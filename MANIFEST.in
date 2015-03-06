@@ -1,0 +1,6 @@
+include DESCRIPTION.rst
+
+
+# TODO: add appropriate lines to incude sample data files, something like:
+# include sample/*.fits.gz
+
