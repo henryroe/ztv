@@ -18,7 +18,7 @@ basis_filename = os.path.join(datadir, 'simple_image.fits')
 basis_header = fits.getheader(basis_filename)
 basis_data = fits.getdata(basis_filename, 0)
 
-# star is at 155, 122
+# star is at 155, 122 
 x0 = 155.
 y0 = 122.
 
