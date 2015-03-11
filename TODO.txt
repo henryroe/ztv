@@ -1,0 +1,48 @@
+# URGENT - before next release
+
+## Work through lots of example fits file inputs and make reading more robust, e.g. barfing on nirspec and pharo data currently
+
+
+
+# Desirable before next release
+
+## re-consider which color maps to include
+
+[based on:](https://jakevdp.github.io/blog/2014/10/16/how-bad-is-your-colormap/)
+
+
+
+# Medium high-priority for some future release:
+
+## ability to do masked numpy arrays with different color value for masked positions
+
+
+## Make which control panels are loaded optional, including a 'default' group.
+
+See ztv.ControlPanels class.
+
+
+## Allow enabling/disabling of components of SourcePanel at startup
+
+- allow enable/disable of ActiveMQ in SourcePanel at startup (default = off?) 
+- Allow enable/disable of Auto-load file in SourcePanel at startup (default = on?) 
+
+
+# Low priority for some future release:
+
+## consider:  what color should be used for blank/fill space in ImagePanels?  (currently white, but should it be black? adjustable?)
+
+## design & implement global keyboard shortcuts, e.g. cmd-o for opening a file
+
+## fix that ctrl-c in ipython is killing ztv gui, even when run via a separate process with ztv_api
+
+Problem:
+
+    import ztv
+    z = ztv.ZTV()
+    # now do some other things
+    # and hit ctrl-c
+    # kills the subprocess'd ztv gui
+    
+I think fix will be around the `ztv_api.py` line that launches ztv with: `subprocess.Popen`.
+
