@@ -10,12 +10,16 @@
 
 [based on:](https://jakevdp.github.io/blog/2014/10/16/how-bad-is-your-colormap/)
 
+## better document ActiveMQ usage/example/etc
 
 
 # Medium high-priority for some future release:
 
+## better 'auto' algorithm for min/max determination
+
 ## ability to do masked numpy arrays with different color value for masked positions
 
+## in "Show FITS header" search box is using strict capitalization - Should it allow sloppy capitalization?
 
 ## Make which control panels are loaded optional, including a 'default' group.
 
@@ -30,11 +34,26 @@ See ztv.ControlPanels class.
 
 # Low priority for some future release:
 
+## in source panel fields:  tab to complete doesn't work at first attempt in fields after clicking.  have to type a character first.  After that behavior is correct.  (launch ztv; click in a field, hit tab.  nothing.  type a character (even not matching), delete it, hit tab -> works)
+
+## is error checking behavior of Source Panel->Current FITS file correct?  seems to error check only upon Return key.  Not actively as you type.  Meanwhile the auto-load file fields work correctly, updating color clues in real time.
+
+## Source Panel->Autoload-file:  auto-redistribute filename vs. directory to Dir/Filename (is there some use case where you don't want to 'correct' the user?)
+
+## Tab to complete in Source Panel->Current FITS file is not working currently (is in auto-load file fields)
+
+## Tab to complete in Source panel fields:  shift-Tab should step back (in case you went past completion you wanted)
+
 ## consider:  what color should be used for blank/fill space in ImagePanels?  (currently white, but should it be black? adjustable?)
 
 ## design & implement global keyboard shortcuts, e.g. cmd-o for opening a file
 
+## allow 'hiding' of source panel, but having pre-set ActiveMQ or auto-load file?? (less certain this needed than enable/disable individual components?)
+
 ## fix that ctrl-c in ipython is killing ztv gui, even when run via a separate process with ztv_api
+
+## consider in color panel:  do other colormap scalings make sense?
+
 
 Problem:
 
