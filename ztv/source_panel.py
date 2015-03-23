@@ -1,6 +1,7 @@
 import wx
 from wx.lib.pubsub import Publisher
 from .filepicker import FilePicker
+import os
 
 class SourcePanel(wx.Panel):
     def __init__(self, parent):
