@@ -12,6 +12,12 @@
 
 ## better document ActiveMQ usage/example/etc
 
+## rename fake_fits_maker.py & document it better
+
+## Write up 'motivation' document referring back to atv (and to ds9 etc etc)
+
+## think through colors of cursor boxes etc and making them make some sort of justifiable sense
+
 
 # Medium high-priority for some future release:
 
@@ -25,14 +31,29 @@
 
 See ztv.ControlPanels class.
 
+## found: problem when auto-loading fits files that typing into curfile/curdir fields is pain in the butt as cursor keep smoving.  think it's an issue in "on_fitsfile_loaded"???
+
+
+## To color control panel:  add a histogram panel with click-and-drag min/max markers
+
 
 ## Allow enabling/disabling of components of SourcePanel at startup
 
 - allow enable/disable of ActiveMQ in SourcePanel at startup (default = off?) 
 - Allow enable/disable of Auto-load file in SourcePanel at startup (default = on?) 
 
+## Fix bugs "deviceDeltaX" [Y] is deprecated, & continuousScroll is deprecated
+
+e.g.:
+
+    In [60]: 2015-03-24 08:57:59.055 Python[8660:1232061] -_continuousScroll is deprecated for NSScrollWheel. Please use -hasPreciseScrollingDeltas.
+    2015-03-24 08:57:59.055 Python[8660:1232061] -deviceDeltaX is deprecated for NSScrollWheel. Please use -scrollingDeltaX.
+    2015-03-24 08:57:59.055 Python[8660:1232061] -deviceDeltaY is deprecated for NSScrollWheel. Please use -scrollingDeltaY.
+
 
 # Low priority for some future release:
+
+## consider:  in Source panel->Autoload, should dir/file be combined in to single field?
 
 ## in source panel fields:  tab to complete doesn't work at first attempt in fields after clicking.  have to type a character first.  After that behavior is correct.  (launch ztv; click in a field, hit tab.  nothing.  type a character (even not matching), delete it, hit tab -> works)
 
@@ -54,6 +75,7 @@ See ztv.ControlPanels class.
 
 ## consider in color panel:  do other colormap scalings make sense?
 
+## access catalogs (local & internet) and overplot
 
 Problem:
 

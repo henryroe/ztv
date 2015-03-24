@@ -14,7 +14,6 @@ class ColorControlPanel(wx.Panel):
         self.cmap_to_eventID = {self.eventID_to_cmap[x]: x for x in self.eventID_to_cmap}
 
         v_sizer1 = wx.BoxSizer(wx.VERTICAL)
-        # TODO: add a histogram panel with click-and-drag min/max markers
         values_sizer = wx.FlexGridSizer( 3, 5, 0, 0 )
         values_sizer.SetFlexibleDirection( wx.BOTH )
         values_sizer.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
