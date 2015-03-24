@@ -31,6 +31,7 @@ from .filepicker import FilePicker
 # Intend: control panels are one per file with class name "MyPanel" in filename "my_panel.py"
 from .source_panel import SourcePanel
 from .plot_panel import PlotPanel
+from .stats_panel import StatsPanel
 from .color_control_panel import ColorControlPanel
 
 import pdb
@@ -147,6 +148,9 @@ class PrimaryImagePanel(wx.Panel):
         self.center = wx.RealPoint()
         self.zoom_factor = 2.0
         self.zoom_box_active = False
+        self.zoom_rect = None
+        self.stats_box_active = False
+        self.stats_rect = None
         self.eventID_to_cmap = {wx.NewId(): x for x in self.ztv_frame.available_cmaps}
         self.cmap_to_eventID = {self.eventID_to_cmap[x]: x for x in self.eventID_to_cmap}
         self.eventID_to_scaling = {wx.NewId(): x for x in self.ztv_frame.available_scalings}
@@ -162,7 +166,8 @@ class PrimaryImagePanel(wx.Panel):
                                                               np.uint8(np.round(rgba*255)))
         self.available_cursor_modes = [('None', self.set_cursor_to_none_mode),
                                        ('Zoom', self.set_cursor_to_zoom_mode),
-                                       ('Pan', self.set_cursor_to_pan_mode)]
+                                       ('Pan', self.set_cursor_to_pan_mode),
+                                       ('Stats box', self.set_cursor_to_stats_box)]
         self.cursor_mode = 'Zoom'
         self.max_doubleclick_millisec = 500  # needed to trap 'real' single clicks from the first click of a double click
         self.init_popup_menu()
@@ -263,6 +268,10 @@ class PrimaryImagePanel(wx.Panel):
     def set_cursor_to_pan_mode(self, event):
         self.cursor_mode = 'Pan'
 
+    def set_cursor_to_stats_box(self, event):
+        self.cursor_mode = 'Stats box'
+        self.ztv_frame.controls_notebook.SetSelection(self.ztv_frame.controls_notebook.panel_id['Stats'])
+        
     def on_key_press(self, event):
         # TODO: figure out why keypresses are only recognized after a click in the matplotlib frame.
         if event.key in ['c', 'C', 'v', 'V', 'y', 'Y']:
@@ -312,9 +321,14 @@ class PrimaryImagePanel(wx.Panel):
         x = int(np.round(event.xdata))
         y = int(np.round(event.ydata))
         if self.zoom_box_active:
-            self.zoom_rect.set_bounds(self.zoom_x0, self.zoom_y0,
-                                      event.xdata - self.zoom_x0, event.ydata - self.zoom_y0)
+            x0,y0 = self.zoom_rect.xy
+            self.zoom_rect.set_bounds(x0, y0, event.xdata - x0, event.ydata - y0)
             self.figure.canvas.draw()
+        if self.stats_box_active:
+            x0,y0 = self.stats_rect.xy
+            self.stats_rect.set_bounds(x0, y0, event.xdata - x0, event.ydata - y0)
+            self.figure.canvas.draw()
+            wx.CallAfter(Publisher().sendMessage, "stats_rect_updated", None)
         if ((x >= 0) and (x < self.ztv_frame.image.shape[1]) and
             (y >= 0) and (y < self.ztv_frame.image.shape[0])):
             imval = self.ztv_frame.image[y, x]
@@ -335,7 +349,7 @@ class PrimaryImagePanel(wx.Panel):
 
     def on_button_press(self, event):
         if event.button == 1:  # left button
-            if self.cursor_mode is 'Zoom':
+            if self.cursor_mode == 'Zoom':
                 if event.dblclick:
                     self.center = wx.RealPoint(event.xdata, event.ydata)
                     self.zoom_factor /= 2.
@@ -343,15 +357,24 @@ class PrimaryImagePanel(wx.Panel):
                 else:
                     self.zoom_start_timestamp = event.guiEvent.GetTimestamp()  # millisec
                     self.zoom_box_active = True
-                    self.zoom_x0 = event.xdata
-                    self.zoom_y0 = event.ydata
-                    self.zoom_rect = Rectangle((self.zoom_x0, self.zoom_y0), 0, 0,
+                    self.zoom_rect = Rectangle((event.xdata, event.ydata), 0, 0,
                                                color='magenta', fill=False, zorder=100)
                     self.axes.add_patch(self.zoom_rect)
                     self.figure.canvas.draw()
-            elif self.cursor_mode is 'Pan':
+            elif self.cursor_mode == 'Pan':
                 self.center = wx.RealPoint(event.xdata, event.ydata)
                 self.set_and_get_xy_limits()
+            elif self.cursor_mode == 'Stats box':
+                self.stats_start_timestamp = event.guiEvent.GetTimestamp()  # millisec
+                self.stats_box_active = True
+                if self.stats_rect is not None:
+                    self.stats_rect.set_bounds(event.xdata, event.ydata, 0, 0)
+                else:
+                    self.stats_rect = Rectangle((event.xdata, event.ydata), 0, 0,
+                                                color='orange', fill=False, zorder=100)
+                    self.axes.add_patch(self.stats_rect)
+                wx.CallAfter(Publisher().sendMessage, "stats_rect_updated", None)
+                self.figure.canvas.draw()
 
     def on_button_release(self, event):
         if event.button == 1:  # left button
@@ -359,17 +382,21 @@ class PrimaryImagePanel(wx.Panel):
                 # this catches for the first click-release of a double-click
                 if (event.guiEvent.GetTimestamp() - self.zoom_start_timestamp) > self.max_doubleclick_millisec:
                     # this catches for a long click-and-release without motion
-                    if abs(self.zoom_x0 - event.xdata) >= 2 and abs(self.zoom_y0 - event.ydata) >= 2:
-                        self.center = wx.RealPoint((self.zoom_x0 + event.xdata)/2., (self.zoom_y0 + event.ydata)/2.)
+                    x0,y0 = self.zoom_rect.xy
+                    if abs(x0 - event.xdata) >= 2 and abs(y0 - event.ydata) >= 2:
+                        self.center = wx.RealPoint((x0 + event.xdata)/2., (y0 + event.ydata)/2.)
                         panel_size = self.canvas.GetSize()
-                        x_zoom_factor = panel_size.x / abs(event.xdata - self.zoom_x0)
-                        y_zoom_factor = panel_size.y / abs(event.ydata - self.zoom_y0)
+                        x_zoom_factor = panel_size.x / abs(event.xdata - x0)
+                        y_zoom_factor = panel_size.y / abs(event.ydata - y0)
                         self.zoom_factor = min(x_zoom_factor, y_zoom_factor)
                         self.set_and_get_xy_limits()
                 self.zoom_box_active = False
                 self.axes.patches.remove(self.zoom_rect)
                 self.zoom_rect = None
                 self.figure.canvas.draw()
+            if self.stats_box_active:
+                self.stats_box_active = False
+                wx.CallAfter(Publisher().sendMessage, "stats_rect_updated", None)
 
     def on_right_down(self, event):
         for cursor_mode in self.cursor_mode_to_eventID:
@@ -557,15 +584,26 @@ class ControlsNotebook(wx.Notebook):
     # see "Book" Controls -> Notebook example in wxpython demo
     def __init__(self, parent):
         self.parent = parent
-        wx.Notebook.__init__(self, parent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0)        
+        wx.Notebook.__init__(self, parent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0)  
+        # NOTE: Warning: this indexing scheme for tracking pages is fragile.  Insert pages, add pages, delete pages, etc will screw it up
+        self.cur_new_page_index = 0  # will increment and keep track of ImageId numbers in self.panel_id
+        self.panel_id = {}
+
         self.source_panel = SourcePanel(self)
-        self.AddPage(self.source_panel, "Source")
-        self.AddPage(wx.Panel(self, -1), "Phot")
-        self.AddPage(wx.Panel(self, -1), "Stats")
+        self.AddPageAndStoreID(self.source_panel, "Source")
+        self.AddPageAndStoreID(wx.Panel(self, -1), "Phot")
+        self.stats_panel = StatsPanel(self)
+        self.AddPageAndStoreID(self.stats_panel, "Stats")
         self.plot_panel = PlotPanel(self)
-        self.AddPage(self.plot_panel, "Plot")
+        self.AddPageAndStoreID(self.plot_panel, "Plot")
         self.color_control_panel = ColorControlPanel(self)
-        self.AddPage(self.color_control_panel, "Color")
+        self.AddPageAndStoreID(self.color_control_panel, "Color")
+        
+    def AddPageAndStoreID(self, page, text, **kwargs):
+        self.panel_id[text] = self.cur_new_page_index
+        self.cur_new_page_index += 1
+        self.AddPage(page, text, imageId=self.panel_id[text])
+        
 
 
 class ZTVFrame(wx.Frame):

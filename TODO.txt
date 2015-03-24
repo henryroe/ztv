@@ -36,6 +36,13 @@ See ztv.ControlPanels class.
 
 ## To color control panel:  add a histogram panel with click-and-drag min/max markers
 
+## To stats panel:  add ability to switch between circle (ellipse?) and box.  
+
+need to think through how circle defined - click cneter and drag out?  Confined within click-drag box (works better for ellipses?)
+
+need to think through if/how the stats panel changes to control 
+
+## To stats panel:  add ability to choose "recent" selection areas (e.g. switch back and forth between some different areas)
 
 ## Allow enabling/disabling of components of SourcePanel at startup
 
@@ -52,6 +59,10 @@ e.g.:
 
 
 # Low priority for some future release:
+
+## run through a syntax checker and cleanup most/all objections (e.g. "x*y" vs. "x * y")
+
+## in stats panel:  fix vertical alignment of "# pixels" field and text label.  should be centered on the two input rows.
 
 ## consider:  in Source panel->Autoload, should dir/file be combined in to single field?
 
@@ -76,6 +87,8 @@ e.g.:
 ## consider in color panel:  do other colormap scalings make sense?
 
 ## access catalogs (local & internet) and overplot
+
+## get cmd-W working to close window
 
 Problem:
 
