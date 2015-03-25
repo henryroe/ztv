@@ -72,6 +72,8 @@ Another issue is visibility - how to make it clear to user what one can do?  Tha
 
 # Low priority for some future release:
 
+## Clean-up layout in Phot panel  (e.g. align fields in output part)
+
 ## run through a syntax checker and cleanup most/all objections (e.g. "x*y" vs. "x * y")
 
 ## in stats panel:  fix vertical alignment of "# pixels" field and text label.  should be centered on the two input rows.

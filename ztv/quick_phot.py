@@ -70,6 +70,7 @@ def aperture_phot(im, x, y, star_radius, sky_inner_radius, sky_outer_radius):
     sky_per_pixel, median, stddev = sigma_clipped_stats(sky_pixels)
     sky_per_pixel_err = stddev/np.sqrt(sky_pixels.size)
     output['sky_per_pixel'] = sky_per_pixel
+    # TODO: check that are doing sky_per_pixel_err right.  In one quick test seemed high (but maybe wasn't a good test)
     output['sky_per_pixel_err'] = sky_per_pixel_err
     output['flux'] = star_pixels.sum() - sky_per_pixel*star_pixels.size
     output['sky_err'] = sky_per_pixel_err*np.sqrt(star_pixels.size)
