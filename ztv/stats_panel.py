@@ -94,8 +94,6 @@ class StatsPanel(wx.Panel):
                                          wx.TE_READONLY)
         self.npix_textctrl.SetFont(textentry_font)
         values_sizer.Add(self.npix_textctrl, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT, 0)
-
-  # HEREIAM:  Next:  add non-editable text control fields.  space things out nicely 
   
         values_sizer.AddSpacer((0,15), 0, wx.EXPAND)
         values_sizer.AddSpacer((0,0), 0, wx.EXPAND)
