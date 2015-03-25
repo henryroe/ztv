@@ -31,6 +31,7 @@ from .filepicker import FilePicker
 # Intend: control panels are one per file with class name "MyPanel" in filename "my_panel.py"
 from .source_panel import SourcePanel
 from .plot_panel import PlotPanel
+from .phot_panel import PhotPanel
 from .stats_panel import StatsPanel
 from .color_control_panel import ColorControlPanel
 
@@ -167,7 +168,8 @@ class PrimaryImagePanel(wx.Panel):
         self.available_cursor_modes = [('None', self.set_cursor_to_none_mode),
                                        ('Zoom', self.set_cursor_to_zoom_mode),
                                        ('Pan', self.set_cursor_to_pan_mode),
-                                       ('Stats box', self.set_cursor_to_stats_box)]
+                                       ('Stats box', self.set_cursor_to_stats_box),
+                                       ('Phot', self.set_cursor_to_phot)]
         self.cursor_mode = 'Zoom'
         self.max_doubleclick_millisec = 500  # needed to trap 'real' single clicks from the first click of a double click
         self.init_popup_menu()
@@ -271,6 +273,10 @@ class PrimaryImagePanel(wx.Panel):
     def set_cursor_to_stats_box(self, event):
         self.cursor_mode = 'Stats box'
         self.ztv_frame.controls_notebook.SetSelection(self.ztv_frame.controls_notebook.panel_id['Stats'])
+        
+    def set_cursor_to_phot(self, event):
+        self.cursor_mode = 'Phot'
+        self.ztv_frame.controls_notebook.SetSelection(self.ztv_frame.controls_notebook.panel_id['Phot'])
         
     def on_key_press(self, event):
         # TODO: figure out why keypresses are only recognized after a click in the matplotlib frame.
@@ -395,6 +401,9 @@ class PrimaryImagePanel(wx.Panel):
                 self.stats_start_timestamp = event.guiEvent.GetTimestamp()  # millisec
                 self.stats_box_active = True
                 self.update_stats_box(event.xdata, event.ydata, event.xdata, event.ydata)
+            elif self.cursor_mode == 'Phot':
+                self.ztv_frame.controls_notebook.SetSelection(self.ztv_frame.controls_notebook.panel_id['Phot'])
+                wx.CallAfter(Publisher().sendMessage, "new_phot_xy", (event.xdata, event.ydata))
 
     def on_button_release(self, event):
         if event.button == 1:  # left button
@@ -611,7 +620,8 @@ class ControlsNotebook(wx.Notebook):
 
         self.source_panel = SourcePanel(self)
         self.AddPageAndStoreID(self.source_panel, "Source")
-        self.AddPageAndStoreID(wx.Panel(self, -1), "Phot")
+        self.phot_panel = PhotPanel(self)
+        self.AddPageAndStoreID(self.phot_panel, "Phot")
         self.stats_panel = StatsPanel(self)
         self.AddPageAndStoreID(self.stats_panel, "Stats")
         self.plot_panel = PlotPanel(self)
