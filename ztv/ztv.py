@@ -315,20 +315,39 @@ class PrimaryImagePanel(wx.Panel):
     def on_change_scaling_event(self, event):
         wx.CallAfter(Publisher().sendMessage, "set_scaling", self.eventID_to_scaling[event.GetId()])
 
+    def update_stats_box(self, x0, y0, x1, y1):
+        if x0 is None:
+            x0 = self.stats_rect.get_x()
+        if y0 is None:
+            y0 = self.stats_rect.get_y()
+        if x1 is None:
+            x1 = self.stats_rect.get_x() + self.stats_rect.get_width()
+        if y1 is None:
+            y1 = self.stats_rect.get_y() + self.stats_rect.get_height()
+        x0 = min(max(0, x0), self.ztv_frame.image.shape[1])
+        y0 = min(max(0, y0), self.ztv_frame.image.shape[0])
+        x1 = min(max(0, x1), self.ztv_frame.image.shape[1])
+        y1 = min(max(0, y1), self.ztv_frame.image.shape[0])
+        if self.stats_rect is None:
+            self.stats_rect = Rectangle((x0, y0), x1 - x0, y1 - y0, color='orange', fill=False, zorder=100)
+            self.axes.add_patch(self.stats_rect)
+        self.stats_rect.set_bounds(x0, y0, x1 - x0, y1 - y0)
+        self.figure.canvas.draw()
+        wx.CallAfter(Publisher().sendMessage, "stats_rect_updated", None)
+
     def on_motion(self, event):
+        # TODO: clean up in stats_box stuff whether ranges are pythonic or inclusive.  Might be that is pythonic behind scenes, but inclusive in some of the display of info?  There are trickinesses to getting this right, as sometimes need to flip x0/x1 and y0/y1 when range is negative
         if event.xdata is None or event.ydata is None:
             return
         x = int(np.round(event.xdata))
         y = int(np.round(event.ydata))
         if self.zoom_box_active:
-            x0,y0 = self.zoom_rect.xy
+            x0,y0 = self.zoom_rect.get_x(),self.zoom_rect.get_y()
             self.zoom_rect.set_bounds(x0, y0, event.xdata - x0, event.ydata - y0)
             self.figure.canvas.draw()
         if self.stats_box_active:
-            x0,y0 = self.stats_rect.xy
-            self.stats_rect.set_bounds(x0, y0, event.xdata - x0, event.ydata - y0)
-            self.figure.canvas.draw()
-            wx.CallAfter(Publisher().sendMessage, "stats_rect_updated", None)
+            x0,y0 = self.stats_rect.get_x(),self.stats_rect.get_y()
+            self.update_stats_box(x0, y0, event.xdata, event.ydata)
         if ((x >= 0) and (x < self.ztv_frame.image.shape[1]) and
             (y >= 0) and (y < self.ztv_frame.image.shape[0])):
             imval = self.ztv_frame.image[y, x]
@@ -367,14 +386,7 @@ class PrimaryImagePanel(wx.Panel):
             elif self.cursor_mode == 'Stats box':
                 self.stats_start_timestamp = event.guiEvent.GetTimestamp()  # millisec
                 self.stats_box_active = True
-                if self.stats_rect is not None:
-                    self.stats_rect.set_bounds(event.xdata, event.ydata, 0, 0)
-                else:
-                    self.stats_rect = Rectangle((event.xdata, event.ydata), 0, 0,
-                                                color='orange', fill=False, zorder=100)
-                    self.axes.add_patch(self.stats_rect)
-                wx.CallAfter(Publisher().sendMessage, "stats_rect_updated", None)
-                self.figure.canvas.draw()
+                self.update_stats_box(event.xdata, event.ydata, event.xdata, event.ydata)
 
     def on_button_release(self, event):
         if event.button == 1:  # left button
@@ -382,7 +394,7 @@ class PrimaryImagePanel(wx.Panel):
                 # this catches for the first click-release of a double-click
                 if (event.guiEvent.GetTimestamp() - self.zoom_start_timestamp) > self.max_doubleclick_millisec:
                     # this catches for a long click-and-release without motion
-                    x0,y0 = self.zoom_rect.xy
+                    x0,y0 = self.zoom_rect.get_x(),self.zoom_rect.get_y()
                     if abs(x0 - event.xdata) >= 2 and abs(y0 - event.ydata) >= 2:
                         self.center = wx.RealPoint((x0 + event.xdata)/2., (y0 + event.ydata)/2.)
                         panel_size = self.canvas.GetSize()

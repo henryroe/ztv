@@ -250,10 +250,7 @@ class ColorControlPanel(wx.Panel):
     def force_textctrl_color_update(self, textctrl):
         cur_focused_item = self.FindFocus()
         insertion_point = textctrl.GetInsertionPoint()
-        if textctrl == self.minval_textctrl:
-            self.maxval_textctrl.SetFocus()
-        else:
-            self.minval_textctrl.SetFocus()
+        self.set_max_button.SetFocus()  # need to shift focus away & then back to force color update in GUI
         textctrl.SetFocus()
         textctrl.SetInsertionPoint(insertion_point)
         if cur_focused_item is not None:

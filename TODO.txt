@@ -57,6 +57,8 @@ e.g.:
     2015-03-24 08:57:59.055 Python[8660:1232061] -deviceDeltaX is deprecated for NSScrollWheel. Please use -scrollingDeltaX.
     2015-03-24 08:57:59.055 Python[8660:1232061] -deviceDeltaY is deprecated for NSScrollWheel. Please use -scrollingDeltaY.
 
+## Activate minpos/maxpos fields in Stats panel
+
 
 # Low priority for some future release:
 
