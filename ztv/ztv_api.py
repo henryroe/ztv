@@ -31,6 +31,7 @@ class ZTV():
         z.set_minmax(0.3 * (2**16), 0.7 * (2**16))
     """
     def __init__(self, title=None):
+        # TODO: add generic passthrough of commands, e.g. load fits file?
         cmd = "python -c 'from ztv.ztv import ZTVMain ; ZTVMain(launch_listen_thread=True, "
         if title is not None:
             cmd += 'title="' + title + '",'

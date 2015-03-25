@@ -33,6 +33,7 @@ See ztv.ControlPanels class.
 
 ## found: problem when auto-loading fits files that typing into curfile/curdir fields is pain in the butt as cursor keep smoving.  think it's an issue in "on_fitsfile_loaded"???
 
+## consider in color panel: convert to using color stretches from astropy.visualization & add more
 
 ## To color control panel:  add a histogram panel with click-and-drag min/max markers
 
@@ -59,6 +60,15 @@ e.g.:
 
 ## Activate minpos/maxpos fields in Stats panel
 
+## generic pass through of parameters for typical `z = ztv.ZTV()` launching
+
+add to:
+    class ZTVMain()  # in ztv.py
+    class ZTV.__init__()   #  in ztv_api.py
+    
+Is probably straightforward for simple things like minval, or even string filenames to load a fits file.  But, gets complicated quickly if passing numpy arrays for display.  Will need to think about how to do.  Or, whether to just do limited subset.  
+
+Another issue is visibility - how to make it clear to user what one can do?  That's an argument for the extra complexity (and less flexibility) of just manually specifiying what can be passed through.
 
 # Low priority for some future release:
 
@@ -85,8 +95,6 @@ e.g.:
 ## allow 'hiding' of source panel, but having pre-set ActiveMQ or auto-load file?? (less certain this needed than enable/disable individual components?)
 
 ## fix that ctrl-c in ipython is killing ztv gui, even when run via a separate process with ztv_api
-
-## consider in color panel:  do other colormap scalings make sense?
 
 ## access catalogs (local & internet) and overplot
 

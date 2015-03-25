@@ -335,6 +335,14 @@ class PrimaryImagePanel(wx.Panel):
         self.figure.canvas.draw()
         wx.CallAfter(Publisher().sendMessage, "stats_rect_updated", None)
 
+    def clear_stats_box(self):
+        if self.stats_rect is not None:
+            self.axes.patches.remove(self.stats_rect)
+            self.stats_rect = None
+            self.figure.canvas.draw()
+            self.stats_box_active = False
+            wx.CallAfter(Publisher().sendMessage, "stats_rect_updated", None)
+
     def on_motion(self, event):
         # TODO: clean up in stats_box stuff whether ranges are pythonic or inclusive.  Might be that is pythonic behind scenes, but inclusive in some of the display of info?  There are trickinesses to getting this right, as sometimes need to flip x0/x1 and y0/y1 when range is negative
         if event.xdata is None or event.ydata is None:
@@ -1038,6 +1046,7 @@ class CommandListenerThread(threading.Thread):
 
 
 class ZTVMain():
+    # TODO: add generic pass through of parameters, e.g. load a file
     def __init__(self, title=None, masterPID=-1, launch_listen_thread=False):
         WatchMasterPIDThread(masterPID)
         app = wx.App(False)

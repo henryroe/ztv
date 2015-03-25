@@ -181,8 +181,11 @@ class StatsPanel(wx.Panel):
 #                                            wx.TE_PROCESS_ENTER)
 #         self.maxpos_textctrl.SetFont(textentry_font)
 #         values_sizer.Add(self.maxpos_textctrl, 0, wx.ALL, 2)
-        values_sizer.AddSpacer((0,0), 0, wx.EXPAND)        
-        values_sizer.AddSpacer((0,0), 0, wx.EXPAND)        
+        values_sizer.AddSpacer((0,0), 0, wx.EXPAND)   
+             
+        self.clear_button = wx.Button(self, wx.ID_ANY, u"Clear", wx.DefaultPosition, wx.DefaultSize, 0)
+        values_sizer.Add(self.clear_button, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL, 2)
+        self.clear_button.Bind(wx.EVT_BUTTON, self.on_clear_button)
 
         v_sizer1 = wx.BoxSizer(wx.VERTICAL)
         v_sizer1.AddStretchSpacer(1.0)
@@ -191,49 +194,77 @@ class StatsPanel(wx.Panel):
         self.SetSizer(v_sizer1)
         Publisher().subscribe(self.update_stats, "stats_rect_updated")
 
+    def on_clear_button(self, evt):
+        self.ztv_frame.primary_image_panel.clear_stats_box()
+
     def get_x0y0x1y1_from_stats_rect(self):
-        x0 = self.ztv_frame.primary_image_panel.stats_rect.get_x()
-        y0 = self.ztv_frame.primary_image_panel.stats_rect.get_y()
-        x1 = x0 + self.ztv_frame.primary_image_panel.stats_rect.get_width()
-        y1 = y0 + self.ztv_frame.primary_image_panel.stats_rect.get_height()
-        return x0,y0,x1,y1
+        if self.ztv_frame.primary_image_panel.stats_rect is not None:
+            x0 = self.ztv_frame.primary_image_panel.stats_rect.get_x()
+            y0 = self.ztv_frame.primary_image_panel.stats_rect.get_y()
+            x1 = x0 + self.ztv_frame.primary_image_panel.stats_rect.get_width()
+            y1 = y0 + self.ztv_frame.primary_image_panel.stats_rect.get_height()
+            return x0,y0,x1,y1
+        else:
+            return None, None, None, None
         
     def update_stats(self, *args):
         x0,y0,x1,y1 = self.get_x0y0x1y1_from_stats_rect()
-        if x0 > x1:
-            x0,x1 = x1,x0
-        if y0 > y1:
-            y0,y1 = y1,y0
-        x0, y0 = int(np.round(x0)), int(np.round(y0))
-        x1, y1 = int(np.round(x1)), int(np.round(y1))
-        self.last_string_values['x0'] = str(int(x0))
-        self.x0_textctrl.SetValue(self.last_string_values['x0'])
-        self.last_string_values['y0'] = str(int(y0))
-        self.y0_textctrl.SetValue(self.last_string_values['y0'])
+        if x0 is None:
+            self.x0_textctrl.SetValue('')
+            self.y0_textctrl.SetValue('')
+            self.xsize_textctrl.SetValue('')
+            self.ysize_textctrl.SetValue('')
+            self.x1_textctrl.SetValue('')
+            self.y1_textctrl.SetValue('')
+            self.npix_textctrl.SetValue('')
+            self.mean_textctrl.SetValue('')
+            self.median_textctrl.SetValue('')
+            self.stdev_textctrl.SetValue('')
+            self.robust_mean_textctrl.SetValue('')
+            self.robust_stdev_textctrl.SetValue('')
+            self.minval_textctrl.SetValue('')
+            self.maxval_textctrl.SetValue('')
+            self.set_textctrl_background_color(self.x0_textctrl, 'ok')
+            self.set_textctrl_background_color(self.x1_textctrl, 'ok')
+            self.set_textctrl_background_color(self.xsize_textctrl, 'ok')
+            self.set_textctrl_background_color(self.y0_textctrl, 'ok')
+            self.set_textctrl_background_color(self.y1_textctrl, 'ok')
+            self.set_textctrl_background_color(self.ysize_textctrl, 'ok')
+        else:
+            if x0 > x1:
+                x0,x1 = x1,x0
+            if y0 > y1:
+                y0,y1 = y1,y0
+            x0, y0 = int(np.round(x0)), int(np.round(y0))
+            x1, y1 = int(np.round(x1)), int(np.round(y1))
+            self.last_string_values['x0'] = str(int(x0))
+            self.x0_textctrl.SetValue(self.last_string_values['x0'])
+            self.last_string_values['y0'] = str(int(y0))
+            self.y0_textctrl.SetValue(self.last_string_values['y0'])
 
-        x_npix = int(x1 - x0 + 1)
-        self.last_string_values['xsize'] = str(x_npix)
-        self.xsize_textctrl.SetValue(self.last_string_values['xsize'])
-        y_npix = int(y1 - y0 + 1)
-        self.last_string_values['ysize'] = str(y_npix)
-        self.ysize_textctrl.SetValue(self.last_string_values['ysize'])
+            x_npix = int(x1 - x0 + 1)
+            self.last_string_values['xsize'] = str(x_npix)
+            self.xsize_textctrl.SetValue(self.last_string_values['xsize'])
+            y_npix = int(y1 - y0 + 1)
+            self.last_string_values['ysize'] = str(y_npix)
+            self.ysize_textctrl.SetValue(self.last_string_values['ysize'])
 
-        self.last_string_values['x1'] = str(int(x1))
-        self.x1_textctrl.SetValue(self.last_string_values['x1'])
-        self.last_string_values['y1'] = str(int(y1))
-        self.y1_textctrl.SetValue(self.last_string_values['y1'])
+            self.last_string_values['x1'] = str(int(x1))
+            self.x1_textctrl.SetValue(self.last_string_values['x1'])
+            self.last_string_values['y1'] = str(int(y1))
+            self.y1_textctrl.SetValue(self.last_string_values['y1'])
         
-        self.npix_textctrl.SetValue(str(x_npix * y_npix))
+            self.npix_textctrl.SetValue(str(x_npix * y_npix))
 
-        stats_data = self.ztv_frame.image[x0:x1+1, y0:y1+1]
-        self.mean_textctrl.SetValue("{:0.4g}".format(stats_data.mean()))
-        self.median_textctrl.SetValue("{:0.4g}".format(np.median(stats_data)))
-        self.stdev_textctrl.SetValue("{:0.4g}".format(stats_data.std()))
-        robust_mean, robust_median, robust_stdev = sigma_clipped_stats(stats_data)
-        self.robust_mean_textctrl.SetValue("{:0.4g}".format(robust_mean)) 
-        self.robust_stdev_textctrl.SetValue("{:0.4g}".format(robust_stdev))
-        self.minval_textctrl.SetValue("{:0.4g}".format(stats_data.min()))
-        self.maxval_textctrl.SetValue("{:0.4g}".format(stats_data.max()))
+            stats_data = self.ztv_frame.image[x0:x1+1, y0:y1+1]
+            self.mean_textctrl.SetValue("{:0.4g}".format(stats_data.mean()))
+            self.median_textctrl.SetValue("{:0.4g}".format(np.median(stats_data)))
+            self.stdev_textctrl.SetValue("{:0.4g}".format(stats_data.std()))
+            robust_mean, robust_median, robust_stdev = sigma_clipped_stats(stats_data)
+            self.robust_mean_textctrl.SetValue("{:0.4g}".format(robust_mean)) 
+            self.robust_stdev_textctrl.SetValue("{:0.4g}".format(robust_stdev))
+            self.minval_textctrl.SetValue("{:0.4g}".format(stats_data.min()))
+            self.maxval_textctrl.SetValue("{:0.4g}".format(stats_data.max()))
         
     def on_navigation_key(self, evt):
         # TODO: figure out how to make tab order work the way I want.  Currently the following code works partly, but is ignored by some tabs.  Weird. Looks like it's an issue that tab is triggering some *other* event when it's a button that has focus.  Might have to play around with catching all key-presses inside of ColorControlPanel & passing along the non-tab keypresses???
@@ -298,6 +329,8 @@ class StatsPanel(wx.Panel):
         self.validate_textctrl_str(self.x0_textctrl, int, self.last_string_values['x0'])
 
     def x0_textctrl_entered(self, evt):
+        if self.ztv_frame.primary_image_panel.stats_rect is None:
+            return # TODO: some day allow manually typing in range values instead of requiring clicking to start a stats box
         if self.validate_textctrl_str(self.x0_textctrl, int, self.last_string_values['x0']):
             self.last_string_values['x0'] = self.x0_textctrl.GetValue()
             self.ztv_frame.primary_image_panel.update_stats_box(int(self.last_string_values['x0']), None, None, None)
@@ -307,6 +340,8 @@ class StatsPanel(wx.Panel):
         self.validate_textctrl_str(self.xsize_textctrl, int, self.last_string_values['xsize'])
 
     def xsize_textctrl_entered(self, evt):
+        if self.ztv_frame.primary_image_panel.stats_rect is None:
+            return # TODO: some day allow manually typing in range values instead of requiring clicking to start a stats box
         if self.validate_textctrl_str(self.xsize_textctrl, int, self.last_string_values['xsize']):
             self.last_string_values['xsize'] = self.xsize_textctrl.GetValue()
             xsize = int(self.last_string_values['xsize'])
@@ -321,6 +356,8 @@ class StatsPanel(wx.Panel):
         self.validate_textctrl_str(self.x1_textctrl, int, self.last_string_values['x1'])
 
     def x1_textctrl_entered(self, evt):
+        if self.ztv_frame.primary_image_panel.stats_rect is None:
+            return # TODO: some day allow manually typing in range values instead of requiring clicking to start a stats box
         if self.validate_textctrl_str(self.x1_textctrl, int, self.last_string_values['x1']):
             self.last_string_values['x1'] = self.x1_textctrl.GetValue()
             self.ztv_frame.primary_image_panel.update_stats_box(None, None, int(self.last_string_values['x1']), None)
@@ -330,6 +367,8 @@ class StatsPanel(wx.Panel):
         self.validate_textctrl_str(self.y0_textctrl, int, self.last_string_values['y0'])
 
     def y0_textctrl_entered(self, evt):
+        if self.ztv_frame.primary_image_panel.stats_rect is None:
+            return # TODO: some day allow manually typing in range values instead of requiring clicking to start a stats box
         if self.validate_textctrl_str(self.y0_textctrl, int, self.last_string_values['y0']):
             self.last_string_values['y0'] = self.y0_textctrl.GetValue()
             self.ztv_frame.primary_image_panel.update_stats_box(None, int(self.last_string_values['y0']), None, None)
@@ -339,6 +378,8 @@ class StatsPanel(wx.Panel):
         self.validate_textctrl_str(self.ysize_textctrl, int, self.last_string_values['ysize'])
 
     def ysize_textctrl_entered(self, evt):
+        if self.ztv_frame.primary_image_panel.stats_rect is None:
+            return # TODO: some day allow manually typing in range values instead of requiring clicking to start a stats box
         if self.validate_textctrl_str(self.ysize_textctrl, int, self.last_string_values['ysize']):
             self.last_string_values['ysize'] = self.ysize_textctrl.GetValue()
             ysize = int(self.last_string_values['ysize'])
@@ -353,6 +394,8 @@ class StatsPanel(wx.Panel):
         self.validate_textctrl_str(self.y1_textctrl, int, self.last_string_values['y1'])
 
     def y1_textctrl_entered(self, evt):
+        if self.ztv_frame.primary_image_panel.stats_rect is None:
+            return # TODO: some day allow manually typing in range values instead of requiring clicking to start a stats box
         if self.validate_textctrl_str(self.y1_textctrl, int, self.last_string_values['y1']):
             self.last_string_values['y1'] = self.y1_textctrl.GetValue()
             self.ztv_frame.primary_image_panel.update_stats_box(None, None, None, int(self.last_string_values['y1']))
