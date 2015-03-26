@@ -240,18 +240,19 @@ class PhotPanel(wx.Panel):
         nice_factor = 10./5.
         sensible_xmax = ((nice_factor*10**np.floor(np.log10(unrounded_xmax))) * 
                          np.ceil(unrounded_xmax / (nice_factor*10**np.floor(np.log10(unrounded_xmax)))))
-        n_sigma = 10.
-        if (phot['sky_per_pixel'] - n_sigma*phot['sky_per_pixel_err']) > 0.:
-            ylim = (phot['sky_per_pixel'] - n_sigma*phot['sky_per_pixel_err'], ylim[1])
-        self.plot_panel.axes.plot([aprad, aprad], ylim, '--', color=aprad_color)
+        n_sigma = 6.
+        if (phot['sky_per_pixel'] - n_sigma*phot['sky_per_pixel_err']*np.sqrt(phot['n_sky_pix'])) > 0.:
+            ylim = (phot['sky_per_pixel'] - n_sigma*phot['sky_per_pixel_err']*np.sqrt(phot['n_sky_pix']), ylim[1])
+        self.plot_panel.axes.set_ylim(ylim)
+        self.plot_panel.axes.plot([aprad, aprad], ylim, '-', color=aprad_color)
         self.plot_panel.axes.plot([skyradin, skyradin], ylim, '.-', color=skyradin_color)
         self.plot_panel.axes.plot([skyradout, skyradout], ylim, '--', color=skyradout_color)
         self.plot_panel.axes.set_xlim([0, sensible_xmax])
         self.plot_panel.axes.plot([0, sensible_xmax], [phot['sky_per_pixel'], phot['sky_per_pixel']], '-r')
         self.plot_panel.axes.plot([0, sensible_xmax], [phot['sky_per_pixel'] - phot['sky_per_pixel_err'], 
-                                                       phot['sky_per_pixel'] - phot['sky_per_pixel_err']], '..r')
+                                                       phot['sky_per_pixel'] - phot['sky_per_pixel_err']], ':r')
         self.plot_panel.axes.plot([0, sensible_xmax], [phot['sky_per_pixel'] + phot['sky_per_pixel_err'], 
-                                                       phot['sky_per_pixel'] + phot['sky_per_pixel_err']], '..r')
+                                                       phot['sky_per_pixel'] + phot['sky_per_pixel_err']], ':r')
         self.plot_panel.figure.canvas.draw()
         #TODO: FWHM
         
