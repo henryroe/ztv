@@ -1,5 +1,6 @@
 import numpy as np
 from astropy.stats import sigma_clipped_stats
+import sys
 
 # TODO: once astropy photometry is released and stable everything in this file should most likely be removed and replaced with calls to the astropy phot package. 
 #  (but needed something quick-and-dirty)
@@ -13,19 +14,20 @@ def centroid(im, x0, y0, searchboxsize=5, centroidboxsize=9):
     x0, y0 - initial x,y
     searchboxsize - search for peak value within this box
     centroidboxsize - calculate centroid of this size box around maximum
+            (have only thought through these size parameters when they are ODD numbers. may not behave nicely if even.)
     
     returns x,y
     ---
     Note: minimal error-checking as intend to replace this some day with astropy photometry package once it is stable and released
     """
-    xmax0 = int(np.round(x0 - searchboxsize/2))
-    ymax0 = int(np.round(y0 - searchboxsize/2))
+    xmax0 = int(np.round(x0 - searchboxsize/2. + 0.5))
+    ymax0 = int(np.round(y0 - searchboxsize/2. + 0.5))
     # in case of multiple maxima, want mean position
-    subim = im[xmax0:xmax0 + searchboxsize, ymax0:ymax0 + searchboxsize]
-    xmax, ymax = [b.mean() for b in np.where(subim == subim.max())]
-    xmax = int(np.round(xmax + xmax0 - centroidboxsize/2))
-    ymax = int(np.round(ymax + ymax0 - centroidboxsize/2))
-    subim = im[xmax:xmax + centroidboxsize, ymax:ymax + centroidboxsize]
+    subim = im[ymax0:ymax0 + searchboxsize, xmax0:xmax0 + searchboxsize]
+    ymax, xmax = [b.mean() for b in np.where(subim == subim.max())]
+    xmax = int(np.round(xmax + xmax0 - centroidboxsize/2.))
+    ymax = int(np.round(ymax + ymax0 - centroidboxsize/2.))
+    subim = im[ymax:ymax + centroidboxsize, xmax:xmax + centroidboxsize]
     subim_x = np.outer(np.ones(subim.shape[0]), np.arange(subim.shape[1]) + xmax)
     subim_y = np.outer(np.arange(subim.shape[0]) + ymax, np.ones(subim.shape[1]))
     return (subim_x*subim).sum()/subim.sum(), (subim_y*subim).sum()/subim.sum()
