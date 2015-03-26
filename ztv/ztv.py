@@ -736,10 +736,10 @@ class ZTVFrame(wx.Frame):
         self.accelerator_table.append((wx.ACCEL_CMD, ord('W'), temp_id))
         rightarrow_id = wx.NewId()
         self.Bind(wx.EVT_MENU, self.on_cmd_right_arrow, id=rightarrow_id)
-        self.accelerator_table.append((wx.ACCEL_CMD, wx.WXK_RIGHT, rightarrow_id))
+        self.accelerator_table.append((wx.ACCEL_CMD, ord(']'), rightarrow_id))
         leftarrow_id = wx.NewId()
         self.Bind(wx.EVT_MENU, self.on_cmd_left_arrow, id=leftarrow_id)
-        self.accelerator_table.append((wx.ACCEL_CMD, wx.WXK_LEFT, leftarrow_id))
+        self.accelerator_table.append((wx.ACCEL_CMD, ord('['), leftarrow_id))
         self.SetAcceleratorTable(wx.AcceleratorTable(self.accelerator_table))
         self.Show()
 
