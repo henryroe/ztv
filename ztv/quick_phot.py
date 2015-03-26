@@ -31,7 +31,8 @@ def centroid(im, x0, y0, searchboxsize=5, centroidboxsize=9):
     return (subim_x*subim).sum()/subim.sum(), (subim_y*subim).sum()/subim.sum()
 
 
-def aperture_phot(im, x, y, star_radius, sky_inner_radius, sky_outer_radius):
+def aperture_phot(im, x, y, star_radius, sky_inner_radius, sky_outer_radius, 
+                  return_distances=False):
     """
     im - 2-d numpy array
     x,y - coordinates of center of star
@@ -63,7 +64,8 @@ def aperture_phot(im, x, y, star_radius, sky_inner_radius, sky_outer_radius):
     xdist = np.outer(np.ones(im.shape[0]), np.arange(im.shape[1]) - x)
     ydist = np.outer(np.arange(im.shape[0]) - y, np.ones(im.shape[1]))
     dist = np.sqrt(xdist**2 + ydist**2)
-    star_pixels = im[dist <= star_radius]
+    star_mask = dist <= star_radius
+    star_pixels = im[star_mask]
     sky_pixels = im[(dist >= sky_inner_radius) & (dist <= sky_outer_radius)]
     output['n_star_pix'] = star_pixels.size
     output['n_sky_pix'] = sky_pixels.size
@@ -74,4 +76,6 @@ def aperture_phot(im, x, y, star_radius, sky_inner_radius, sky_outer_radius):
     output['sky_per_pixel_err'] = sky_per_pixel_err
     output['flux'] = star_pixels.sum() - sky_per_pixel*star_pixels.size
     output['sky_err'] = sky_per_pixel_err*np.sqrt(star_pixels.size)
+    if return_distances:
+        output['distances'] = dist
     return output

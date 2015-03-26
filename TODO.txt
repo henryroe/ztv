@@ -72,7 +72,7 @@ Another issue is visibility - how to make it clear to user what one can do?  Tha
 
 # Low priority for some future release:
 
-## Clean-up layout in Phot panel  (e.g. align fields in output part)
+## Clean-up layout in Phot panel  (e.g. align fields in output part & create a minimum initial size for the plot panel)
 
 ## run through a syntax checker and cleanup most/all objections (e.g. "x*y" vs. "x * y")
 

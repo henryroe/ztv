@@ -203,11 +203,16 @@ class PrimaryImagePanel(wx.Panel):
         menu = wx.Menu()
         menu.Append(wx.NewId(), 'Cursor mode:').Enable(False)
         self.cursor_mode_to_eventID = {}
+        cmd_num = 0
+        accelerator_table = []
         for cursor_mode, fxn in self.available_cursor_modes:
             wx_id = wx.NewId()
-            menu.AppendCheckItem(wx_id, '   ' + cursor_mode)
+            menu.AppendCheckItem(wx_id, '   ' + cursor_mode + '\tCtrl+' + str(cmd_num))
             wx.EVT_MENU(menu, wx_id, fxn)
             self.cursor_mode_to_eventID[cursor_mode] = wx_id
+            self.Bind(wx.EVT_MENU, fxn, id=wx_id)
+            accelerator_table.append((wx.ACCEL_CMD, ord(str(cmd_num)), wx_id))
+            cmd_num += 1
         menu.AppendSeparator()
         image_cmap_submenu = wx.Menu()
         for cmap in self.ztv_frame.available_cmaps:
@@ -229,6 +234,7 @@ class PrimaryImagePanel(wx.Panel):
         self._append_menu_item(menu, self.popup_menu_fits_header_eventID, 'FITS Header',
                                self.on_display_fits_header)
         self.popup_menu = menu
+        self.SetAcceleratorTable(wx.AcceleratorTable(accelerator_table))
 
     def on_display_fits_header(self, event):
         raw_header_str = self.ztv_frame.fits_header.tostring()
@@ -272,11 +278,11 @@ class PrimaryImagePanel(wx.Panel):
 
     def set_cursor_to_stats_box(self, event):
         self.cursor_mode = 'Stats box'
-        self.ztv_frame.controls_notebook.SetSelection(self.ztv_frame.controls_notebook.panel_id['Stats'])
+        self.ztv_frame.controls_notebook.SetSelection(self.ztv_frame.controls_notebook.panel_name_to_id['Stats'])
         
     def set_cursor_to_phot(self, event):
         self.cursor_mode = 'Phot'
-        self.ztv_frame.controls_notebook.SetSelection(self.ztv_frame.controls_notebook.panel_id['Phot'])
+        self.ztv_frame.controls_notebook.SetSelection(self.ztv_frame.controls_notebook.panel_name_to_id['Phot'])
         
     def on_key_press(self, event):
         # TODO: figure out why keypresses are only recognized after a click in the matplotlib frame.
@@ -402,7 +408,7 @@ class PrimaryImagePanel(wx.Panel):
                 self.stats_box_active = True
                 self.update_stats_box(event.xdata, event.ydata, event.xdata, event.ydata)
             elif self.cursor_mode == 'Phot':
-                self.ztv_frame.controls_notebook.SetSelection(self.ztv_frame.controls_notebook.panel_id['Phot'])
+                self.ztv_frame.controls_notebook.SetSelection(self.ztv_frame.controls_notebook.panel_name_to_id['Phot'])
                 wx.CallAfter(Publisher().sendMessage, "new_phot_xy", (event.xdata, event.ydata))
 
     def on_button_release(self, event):
@@ -615,8 +621,9 @@ class ControlsNotebook(wx.Notebook):
         self.parent = parent
         wx.Notebook.__init__(self, parent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0)  
         # NOTE: Warning: this indexing scheme for tracking pages is fragile.  Insert pages, add pages, delete pages, etc will screw it up
-        self.cur_new_page_index = 0  # will increment and keep track of ImageId numbers in self.panel_id
-        self.panel_id = {}
+        self.cur_new_page_index = 0  # will increment and keep track of ImageId numbers in self.panel_name_to_id
+        self.panel_name_to_id = {}
+        self.panel_id_to_name = {}
 
         self.source_panel = SourcePanel(self)
         self.AddPageAndStoreID(self.source_panel, "Source")
@@ -630,11 +637,11 @@ class ControlsNotebook(wx.Notebook):
         self.AddPageAndStoreID(self.color_control_panel, "Color")
         
     def AddPageAndStoreID(self, page, text, **kwargs):
-        self.panel_id[text] = self.cur_new_page_index
+        self.panel_name_to_id[text] = self.cur_new_page_index
+        self.panel_id_to_name[self.cur_new_page_index] = text
         self.cur_new_page_index += 1
-        self.AddPage(page, text, imageId=self.panel_id[text])
+        self.AddPage(page, text, imageId=self.panel_name_to_id[text])
         
-
 
 class ZTVFrame(wx.Frame):
     # TODO: create __init__ input parameters for essentially every adjustable parameter
@@ -663,6 +670,7 @@ class ZTVFrame(wx.Frame):
         self.available_cmaps = ColorMaps().basic()
         self.cmap = 'jet'  # will go back to gray later
         self.is_cmap_inverted = False
+        self.accelerator_table = []
         Publisher().subscribe(self.invert_cmap, "invert_cmap")
         Publisher().subscribe(self.set_cmap, "set_cmap")
         Publisher().subscribe(self.set_cmap_inverted, "set_cmap_inverted")
@@ -722,6 +730,17 @@ class ZTVFrame(wx.Frame):
         if launch_listen_thread:
             CommandListenerThread(self)
         self.set_cmap('gray')
+        temp_id = wx.NewId()
+        self.Bind(wx.EVT_MENU, self.kill_ztv, id=temp_id)
+        self.accelerator_table.append((wx.ACCEL_CMD, ord('Q'), temp_id))
+        self.accelerator_table.append((wx.ACCEL_CMD, ord('W'), temp_id))
+        rightarrow_id = wx.NewId()
+        self.Bind(wx.EVT_MENU, self.on_cmd_right_arrow, id=rightarrow_id)
+        self.accelerator_table.append((wx.ACCEL_CMD, wx.WXK_RIGHT, rightarrow_id))
+        leftarrow_id = wx.NewId()
+        self.Bind(wx.EVT_MENU, self.on_cmd_left_arrow, id=leftarrow_id)
+        self.accelerator_table.append((wx.ACCEL_CMD, wx.WXK_LEFT, leftarrow_id))
+        self.SetAcceleratorTable(wx.AcceleratorTable(self.accelerator_table))
         self.Show()
 
     def kill_ztv(self, *args):
@@ -732,6 +751,14 @@ class ZTVFrame(wx.Frame):
         new_key = str(server) + ':' + str(port) + ':' + str(destination)
         self.activemq_instances_info[new_key] = {'server':server, 'port':port, 'destination':destination}
         wx.CallAfter(Publisher().sendMessage, "activemq_instances_info-changed", None)
+
+    def on_cmd_left_arrow(self, evt):
+        self.controls_notebook.SetSelection((self.controls_notebook.GetSelection() - 1) % 
+                                            (max(self.controls_notebook.panel_id_to_name) + 1))
+
+    def on_cmd_right_arrow(self, evt):
+        self.controls_notebook.SetSelection((self.controls_notebook.GetSelection() + 1) % 
+                                            (max(self.controls_notebook.panel_id_to_name) + 1))
 
     def get_cmap_to_display(self):
         if self.is_cmap_inverted:
