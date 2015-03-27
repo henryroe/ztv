@@ -6,6 +6,8 @@ matplotlib.interactive(True)
 matplotlib.use('WXAgg')
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg
+from matplotlib.patches import Circle, Wedge
+from scipy.optimize import curve_fit
 from .quick_phot import centroid, aperture_phot
 import numpy as np
 
@@ -30,13 +32,25 @@ class PhotPlotPanel(wx.Panel):
         self.figure.set_size_inches(float(pixels[0])/self.figure.get_dpi(), float(pixels[1])/self.figure.get_dpi())
 
 
+def fixed_gauss(x, fwhm, peakval):
+    """
+    Fit FWHM & peakval for a gaussian fixed at 0 and that baseline is 0.
+    """
+    c = fwhm / (2. * np.sqrt(2. * np.log(2.)))
+    xc = 0.
+    return peakval * np.exp(-((x - xc)**2) / (2.*c**2))
+
+
 class PhotPanel(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL)
         self.ztv_frame = self.GetTopLevelParent()
         # TODO: figure out why min size is not being respected by comparing with the framebuilder example
         self.SetSizeHintsSz( wx.Size( 1024,512 ), wx.DefaultSize )
-        
+        self.star_center_patch = None
+        self.star_aperture_patch = None
+        self.sky_aperture_patch = None
+
         self.last_string_values = {'aprad':'', 'skyradin':'', 'skyradout':''}
         self.xclicked = 0.
         self.yclicked = 0.
@@ -61,14 +75,15 @@ class PhotPanel(wx.Panel):
         self.aprad_textctrl.Bind(wx.EVT_TEXT, self.aprad_textctrl_changed)
         self.aprad_textctrl.Bind(wx.EVT_TEXT_ENTER, self.aprad_textctrl_entered)
         values_sizer.AddSpacer((30,0), 0, wx.EXPAND)
-        self.clicked_static_text = wx.StaticText( self, wx.ID_ANY, u"Clicked", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_CENTER_HORIZONTAL )
-        self.clicked_static_text.Wrap( -1 )
-        values_sizer.Add(self.clicked_static_text, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_BOTTOM, 0)
-        self.centroid_static_text = wx.StaticText( self, wx.ID_ANY, u"Centroid", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_CENTER_HORIZONTAL )
-        self.centroid_static_text.Wrap( -1 )
-        values_sizer.Add(self.centroid_static_text, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_BOTTOM, 0)
+        self.x_static_text = wx.StaticText( self, wx.ID_ANY, u"x", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_CENTER_HORIZONTAL )
+        self.x_static_text.Wrap( -1 )
+        values_sizer.Add(self.x_static_text, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_BOTTOM, 0)
+        self.y_static_text = wx.StaticText( self, wx.ID_ANY, u"y", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_CENTER_HORIZONTAL )
+        self.y_static_text.Wrap( -1 )
+        values_sizer.Add(self.y_static_text, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_BOTTOM, 0)
 
-        self.skyradin_static_text = wx.StaticText( self, wx.ID_ANY, u"Sky inner radius", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_RIGHT )
+        self.skyradin_static_text = wx.StaticText(self, wx.ID_ANY, u"Sky inner radius", 
+                                                  wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_RIGHT )
         self.skyradin_static_text.Wrap( -1 )
         values_sizer.Add(self.skyradin_static_text, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
         self.skyradin_textctrl = wx.TextCtrl(self, wx.ID_ANY, str(self.skyradin), wx.DefaultPosition, wx.DefaultSize,
@@ -77,34 +92,37 @@ class PhotPanel(wx.Panel):
         values_sizer.Add(self.skyradin_textctrl, 0, wx.ALL, 2)
         self.skyradin_textctrl.Bind(wx.EVT_TEXT, self.skyradin_textctrl_changed)
         self.skyradin_textctrl.Bind(wx.EVT_TEXT_ENTER, self.skyradin_textctrl_entered)
-        self.x_static_text = wx.StaticText( self, wx.ID_ANY, u"x", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_RIGHT )
-        self.x_static_text.Wrap( -1 )
-        values_sizer.Add(self.x_static_text, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
+        self.clicked_static_text = wx.StaticText(self, wx.ID_ANY, u"Clicked", wx.DefaultPosition, 
+                                                 wx.DefaultSize, wx.ALIGN_RIGHT )
+        self.clicked_static_text.Wrap( -1 )
+        values_sizer.Add(self.clicked_static_text, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
         self.xclicked_textctrl = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize,
-                                       wx.TE_PROCESS_ENTER)
+                                             wx.TE_PROCESS_ENTER)
         self.xclicked_textctrl.SetFont(textentry_font)
         values_sizer.Add(self.xclicked_textctrl, 0, wx.ALL, 2)
-        self.xcentroid_textctrl = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize,
-                                       wx.TE_PROCESS_ENTER)
-        self.xcentroid_textctrl.SetFont(textentry_font)
-        values_sizer.Add(self.xcentroid_textctrl, 0, wx.ALL, 2)
+        self.yclicked_textctrl = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize,
+                                             wx.TE_PROCESS_ENTER)
+        self.yclicked_textctrl.SetFont(textentry_font)
+        values_sizer.Add(self.yclicked_textctrl, 0, wx.ALL, 2)
 
-        self.skyradout_static_text = wx.StaticText( self, wx.ID_ANY, u"Sky outer radius", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_RIGHT )
+        self.skyradout_static_text = wx.StaticText(self, wx.ID_ANY, u"Sky outer radius", wx.DefaultPosition, 
+                                                   wx.DefaultSize, wx.ALIGN_RIGHT )
         self.skyradout_static_text.Wrap( -1 )
         values_sizer.Add(self.skyradout_static_text, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
         self.skyradout_textctrl = wx.TextCtrl(self, wx.ID_ANY, str(self.skyradout), wx.DefaultPosition, wx.DefaultSize,
-                                       wx.TE_PROCESS_ENTER)
+                                              wx.TE_PROCESS_ENTER)
         self.skyradout_textctrl.SetFont(textentry_font)
         values_sizer.Add(self.skyradout_textctrl, 0, wx.ALL, 2)
         self.skyradout_textctrl.Bind(wx.EVT_TEXT, self.skyradout_textctrl_changed)
         self.skyradout_textctrl.Bind(wx.EVT_TEXT_ENTER, self.skyradout_textctrl_entered)
-        self.y_static_text = wx.StaticText( self, wx.ID_ANY, u"y", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_RIGHT )
-        self.y_static_text.Wrap( -1 )
-        values_sizer.Add(self.y_static_text, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
-        self.yclicked_textctrl = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize,
-                                       wx.TE_PROCESS_ENTER)
-        self.yclicked_textctrl.SetFont(textentry_font)
-        values_sizer.Add(self.yclicked_textctrl, 0, wx.ALL, 2)
+        self.centroid_static_text = wx.StaticText(self, wx.ID_ANY, u"Centroid", wx.DefaultPosition, 
+                                                  wx.DefaultSize, wx.ALIGN_RIGHT )
+        self.centroid_static_text.Wrap( -1 )
+        values_sizer.Add(self.centroid_static_text, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
+        self.xcentroid_textctrl = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize,
+                                              wx.TE_PROCESS_ENTER)
+        self.xcentroid_textctrl.SetFont(textentry_font)
+        values_sizer.Add(self.xcentroid_textctrl, 0, wx.ALL, 2)
         self.ycentroid_textctrl = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize,
                                        wx.TE_PROCESS_ENTER)
         self.ycentroid_textctrl.SetFont(textentry_font)
@@ -156,6 +174,11 @@ class PhotPanel(wx.Panel):
         self.pix_static_text = wx.StaticText( self, wx.ID_ANY, u"pix", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_RIGHT )
         self.pix_static_text.Wrap( -1 )
         h_sizer2.Add(self.pix_static_text, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
+        h_sizer2.AddSpacer([30, 0], 0, 1)
+        self.clear_button = wx.Button(self, wx.ID_ANY, u"Clear", wx.DefaultPosition, wx.DefaultSize, 0)
+        h_sizer2.Add(self.clear_button, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 2)
+        self.clear_button.Bind(wx.EVT_BUTTON, self.on_clear_button)
+
         v_sizer1.Add(h_sizer2, 0, wx.ALIGN_LEFT)
 
         self.plot_panel = PhotPlotPanel(self)
@@ -163,6 +186,18 @@ class PhotPanel(wx.Panel):
 
         self.SetSizer(v_sizer1)
         Publisher().subscribe(self.update_phot_xy, "new_phot_xy")
+
+    def on_clear_button(self, evt):
+        if self.star_center_patch is not None:
+            self.ztv_frame.primary_image_panel.axes.patches.remove(self.star_center_patch)
+            self.star_center_patch = None
+        if self.star_aperture_patch is not None:
+            self.ztv_frame.primary_image_panel.axes.patches.remove(self.star_aperture_patch)
+            self.star_aperture_patch = None
+        if self.sky_aperture_patch is not None:
+            self.ztv_frame.primary_image_panel.axes.patches.remove(self.sky_aperture_patch)
+            self.sky_aperture_patch = None
+        self.ztv_frame.primary_image_panel.figure.canvas.draw()
 
     def force_textctrl_color_update(self, textctrl):
         cur_focused_item = self.FindFocus()
@@ -230,34 +265,57 @@ class PhotPanel(wx.Panel):
         self.sky_textctrl.SetValue("{:0.6g}".format(phot['sky_per_pixel']))
         self.skyerr_textctrl.SetValue("{:0.6g}".format(phot['sky_per_pixel_err']))
         aprad_color = 'blue'
-        skyradin_color = 'red'
-        skyradout_color = 'red'
+        skyrad_color = 'red'
         self.plot_panel.axes.cla()
-          # HEREIAM:  need radial profile plot
-        self.plot_panel.axes.plot(phot['distances'].ravel(), self.ztv_frame.image.ravel(), 'ko', markersize=1)
-        ylim = self.plot_panel.axes.get_ylim()
-        unrounded_xmax = max([aprad*2, skyradin*2, skyradout + (skyradout - skyradin)])
+#         unrounded_xmax = max([aprad*2, skyradin*2, skyradout + (skyradout - skyradin)])
+        unrounded_xmax = skyradout + 0.2 * (skyradout - skyradin)
         nice_factor = 10./5.
         sensible_xmax = ((nice_factor*10**np.floor(np.log10(unrounded_xmax))) * 
                          np.ceil(unrounded_xmax / (nice_factor*10**np.floor(np.log10(unrounded_xmax)))))
+        mask = phot['distances'] <= sensible_xmax
+        self.plot_panel.axes.plot(phot['distances'][mask].ravel(), self.ztv_frame.image[mask].ravel(), 'ko', markersize=1)
+        ylim = self.plot_panel.axes.get_ylim()
         n_sigma = 6.
         if (phot['sky_per_pixel'] - n_sigma*phot['sky_per_pixel_err']*np.sqrt(phot['n_sky_pix'])) > 0.:
             ylim = (phot['sky_per_pixel'] - n_sigma*phot['sky_per_pixel_err']*np.sqrt(phot['n_sky_pix']), ylim[1])
         self.plot_panel.axes.set_ylim(ylim)
-        self.plot_panel.axes.plot([aprad, aprad], ylim, '-', color=aprad_color)
-        self.plot_panel.axes.plot([skyradin, skyradin], ylim, '.-', color=skyradin_color)
-        self.plot_panel.axes.plot([skyradout, skyradout], ylim, '--', color=skyradout_color)
-        self.plot_panel.axes.set_xlim([0, sensible_xmax])
+        alpha = 0.25
+        self.plot_panel.axes.fill_between([0., aprad], [ylim[0], ylim[0]], [ylim[1], ylim[1]], 
+                                          facecolor=aprad_color, alpha=alpha)
+        self.plot_panel.axes.fill_between([skyradin, skyradout], [ylim[0], ylim[0]], [ylim[1], ylim[1]], 
+                                          facecolor=skyrad_color, alpha=alpha)
         self.plot_panel.axes.plot([0, sensible_xmax], [phot['sky_per_pixel'], phot['sky_per_pixel']], '-r')
         self.plot_panel.axes.plot([0, sensible_xmax], [phot['sky_per_pixel'] - phot['sky_per_pixel_err'], 
                                                        phot['sky_per_pixel'] - phot['sky_per_pixel_err']], ':r')
         self.plot_panel.axes.plot([0, sensible_xmax], [phot['sky_per_pixel'] + phot['sky_per_pixel_err'], 
                                                        phot['sky_per_pixel'] + phot['sky_per_pixel_err']], ':r')
-        self.plot_panel.figure.canvas.draw()
-        #TODO: FWHM
+        self.plot_panel.axes.set_xlim([0, sensible_xmax])
+        mask = phot['distances'] <= aprad
+        xs = phot['distances'][mask]
+        vals = self.ztv_frame.image[mask] - phot['sky_per_pixel']
+        p0 = [aprad*0.3, vals.max()]
+        popt, pcov = curve_fit(fixed_gauss, xs, vals, p0=p0)
+        xs = np.arange(0, aprad+0.1, 0.1)
+        c = popt[0] / (2. * np.sqrt(2. * np.log(2.)))
+        self.plot_panel.axes.plot(xs, phot['sky_per_pixel'] + 
+                                      popt[1] * np.exp(-((xs)**2) / (2.*c**2)), '-', color=aprad_color)
+        self.fwhm_textctrl.SetValue("{:0.3g}".format(np.abs(popt[0])))
         
-        pass
-        # TODO: recalc phot & update circles on image
+        if self.star_center_patch is not None:
+            self.ztv_frame.primary_image_panel.axes.patches.remove(self.star_center_patch)
+        self.star_center_patch = Circle([self.xcentroid, self.ycentroid], 0.125, color=aprad_color)
+        self.ztv_frame.primary_image_panel.axes.add_patch(self.star_center_patch)
+        if self.star_aperture_patch is not None:
+            self.ztv_frame.primary_image_panel.axes.patches.remove(self.star_aperture_patch)
+        self.star_aperture_patch = Circle([self.xcentroid, self.ycentroid], aprad, color=aprad_color, alpha=alpha)
+        self.ztv_frame.primary_image_panel.axes.add_patch(self.star_aperture_patch)
+        if self.sky_aperture_patch is not None:
+            self.ztv_frame.primary_image_panel.axes.patches.remove(self.sky_aperture_patch)
+        self.sky_aperture_patch = Wedge([self.xcentroid, self.ycentroid], skyradout, 0., 360., 
+                                        width=skyradout-skyradin, color=skyrad_color, alpha=alpha)
+        self.ztv_frame.primary_image_panel.axes.add_patch(self.sky_aperture_patch)
+        self.plot_panel.figure.canvas.draw()
+        self.ztv_frame.primary_image_panel.figure.canvas.draw()
 
     def aprad_textctrl_changed(self, evt):
         self.validate_textctrl_str(self.aprad_textctrl, float, self.last_string_values['aprad'])

@@ -624,17 +624,16 @@ class ControlsNotebook(wx.Notebook):
         self.cur_new_page_index = 0  # will increment and keep track of ImageId numbers in self.panel_name_to_id
         self.panel_name_to_id = {}
         self.panel_id_to_name = {}
-
         self.source_panel = SourcePanel(self)
         self.AddPageAndStoreID(self.source_panel, "Source")
-        self.phot_panel = PhotPanel(self)
-        self.AddPageAndStoreID(self.phot_panel, "Phot")
-        self.stats_panel = StatsPanel(self)
-        self.AddPageAndStoreID(self.stats_panel, "Stats")
         self.plot_panel = PlotPanel(self)
         self.AddPageAndStoreID(self.plot_panel, "Plot")
         self.color_control_panel = ColorControlPanel(self)
         self.AddPageAndStoreID(self.color_control_panel, "Color")
+        self.stats_panel = StatsPanel(self)
+        self.AddPageAndStoreID(self.stats_panel, "Stats")
+        self.phot_panel = PhotPanel(self)
+        self.AddPageAndStoreID(self.phot_panel, "Phot")
         
     def AddPageAndStoreID(self, page, text, **kwargs):
         self.panel_name_to_id[text] = self.cur_new_page_index
