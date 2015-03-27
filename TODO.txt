@@ -21,6 +21,10 @@
 
 # Medium high-priority for some future release:
 
+## think through overplotting colors, e.g. slice plot vs stats etc
+
+want sensible, don't want garish  (some way to link to the panels?  background colors? underlining of titles on tabs?)
+
 ## better 'auto' algorithm for min/max determination
 
 ## ability to do masked numpy arrays with different color value for masked positions
