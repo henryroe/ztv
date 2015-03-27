@@ -254,7 +254,7 @@ class StatsPanel(wx.Panel):
         
             self.npix_textctrl.SetValue(str(x_npix * y_npix))
 
-            stats_data = self.ztv_frame.image[x0:x1+1, y0:y1+1]
+            stats_data = self.ztv_frame.image[y0:y1+1, x0:x1+1]
             self.mean_textctrl.SetValue("{:0.4g}".format(stats_data.mean()))
             self.median_textctrl.SetValue("{:0.4g}".format(np.median(stats_data)))
             self.stdev_textctrl.SetValue("{:0.4g}".format(stats_data.std()))

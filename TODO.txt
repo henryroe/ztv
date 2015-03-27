@@ -96,11 +96,14 @@ Another issue is visibility - how to make it clear to user what one can do?  Tha
 
 ## allow 'hiding' of source panel, but having pre-set ActiveMQ or auto-load file?? (less certain this needed than enable/disable individual components?)
 
-## fix that ctrl-c in ipython is killing ztv gui, even when run via a separate process with ztv_api
 
 ## access catalogs (local & internet) and overplot
 
-## get cmd-W working to close window
+## Consider re-vamping method of monitoring for new/changed FITS files on disk
+
+[e.g. see](https://github.com/joh/when-changed)
+
+## fix that ctrl-c in ipython is killing ztv gui, even when run via a separate process with ztv_api
 
 Problem:
 

@@ -148,9 +148,7 @@ class PrimaryImagePanel(wx.Panel):
         self.ztv_frame = self.GetTopLevelParent()
         self.center = wx.RealPoint()
         self.zoom_factor = 2.0
-        self.zoom_box_active = False
         self.zoom_rect = None
-        self.stats_box_active = False
         self.stats_rect = None
         self.eventID_to_cmap = {wx.NewId(): x for x in self.ztv_frame.available_cmaps}
         self.cmap_to_eventID = {self.eventID_to_cmap[x]: x for x in self.eventID_to_cmap}
@@ -165,11 +163,12 @@ class PrimaryImagePanel(wx.Panel):
                                          np.arange(cmap_bitmap_width, dtype=np.uint8)))
             self.cmap_bitmaps[cmap] = wx.BitmapFromBufferRGBA(cmap_bitmap_width, cmap_bitmap_height,
                                                               np.uint8(np.round(rgba*255)))
-        self.available_cursor_modes = [('None', self.set_cursor_to_none_mode),
+        self.available_cursor_modes = [ # ('None', self.set_cursor_to_none_mode),
                                        ('Zoom', self.set_cursor_to_zoom_mode),
                                        ('Pan', self.set_cursor_to_pan_mode),
-                                       ('Stats box', self.set_cursor_to_stats_box),
-                                       ('Phot', self.set_cursor_to_phot)]
+                                       ('Slice plot', self.set_cursor_to_plot_mode),
+                                       ('Stats box', self.set_cursor_to_stats_box_mode),
+                                       ('Phot', self.set_cursor_to_phot_mode)]
         self.cursor_mode = 'Zoom'
         self.max_doubleclick_millisec = 500  # needed to trap 'real' single clicks from the first click of a double click
         self.init_popup_menu()
@@ -276,11 +275,15 @@ class PrimaryImagePanel(wx.Panel):
     def set_cursor_to_pan_mode(self, event):
         self.cursor_mode = 'Pan'
 
-    def set_cursor_to_stats_box(self, event):
+    def set_cursor_to_stats_box_mode(self, event):
         self.cursor_mode = 'Stats box'
         self.ztv_frame.controls_notebook.SetSelection(self.ztv_frame.controls_notebook.panel_name_to_id['Stats'])
         
-    def set_cursor_to_phot(self, event):
+    def set_cursor_to_plot_mode(self, event):
+        self.cursor_mode = 'Slice plot'
+        self.ztv_frame.controls_notebook.SetSelection(self.ztv_frame.controls_notebook.panel_name_to_id['Plot'])
+        
+    def set_cursor_to_phot_mode(self, event):
         self.cursor_mode = 'Phot'
         self.ztv_frame.controls_notebook.SetSelection(self.ztv_frame.controls_notebook.panel_name_to_id['Phot'])
         
@@ -352,39 +355,7 @@ class PrimaryImagePanel(wx.Panel):
             self.axes.patches.remove(self.stats_rect)
             self.stats_rect = None
             self.figure.canvas.draw()
-            self.stats_box_active = False
             wx.CallAfter(Publisher().sendMessage, "stats_rect_updated", None)
-
-    def on_motion(self, event):
-        # TODO: clean up in stats_box stuff whether ranges are pythonic or inclusive.  Might be that is pythonic behind scenes, but inclusive in some of the display of info?  There are trickinesses to getting this right, as sometimes need to flip x0/x1 and y0/y1 when range is negative
-        if event.xdata is None or event.ydata is None:
-            return
-        x = int(np.round(event.xdata))
-        y = int(np.round(event.ydata))
-        if self.zoom_box_active:
-            x0,y0 = self.zoom_rect.get_x(),self.zoom_rect.get_y()
-            self.zoom_rect.set_bounds(x0, y0, event.xdata - x0, event.ydata - y0)
-            self.figure.canvas.draw()
-        if self.stats_box_active:
-            x0,y0 = self.stats_rect.get_x(),self.stats_rect.get_y()
-            self.update_stats_box(x0, y0, event.xdata, event.ydata)
-        if ((x >= 0) and (x < self.ztv_frame.image.shape[1]) and
-            (y >= 0) and (y < self.ztv_frame.image.shape[0])):
-            imval = self.ztv_frame.image[y, x]
-            new_status_string = "x,y={},{}".format(x, y)
-            if self.ztv_frame.image_radec is not None:
-                c = self.ztv_frame.image_radec[y, x]
-                new_status_string += "  radec={0} {1}".format(c.ra.to_string(units.hour, sep=':', precision=2, pad=True),
-                                                              c.dec.to_string(sep=':', precision=2, alwayssign=True, pad=True))
-            new_status_string += "  val={:.5g}".format(imval)
-            self.ztv_frame.status_bar.SetStatusText(new_status_string)
-            self.ztv_frame.loupe_image_panel.set_xy_limits((x, y))
-            # finally, catch for a situation where cursor should be active, but didn't enter, e.g. window launched under cursor
-            if not hasattr(self, 'saved_cursor') or self.saved_cursor is None:
-                self.on_cursor_enter(event)
-        else:
-            self.ztv_frame.status_bar.SetStatusText("")
-            self.ztv_frame.loupe_image_panel.set_xy_limits()
 
     def on_button_press(self, event):
         if event.button == 1:  # left button
@@ -395,7 +366,6 @@ class PrimaryImagePanel(wx.Panel):
                     self.set_and_get_xy_limits()
                 else:
                     self.zoom_start_timestamp = event.guiEvent.GetTimestamp()  # millisec
-                    self.zoom_box_active = True
                     self.zoom_rect = Rectangle((event.xdata, event.ydata), 0, 0,
                                                color='magenta', fill=False, zorder=100)
                     self.axes.add_patch(self.zoom_rect)
@@ -405,15 +375,52 @@ class PrimaryImagePanel(wx.Panel):
                 self.set_and_get_xy_limits()
             elif self.cursor_mode == 'Stats box':
                 self.stats_start_timestamp = event.guiEvent.GetTimestamp()  # millisec
-                self.stats_box_active = True
                 self.update_stats_box(event.xdata, event.ydata, event.xdata, event.ydata)
             elif self.cursor_mode == 'Phot':
                 self.ztv_frame.controls_notebook.SetSelection(self.ztv_frame.controls_notebook.panel_name_to_id['Phot'])
                 wx.CallAfter(Publisher().sendMessage, "new_phot_xy", (event.xdata, event.ydata))
+            elif self.cursor_mode == 'Slice plot':
+                self.ztv_frame.controls_notebook.SetSelection(self.ztv_frame.controls_notebook.panel_name_to_id['Plot'])
+                wx.CallAfter(Publisher().sendMessage, "new_slice_plot_xy0", (event.xdata, event.ydata))
 
+    def on_motion(self, event):
+        # TODO: clean up in stats_box stuff whether ranges are pythonic or inclusive.  Might be that is pythonic behind scenes, but inclusive in some of the display of info?  There are trickinesses to getting this right, as sometimes need to flip x0/x1 and y0/y1 when range is negative
+        if event.xdata is None or event.ydata is None:
+            return
+        x = int(np.round(event.xdata))
+        y = int(np.round(event.ydata))
+        if event.button is not None:
+            if self.cursor_mode == 'Zoom':
+                x0,y0 = self.zoom_rect.get_x(),self.zoom_rect.get_y()
+                self.zoom_rect.set_bounds(x0, y0, event.xdata - x0, event.ydata - y0)
+                self.figure.canvas.draw()
+            elif self.cursor_mode == 'Stats box':
+                x0,y0 = self.stats_rect.get_x(),self.stats_rect.get_y()
+                self.update_stats_box(x0, y0, event.xdata, event.ydata)
+            elif self.cursor_mode == 'Slice plot':
+                wx.CallAfter(Publisher().sendMessage, "new_slice_plot_xy1", (event.xdata, event.ydata))
+        if ((x >= 0) and (x < self.ztv_frame.image.shape[1]) and
+            (y >= 0) and (y < self.ztv_frame.image.shape[0])):
+            imval = self.ztv_frame.image[y, x]
+            new_status_string = "x,y={},{}".format(x, y)
+            if self.ztv_frame.image_radec is not None:
+                c = self.ztv_frame.image_radec[y, x]
+                new_status_string += "  radec={0} {1}".format(c.ra.to_string(units.hour, sep=':', precision=2, pad=True),
+                                                              c.dec.to_string(sep=':', precision=2, alwayssign=True, 
+                                                                              pad=True))
+            new_status_string += "  val={:.5g}".format(imval)
+            self.ztv_frame.status_bar.SetStatusText(new_status_string)
+            self.ztv_frame.loupe_image_panel.set_xy_limits((x, y))
+            # finally, catch for a situation where cursor should be active, but didn't enter, e.g. window launched under cursor
+            if not hasattr(self, 'saved_cursor') or self.saved_cursor is None:
+                self.on_cursor_enter(event)
+        else:
+            self.ztv_frame.status_bar.SetStatusText("")
+            self.ztv_frame.loupe_image_panel.set_xy_limits()
+  
     def on_button_release(self, event):
         if event.button == 1:  # left button
-            if self.zoom_box_active:
+            if self.cursor_mode == 'Zoom':
                 # this catches for the first click-release of a double-click
                 if (event.guiEvent.GetTimestamp() - self.zoom_start_timestamp) > self.max_doubleclick_millisec:
                     # this catches for a long click-and-release without motion
@@ -425,13 +432,13 @@ class PrimaryImagePanel(wx.Panel):
                         y_zoom_factor = panel_size.y / abs(event.ydata - y0)
                         self.zoom_factor = min(x_zoom_factor, y_zoom_factor)
                         self.set_and_get_xy_limits()
-                self.zoom_box_active = False
                 self.axes.patches.remove(self.zoom_rect)
                 self.zoom_rect = None
                 self.figure.canvas.draw()
-            if self.stats_box_active:
-                self.stats_box_active = False
+            elif self.cursor_mode == 'Stats box':
                 wx.CallAfter(Publisher().sendMessage, "stats_rect_updated", None)
+            elif self.cursor_mode == 'Slice plot':
+                wx.CallAfter(Publisher().sendMessage, "new_slice_plot_xy1", (event.xdata, event.ydata))
 
     def on_right_down(self, event):
         for cursor_mode in self.cursor_mode_to_eventID:
@@ -626,10 +633,10 @@ class ControlsNotebook(wx.Notebook):
         self.panel_id_to_name = {}
         self.source_panel = SourcePanel(self)
         self.AddPageAndStoreID(self.source_panel, "Source")
-        self.plot_panel = PlotPanel(self)
-        self.AddPageAndStoreID(self.plot_panel, "Plot")
         self.color_control_panel = ColorControlPanel(self)
         self.AddPageAndStoreID(self.color_control_panel, "Color")
+        self.plot_panel = PlotPanel(self)
+        self.AddPageAndStoreID(self.plot_panel, "Plot")
         self.stats_panel = StatsPanel(self)
         self.AddPageAndStoreID(self.stats_panel, "Stats")
         self.phot_panel = PhotPanel(self)
