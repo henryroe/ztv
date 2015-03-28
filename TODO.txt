@@ -6,6 +6,8 @@
 
 # Desirable before next release
 
+## careful examination of slice plots and whether limits and exact paths across pixels are correct
+
 ## re-consider which color maps to include
 
 [based on:](https://jakevdp.github.io/blog/2014/10/16/how-bad-is-your-colormap/)
@@ -20,6 +22,12 @@
 
 
 # Medium high-priority for some future release:
+
+## add keyboard shortcuts to line/column plots (x/l and y/c) in plot mode
+
+Probably build this in to ztv.py and send new_slice_plot_xy[0/1] messages.  But, need to figure out how to get current matplotlib cursor coordinates when it's not a mouse event...
+
+## control panel for drawing/managing shapes (lines, boxes, circles)
 
 ## think through overplotting colors, e.g. slice plot vs stats etc
 
@@ -74,7 +82,14 @@ Is probably straightforward for simple things like minval, or even string filena
 
 Another issue is visibility - how to make it clear to user what one can do?  That's an argument for the extra complexity (and less flexibility) of just manually specifiying what can be passed through.
 
+
+
+
+
+
 # Low priority for some future release:
+
+## crisper 'historgram' style plotting for slice plots when really zoomed in
 
 ## Clean-up layout in Phot panel  (e.g. align fields in output part & create a minimum initial size for the plot panel)
 

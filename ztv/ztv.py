@@ -146,6 +146,7 @@ class PrimaryImagePanel(wx.Panel):
     def __init__(self, parent, dpi=None, **kwargs):
         wx.Panel.__init__(self, parent, wx.ID_ANY, wx.DefaultPosition, wx.Size(512,512), **kwargs)
         self.ztv_frame = self.GetTopLevelParent()
+        self.accelerator_table = []
         self.center = wx.RealPoint()
         self.zoom_factor = 2.0
         self.zoom_rect = None
@@ -164,8 +165,8 @@ class PrimaryImagePanel(wx.Panel):
             self.cmap_bitmaps[cmap] = wx.BitmapFromBufferRGBA(cmap_bitmap_width, cmap_bitmap_height,
                                                               np.uint8(np.round(rgba*255)))
         self.available_cursor_modes = [ # ('None', self.set_cursor_to_none_mode),
-                                       ('Zoom', self.set_cursor_to_zoom_mode),
                                        ('Pan', self.set_cursor_to_pan_mode),
+                                       ('Zoom', self.set_cursor_to_zoom_mode),
                                        ('Slice plot', self.set_cursor_to_plot_mode),
                                        ('Stats box', self.set_cursor_to_stats_box_mode),
                                        ('Phot', self.set_cursor_to_phot_mode)]
@@ -190,6 +191,7 @@ class PrimaryImagePanel(wx.Panel):
         Publisher().subscribe(self.reset_zoom_and_center, "reset_zoom_and_center")
         Publisher().subscribe(self.set_zoom_factor, "set_zoom_factor")
         Publisher().subscribe(self.set_xy_center, "set_xy_center")
+        self.SetAcceleratorTable(wx.AcceleratorTable(self.accelerator_table))
 
     def _append_menu_item(self, menu, wx_id, title, fxn):
         if wx_id is None:
@@ -203,14 +205,13 @@ class PrimaryImagePanel(wx.Panel):
         menu.Append(wx.NewId(), 'Cursor mode:').Enable(False)
         self.cursor_mode_to_eventID = {}
         cmd_num = 0
-        accelerator_table = []
         for cursor_mode, fxn in self.available_cursor_modes:
             wx_id = wx.NewId()
             menu.AppendCheckItem(wx_id, '   ' + cursor_mode + '\tCtrl+' + str(cmd_num))
             wx.EVT_MENU(menu, wx_id, fxn)
             self.cursor_mode_to_eventID[cursor_mode] = wx_id
             self.Bind(wx.EVT_MENU, fxn, id=wx_id)
-            accelerator_table.append((wx.ACCEL_CMD, ord(str(cmd_num)), wx_id))
+            self.accelerator_table.append((wx.ACCEL_CMD, ord(str(cmd_num)), wx_id))
             cmd_num += 1
         menu.AppendSeparator()
         image_cmap_submenu = wx.Menu()
@@ -233,7 +234,6 @@ class PrimaryImagePanel(wx.Panel):
         self._append_menu_item(menu, self.popup_menu_fits_header_eventID, 'FITS Header',
                                self.on_display_fits_header)
         self.popup_menu = menu
-        self.SetAcceleratorTable(wx.AcceleratorTable(accelerator_table))
 
     def on_display_fits_header(self, event):
         raw_header_str = self.ztv_frame.fits_header.tostring()
@@ -382,7 +382,6 @@ class PrimaryImagePanel(wx.Panel):
             elif self.cursor_mode == 'Slice plot':
                 self.ztv_frame.controls_notebook.SetSelection(self.ztv_frame.controls_notebook.panel_name_to_id['Plot'])
                 wx.CallAfter(Publisher().sendMessage, "new_slice_plot_xy0", (event.xdata, event.ydata))
-                wx.CallAfter(Publisher().sendMessage, "new_slice_plot_xy1", (event.xdata, event.ydata))
 
     def on_motion(self, event):
         # TODO: clean up in stats_box stuff whether ranges are pythonic or inclusive.  Might be that is pythonic behind scenes, but inclusive in some of the display of info?  There are trickinesses to getting this right, as sometimes need to flip x0/x1 and y0/y1 when range is negative
@@ -391,7 +390,7 @@ class PrimaryImagePanel(wx.Panel):
         x = int(np.round(event.xdata))
         y = int(np.round(event.ydata))
         if event.button is not None:
-            if self.cursor_mode == 'Zoom':
+            if self.cursor_mode == 'Zoom' and self.zoom_rect is not None:
                 x0,y0 = self.zoom_rect.get_x(),self.zoom_rect.get_y()
                 self.zoom_rect.set_bounds(x0, y0, event.xdata - x0, event.ydata - y0)
                 self.figure.canvas.draw()
