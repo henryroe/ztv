@@ -29,7 +29,9 @@ class FilePicker(wx.Panel):
                                       # Basically, the interface just "hides" assumed_prefix from the user in the GUI
                  allow_glob_matching=False,  # if true, then entries can be, e.g.:   image*_[0-9][0-9][0-9].fits
                                              # allow_glob_matching is NOT compatible with is_files_not_dirs=False
-                 default_entry=None):
+                 default_entry=None,
+                 maintain_default_entry_in_recents=False,  # can be True, or an integer to indicate where to put in list (e.g. 0, 1, -1)
+                 ):
         wx.Panel.__init__(self, parent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL)
         self.is_files_not_dirs = is_files_not_dirs
         self.max_history_items = max_history_items
@@ -54,6 +56,7 @@ class FilePicker(wx.Panel):
         if default_entry is None:
             default_entry = os.path.expanduser('~') + '/'
         self.default_entry = default_entry
+        self.maintain_default_entry_in_recents = maintain_default_entry_in_recents
         self.title = title
         self.last_valid_entry = ''
         self.reset_auto_completion_info()
@@ -154,6 +157,15 @@ class FilePicker(wx.Panel):
             if cur_sticky in history:
                 history.pop(history.index(cur_sticky))
             history.insert(0, cur_sticky)
+        history = history[:self.max_history_items]
+        if self.maintain_default_entry_in_recents is not False:
+            if type(self.maintain_default_entry_in_recents) is int:
+                if self.default_entry in self.history:
+                    self.history.pop(self.history.index(self.default_entry))
+                self.history.insert(self.maintain_default_entry_in_recents, self.default_entry)
+            else:
+                if self.default_entry not in self.history:
+                    self.history.insert(999999, self.default_entry)
         if self.assumed_prefix is None:
             return history[:self.max_history_items]
         else:
