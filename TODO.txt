@@ -83,7 +83,7 @@ Is probably straightforward for simple things like minval, or even string filena
 Another issue is visibility - how to make it clear to user what one can do?  That's an argument for the extra complexity (and less flexibility) of just manually specifiying what can be passed through.
 
 
-
+## in source panel, with hiding/showing GUI elements, ideally should have everything dynamically re-arrange
 
 
 

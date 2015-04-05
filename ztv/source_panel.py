@@ -32,35 +32,36 @@ class SourcePanel(wx.Panel):
         v_sizer1.Add(h_current_filepicker_sizer, 0, wx.EXPAND)
 
         v_sizer1.AddSpacer((0, 5), 0, wx.EXPAND)
-        h_sky_filepicker_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.sky_filepicker_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.sky_checkbox = wx.CheckBox(self, -1, "")
         self.Bind(wx.EVT_CHECKBOX, self.on_sky_checkbox, self.sky_checkbox)
-        h_sky_filepicker_sizer.Add(self.sky_checkbox, 0, wx.ALIGN_CENTER_VERTICAL)
+        self.sky_filepicker_sizer.Add(self.sky_checkbox, 0, wx.ALIGN_CENTER_VERTICAL)
         self.skyfile_filepicker = FilePicker(self, title='Sky:', default_entry='', maintain_default_entry_in_recents=0)
         self.skyfile_filepicker.on_load = self.load_sky_frame
-        h_sky_filepicker_sizer.Add(self.skyfile_filepicker, 1, wx.EXPAND)
+        self.sky_filepicker_sizer.Add(self.skyfile_filepicker, 1, wx.EXPAND)
         self.sky_header_button = wx.Button(self, wx.ID_ANY, u"hdr", wx.DefaultPosition, wx.DefaultSize,
                                            style=wx.BU_EXACTFIT)
-        h_sky_filepicker_sizer.Add(self.sky_header_button, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
+        self.sky_filepicker_sizer.Add(self.sky_header_button, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
         self.sky_header_button.Bind(wx.EVT_BUTTON, self.on_display_sky_fits_header)
-        v_sizer1.Add(h_sky_filepicker_sizer, 0, wx.EXPAND)
+        v_sizer1.Add(self.sky_filepicker_sizer, 0, wx.EXPAND)
 
-        h_flat_filepicker_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.flat_filepicker_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.flat_checkbox = wx.CheckBox(self, -1, "")
         self.Bind(wx.EVT_CHECKBOX, self.on_flat_checkbox, self.flat_checkbox)
-        h_flat_filepicker_sizer.Add(self.flat_checkbox, 0, wx.ALIGN_CENTER_VERTICAL)
+        self.flat_filepicker_sizer.Add(self.flat_checkbox, 0, wx.ALIGN_CENTER_VERTICAL)
         self.flatfile_filepicker = FilePicker(self, title='Flat:', default_entry='', maintain_default_entry_in_recents=0)
         self.flatfile_filepicker.on_load = self.load_flat_frame
-        h_flat_filepicker_sizer.Add(self.flatfile_filepicker, 1, wx.EXPAND)
+        self.flat_filepicker_sizer.Add(self.flatfile_filepicker, 1, wx.EXPAND)
         self.flat_header_button = wx.Button(self, wx.ID_ANY, u"hdr", wx.DefaultPosition, wx.DefaultSize,
                                             style=wx.BU_EXACTFIT)
-        h_flat_filepicker_sizer.Add(self.flat_header_button, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
+        self.flat_filepicker_sizer.Add(self.flat_header_button, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
         self.flat_header_button.Bind(wx.EVT_BUTTON, self.on_display_flat_fits_header)
-        v_sizer1.Add(h_flat_filepicker_sizer, 0, wx.EXPAND)
+        v_sizer1.Add(self.flat_filepicker_sizer, 0, wx.EXPAND)
 
-        v_sizer1.AddSpacer((0, 5), 0, wx.EXPAND)
-        v_sizer1.Add(wx.StaticLine(self, -1, style=wx.LI_HORIZONTAL), 0, wx.EXPAND|wx.ALL, 5)
-        v_sizer1.AddSpacer((0, 5), 0, wx.EXPAND)
+        self.autoload_sizer = wx.BoxSizer(wx.VERTICAL)        
+        self.autoload_sizer.AddSpacer((0, 5), 0, wx.EXPAND)
+        self.autoload_sizer.Add(wx.StaticLine(self, -1, style=wx.LI_HORIZONTAL), 0, wx.EXPAND|wx.ALL, 5)
+        self.autoload_sizer.AddSpacer((0, 5), 0, wx.EXPAND)
 
         self.autoload_checkbox = wx.CheckBox(self, -1, "Auto-load file")
         self.Bind(wx.EVT_CHECKBOX, self.on_autoload_checkbox, self.autoload_checkbox)
@@ -75,20 +76,21 @@ class SourcePanel(wx.Panel):
         h_sizer.Add(wx.StaticText(self, -1, u"Pause"), 0)
         h_sizer.Add(self.autoload_pausetime_choice, 0)
         h_sizer.Add(wx.StaticText(self, -1, u"sec"), 0)
-        v_sizer1.Add(h_sizer, 0, wx.EXPAND)
-        v_sizer1.AddSpacer((0, 5), 0, wx.EXPAND)
+        self.autoload_sizer.Add(h_sizer, 0, wx.EXPAND)
+        self.autoload_sizer.AddSpacer((0, 5), 0, wx.EXPAND)
         self.autoload_curdir_filepicker = FilePicker(self, title='Dir:', is_files_not_dirs=False)
-        v_sizer1.Add(self.autoload_curdir_filepicker, 0, wx.EXPAND)
+        self.autoload_sizer.Add(self.autoload_curdir_filepicker, 0, wx.EXPAND)
         self.autoload_curfile_filepicker = FilePicker(self, title='Filename Pattern:', allow_glob_matching=True,
-                                                      assumed_prefix='/Users/hroe/') # TODO: fix hardwiring of assumed_prefix
+                                                      assumed_prefix=os.path.expanduser('~/'))
         self.autoload_curdir_filepicker.on_load = self.autoload_curfile_filepicker.set_assumed_prefix
         self.autoload_curfile_filepicker.on_load = self.autoload_curfile_filepicker_on_load
-
-        v_sizer1.Add(self.autoload_curfile_filepicker, 0, wx.EXPAND)
-
-        v_sizer1.AddSpacer((0, 10), 0, wx.EXPAND)
-        v_sizer1.Add(wx.StaticLine(self, -1, style=wx.LI_HORIZONTAL), 0, wx.EXPAND|wx.ALL, 5)
-        v_sizer1.AddSpacer((0, 5), 0, wx.EXPAND)
+        self.autoload_sizer.Add(self.autoload_curfile_filepicker, 0, wx.EXPAND)
+        v_sizer1.Add(self.autoload_sizer, 0, wx.EXPAND)
+        
+        self.activemq_sizer = wx.BoxSizer(wx.VERTICAL)        
+        self.activemq_sizer.AddSpacer((0, 10), 0, wx.EXPAND)
+        self.activemq_sizer.Add(wx.StaticLine(self, -1, style=wx.LI_HORIZONTAL), 0, wx.EXPAND|wx.ALL, 5)
+        self.activemq_sizer.AddSpacer((0, 5), 0, wx.EXPAND)
 
         h_queue_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.message_queue_checkbox = wx.CheckBox(self, -1, "ActiveMQ")
@@ -100,11 +102,73 @@ class SourcePanel(wx.Panel):
         h_queue_sizer.Add(self.message_queue_choice, 1, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL)
         Publisher().subscribe(self.on_activemq_instances_info_changed, "activemq_instances_info-changed")
         self.Bind(wx.EVT_CHOICE, self.on_message_queue_choice, self.message_queue_choice)
-        v_sizer1.Add(h_queue_sizer, 0, wx.EXPAND)
+        self.activemq_sizer.Add(h_queue_sizer, 0, wx.EXPAND)
+        v_sizer1.Add(self.activemq_sizer, 0, wx.EXPAND)
+        
         v_sizer1.AddSpacer((0, 0), 1, wx.EXPAND)
+        
+        bottom_sizer = wx.BoxSizer(wx.VERTICAL)        
+        self.init_settings_popup_menu()
+        gear_bitmap = wx.EmptyBitmap( 20, 20 )
+        self.settings_button = wx.Button(self, wx.ID_ANY, u'\u2699', wx.DefaultPosition, wx.DefaultSize, 
+                                         style=wx.BU_EXACTFIT|wx.BORDER_NONE)
+        self.settings_button.SetFont(wx.Font(20, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, 
+                                             wx.FONTWEIGHT_NORMAL, True))
+        self.settings_button.Bind(wx.EVT_LEFT_DOWN, self.on_settings_button)
+        bottom_sizer.Add(self.settings_button, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_BOTTOM, 0)
+        v_sizer1.Add(bottom_sizer, 0, wx.EXPAND)
         self.SetSizer(v_sizer1)
         self.sky_header_button.Disable()
         self.flat_header_button.Disable()
+
+    def init_settings_popup_menu(self):
+        menu = wx.Menu()
+        menu.Append(wx.NewId(), 'Show in GUI:').Enable(False)
+        wx_id = wx.NewId()
+        self.settings_menu_sky_item = menu.AppendCheckItem(wx_id, '   Sky')
+        wx.EVT_MENU(menu, wx_id, self.on_settings_menu_sky_item)
+        self.settings_menu_sky_item.Check(True)
+        wx_id = wx.NewId()
+        self.settings_menu_flat_item = menu.AppendCheckItem(wx_id, '   Flat')
+        wx.EVT_MENU(menu, wx_id, self.on_settings_menu_flat_item)
+        self.settings_menu_flat_item.Check(True)
+        wx_id = wx.NewId()
+        self.settings_menu_autoload_item = menu.AppendCheckItem(wx_id, '   Auto-load')
+        wx.EVT_MENU(menu, wx_id, self.on_settings_menu_autoload_item)
+        self.settings_menu_autoload_item.Check(True)
+        wx_id = wx.NewId()
+        self.settings_menu_activemq_item = menu.AppendCheckItem(wx_id, '   ActiveMQ')
+        wx.EVT_MENU(menu, wx_id, self.on_settings_menu_activemq_item)
+        self.settings_menu_activemq_item.Check(True)
+        self.settings_popup_menu = menu
+
+    def on_settings_menu_sky_item(self, evt):
+        if evt.IsChecked():
+            self.sky_filepicker_sizer.ShowItems(True)
+        else:
+            self.sky_filepicker_sizer.ShowItems(False)
+
+    def on_settings_menu_flat_item(self, evt):
+        if evt.IsChecked():
+            self.flat_filepicker_sizer.ShowItems(True)
+        else:
+            self.flat_filepicker_sizer.ShowItems(False)
+
+    def on_settings_menu_autoload_item(self, evt):
+        if evt.IsChecked():
+            self.autoload_sizer.ShowItems(True)
+        else:
+            self.autoload_sizer.ShowItems(False)
+
+    def on_settings_menu_activemq_item(self, evt):
+        if evt.IsChecked():
+            self.activemq_sizer.ShowItems(True)
+        else:
+            self.activemq_sizer.ShowItems(False)
+
+    def on_settings_button(self, evt):
+        pos = self.ScreenToClient(wx.GetMousePosition())
+        self.PopupMenu(self.settings_popup_menu, pos)
 
     def on_display_sky_fits_header(self, event):
         raw_header_str = self.sky_hdulist[0].header.tostring()
