@@ -196,8 +196,7 @@ class ColorPanel(wx.Panel):
             self.cmap_popup_menu.Check(self.cmap_to_eventID[cmap], False)
         self.cmap_popup_menu.Check(self.cmap_to_eventID[self.ztv_frame.cmap], True)
         pos = self.ScreenToClient(wx.GetMousePosition())
-        pos.y -= 90
-        self.cmap_button.PopupMenu(self.cmap_popup_menu, pos)
+        self.PopupMenu(self.cmap_popup_menu, pos)
 
     def on_choose_min_value_mode_on_new_image(self, evt):
         new_val = [a for a in self.ztv_frame.available_value_modes_on_new_image if
