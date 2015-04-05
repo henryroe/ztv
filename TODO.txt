@@ -89,6 +89,8 @@ Another issue is visibility - how to make it clear to user what one can do?  Tha
 
 # Low priority for some future release:
 
+## make cmd-W work to close FITS header dialog
+
 ## crisper 'historgram' style plotting for slice plots when really zoomed in
 
 ## Clean-up layout in Phot panel  (e.g. align fields in output part & create a minimum initial size for the plot panel)
@@ -115,6 +117,7 @@ Another issue is visibility - how to make it clear to user what one can do?  Tha
 
 ## allow 'hiding' of source panel, but having pre-set ActiveMQ or auto-load file?? (less certain this needed than enable/disable individual components?)
 
+## enable/disable hdr buttons in source panel, keeping code local to source_panel.py
 
 ## access catalogs (local & internet) and overplot
 

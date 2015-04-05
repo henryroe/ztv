@@ -54,7 +54,7 @@ class PlotPanel(wx.Panel):
         Publisher().subscribe(self.on_new_xy0, "new_slice_plot_xy0")
         Publisher().subscribe(self.on_new_xy1, "new_slice_plot_xy1")
         Publisher().subscribe(self.redraw, "primary_xy_limits-changed")
-        Publisher().subscribe(self.redraw, "new-image-loaded")
+        Publisher().subscribe(self.redraw, "redraw_image")
 
     def on_new_xy0(self, msg):
         if isinstance(msg, Message):
@@ -92,32 +92,37 @@ class PlotPanel(wx.Panel):
     def redraw(self, *args):
         xy_limits = self.ztv_frame.primary_image_panel.set_and_get_xy_limits()
         oversample_factor = 10.
-        n_pts = oversample_factor*np.max(self.ztv_frame.image.shape)
+        n_pts = oversample_factor*np.max(self.ztv_frame.display_image.shape)
         xs = np.linspace(self.start_pt.x, self.end_pt.x, n_pts)
         ys = np.linspace(self.start_pt.y, self.end_pt.y, n_pts)
         mask = ((xs >= min(xy_limits['xlim'])) & (xs <= max(xy_limits['xlim'])) & 
                 (ys >= min(xy_limits['ylim'])) & (ys <= max(xy_limits['ylim'])))
         xs = xs[mask]
         ys = ys[mask]
-        if (ys.max() - ys.min()) > (xs.max() - xs.min()):   # dominantly a vertical slice
-            if ys[0] > ys[1]:
-                xs = xs[-1::-1]
-                ys = ys[-1::-1]
+        if len(xs) > 0:
+            if (ys.max() - ys.min()) > (xs.max() - xs.min()):   # dominantly a vertical slice
+                if ys[0] > ys[1]:
+                    xs = xs[-1::-1]
+                    ys = ys[-1::-1]
+            else:
+                if xs[0] > xs[1]:
+                    xs = xs[-1::-1]
+                    ys = ys[-1::-1]
+            if np.min(np.round(xs)) == np.max(np.round(xs)):
+                positions = ys
+            elif np.min(np.round(ys)) == np.max(np.round(ys)):
+                positions = xs
+            else:
+                positions = np.sqrt( (xs - xs[0])**2 + (ys - ys[0])**2 )
+            xs = xs.astype(np.int)
+            ys = ys.astype(np.int)
+            im_values = self.ztv_frame.display_image[ys, xs]
+            self.plot_panel.axes.clear()
+            if positions.min() != positions.max():
+                self.line_plot = self.plot_panel.axes.plot(positions, im_values)
+                self.plot_panel.axes.set_xlim([positions[0], positions[-1]])
+            self.plot_panel.figure.canvas.draw()
         else:
-            if xs[0] > xs[1]:
-                xs = xs[-1::-1]
-                ys = ys[-1::-1]
-        if np.min(np.round(xs)) == np.max(np.round(xs)):
-            positions = ys
-        elif np.min(np.round(ys)) == np.max(np.round(ys)):
-            positions = xs
-        else:
-            positions = np.sqrt( (xs - xs[0])**2 + (ys - ys[0])**2 )
-        xs = xs.astype(np.int)
-        ys = ys.astype(np.int)
-        im_values = self.ztv_frame.image[ys, xs]
-        self.plot_panel.axes.clear()
-        if positions.min() != positions.max():
-            self.line_plot = self.plot_panel.axes.plot(positions, im_values)
-            self.plot_panel.axes.set_xlim([positions[0], positions[-1]])
-        self.plot_panel.figure.canvas.draw()
+            self.plot_panel.axes.clear()
+            self.plot_panel.figure.canvas.draw()
+        

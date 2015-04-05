@@ -1,28 +1,63 @@
 import wx
 from wx.lib.pubsub import Publisher
 from .filepicker import FilePicker
+from .fits_header_dialog import FITSHeaderDialog
+from .image_process_action import ImageProcessAction
+import numpy as np
 import os
+import os.path
+import sys
 
 class SourcePanel(wx.Panel):
     def __init__(self, parent):
+        self.sky_hdulist = None
+        self.flat_hdulist = None
+        self.sky_file_basename = ''
+        self.flat_file_basename = ''
         wx.Panel.__init__(self, parent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL)
         self.ztv_frame = self.GetTopLevelParent()
         Publisher().subscribe(self.on_fitsfile_loaded, "fitsfile-loaded")
         self.max_items_in_curfile_history = 20
         v_sizer1 = wx.BoxSizer(wx.VERTICAL)
-        current_fits_file_static_text = wx.StaticText(self, wx.ID_ANY, u"Current FITS file:",
-                                                      wx.DefaultPosition, wx.DefaultSize, 0 )
-        current_fits_file_static_text.Wrap( -1 )
-        v_sizer1.Add(current_fits_file_static_text, 0, wx.ALL, 0)
+        
+        h_current_filepicker_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.curfile_filepicker = FilePicker(self, title='')
         self.curfile_filepicker.on_load = self.ztv_frame.load_fits_file
-        v_sizer1.Add(self.curfile_filepicker, 0, wx.EXPAND)
+        h_current_filepicker_sizer.Add(self.curfile_filepicker, 1, wx.EXPAND)
+        self.cur_header_button = wx.Button(self, wx.ID_ANY, u"hdr", wx.DefaultPosition, wx.DefaultSize,
+                                            style=wx.BU_EXACTFIT)
+        h_current_filepicker_sizer.Add(self.cur_header_button, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
+        self.cur_header_button.Bind(wx.EVT_BUTTON, self.ztv_frame.primary_image_panel.on_display_cur_fits_header)
+        v_sizer1.Add(h_current_filepicker_sizer, 0, wx.EXPAND)
 
-        self.show_header_button = wx.Button(self, wx.ID_ANY, u"Show header", wx.DefaultPosition, wx.DefaultSize, 0)
-        v_sizer1.Add(self.show_header_button, 0, wx.ALL|wx.ALIGN_LEFT|wx.ALIGN_CENTER_VERTICAL, 0)
-        self.show_header_button.Bind(wx.EVT_BUTTON, self.ztv_frame.primary_image_panel.on_display_fits_header)
+        v_sizer1.AddSpacer((0, 5), 0, wx.EXPAND)
+        h_sky_filepicker_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.sky_checkbox = wx.CheckBox(self, -1, "")
+        self.Bind(wx.EVT_CHECKBOX, self.on_sky_checkbox, self.sky_checkbox)
+        h_sky_filepicker_sizer.Add(self.sky_checkbox, 0, wx.ALIGN_CENTER_VERTICAL)
+        self.skyfile_filepicker = FilePicker(self, title='Sky:', default_entry='', maintain_default_entry_in_recents=0)
+        self.skyfile_filepicker.on_load = self.load_sky_frame
+        h_sky_filepicker_sizer.Add(self.skyfile_filepicker, 1, wx.EXPAND)
+        self.sky_header_button = wx.Button(self, wx.ID_ANY, u"hdr", wx.DefaultPosition, wx.DefaultSize,
+                                           style=wx.BU_EXACTFIT)
+        h_sky_filepicker_sizer.Add(self.sky_header_button, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
+        self.sky_header_button.Bind(wx.EVT_BUTTON, self.on_display_sky_fits_header)
+        v_sizer1.Add(h_sky_filepicker_sizer, 0, wx.EXPAND)
 
-        v_sizer1.AddSpacer((0, 10), 0, wx.EXPAND)
+        h_flat_filepicker_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.flat_checkbox = wx.CheckBox(self, -1, "")
+        self.Bind(wx.EVT_CHECKBOX, self.on_flat_checkbox, self.flat_checkbox)
+        h_flat_filepicker_sizer.Add(self.flat_checkbox, 0, wx.ALIGN_CENTER_VERTICAL)
+        self.flatfile_filepicker = FilePicker(self, title='Flat:', default_entry='', maintain_default_entry_in_recents=0)
+        self.flatfile_filepicker.on_load = self.load_flat_frame
+        h_flat_filepicker_sizer.Add(self.flatfile_filepicker, 1, wx.EXPAND)
+        self.flat_header_button = wx.Button(self, wx.ID_ANY, u"hdr", wx.DefaultPosition, wx.DefaultSize,
+                                            style=wx.BU_EXACTFIT)
+        h_flat_filepicker_sizer.Add(self.flat_header_button, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
+        self.flat_header_button.Bind(wx.EVT_BUTTON, self.on_display_flat_fits_header)
+        v_sizer1.Add(h_flat_filepicker_sizer, 0, wx.EXPAND)
+
+        v_sizer1.AddSpacer((0, 5), 0, wx.EXPAND)
         v_sizer1.Add(wx.StaticLine(self, -1, style=wx.LI_HORIZONTAL), 0, wx.EXPAND|wx.ALL, 5)
         v_sizer1.AddSpacer((0, 5), 0, wx.EXPAND)
 
@@ -54,25 +89,120 @@ class SourcePanel(wx.Panel):
         v_sizer1.Add(wx.StaticLine(self, -1, style=wx.LI_HORIZONTAL), 0, wx.EXPAND|wx.ALL, 5)
         v_sizer1.AddSpacer((0, 5), 0, wx.EXPAND)
 
+        h_queue_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.message_queue_checkbox = wx.CheckBox(self, -1, "ActiveMQ")
         self.Bind(wx.EVT_CHECKBOX, self.on_message_queue_checkbox, self.message_queue_checkbox)
-        v_sizer1.Add(self.message_queue_checkbox, 0)
-        v_sizer1.AddSpacer((0, 5), 0, wx.EXPAND)
+        h_queue_sizer.Add(self.message_queue_checkbox, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL)
 
         self.message_queue_choice = wx.Choice(self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize,
                                               ['No message queues available'], 0)
-        v_sizer1.Add(self.message_queue_choice, 0, wx.EXPAND)
+        h_queue_sizer.Add(self.message_queue_choice, 1, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL)
         Publisher().subscribe(self.on_activemq_instances_info_changed, "activemq_instances_info-changed")
         self.Bind(wx.EVT_CHOICE, self.on_message_queue_choice, self.message_queue_choice)
-
-        v_sizer1.AddSpacer((0, 0), 0, wx.EXPAND)
+        v_sizer1.Add(h_queue_sizer, 0, wx.EXPAND)
         self.SetSizer(v_sizer1)
+        self.sky_header_button.Disable()
+        self.flat_header_button.Disable()
 
-    def enable_show_header_button(self):
-        self.show_header_button.Enable()
+    def on_display_sky_fits_header(self, event):
+        raw_header_str = self.sky_hdulist[0].header.tostring()
+        header_str = (('\n'.join([raw_header_str[i:i+80] for i in np.arange(0, len(raw_header_str), 80)
+                                  if raw_header_str[i:i+80] != " "*80])) + '\n')
+        new_title = "Sky: " + self.sky_file_basename
+        if hasattr(self, 'sky_fits_header_dialog') and self.sky_fits_header_dialog.is_dialog_still_open:
+            self.sky_fits_header_dialog.SetTitle(new_title)
+            self.sky_fits_header_dialog.text.SetValue(header_str)
+            self.sky_fits_header_dialog.last_find_index = 0
+            self.sky_fits_header_dialog.on_search(None)
+        else:
+            self.sky_fits_header_dialog = FITSHeaderDialog(self, header_str, new_title)
+            self.sky_fits_header_dialog.Show()
 
-    def disable_show_header_button(self):
-        self.show_header_button.Disable()
+    def on_display_flat_fits_header(self, event):
+        raw_header_str = self.flat_hdulist[0].header.tostring()
+        header_str = (('\n'.join([raw_header_str[i:i+80] for i in np.arange(0, len(raw_header_str), 80)
+                                  if raw_header_str[i:i+80] != " "*80])) + '\n')
+        new_title = "Flat: " + self.flat_file_basename
+        if hasattr(self, 'flat_fits_header_dialog') and self.flat_fits_header_dialog.is_dialog_still_open:
+            self.flat_fits_header_dialog.SetTitle(new_title)
+            self.flat_fits_header_dialog.text.SetValue(header_str)
+            self.flat_fits_header_dialog.last_find_index = 0
+            self.flat_fits_header_dialog.on_search(None)
+        else:
+            self.flat_fits_header_dialog = FITSHeaderDialog(self, header_str, new_title)
+            self.flat_fits_header_dialog.Show()
+
+    def enable_cur_header_button(self):
+        self.cur_header_button.Enable()
+
+    def disable_cur_header_button(self):
+        self.cur_header_button.Disable()
+
+    def unload_sky_subtraction_from_process_stack(self):
+        proc_labels = [x[0] for x in self.ztv_frame.image_process_functions_to_apply]
+        if 'sky_subtraction' in proc_labels:
+            self.ztv_frame.image_process_functions_to_apply.pop(proc_labels.index('sky_subtraction'))
+            self.ztv_frame.redisplay_image()
+
+    def load_sky_subtraction_to_process_stack(self):
+        self.unload_sky_subtraction_from_process_stack()
+        if self.sky_hdulist is not None:
+            process_fxn = ImageProcessAction(np.subtract, self.sky_hdulist[0].data)
+            # assume that sky subtraction should always be first in processing stack.
+            self.ztv_frame.image_process_functions_to_apply.insert(0, ('sky_subtraction', process_fxn))
+            self.ztv_frame.redisplay_image()
+
+    def load_sky_frame(self, filename):
+        if len(filename) == 0:
+            self.sky_hdulist = None
+            self.sky_header_button.Disable()
+            self.unload_sky_subtraction_from_process_stack()
+            self.sky_checkbox.SetValue(False)
+        else:
+            self.sky_hdulist = self.ztv_frame.load_hdulist_from_fitsfile(filename)
+            self.sky_file_basename = os.path.basename(filename)
+            self.sky_header_button.Enable()
+            self.load_sky_subtraction_to_process_stack()
+            self.sky_checkbox.SetValue(True)
+
+    def on_sky_checkbox(self, evt):
+        if evt.IsChecked():
+            self.load_sky_subtraction_to_process_stack()
+        else:
+            self.unload_sky_subtraction_from_process_stack()
+
+    def unload_flat_division_from_process_stack(self):
+        proc_labels = [x[0] for x in self.ztv_frame.image_process_functions_to_apply]
+        if 'flat_division' in proc_labels:
+            self.ztv_frame.image_process_functions_to_apply.pop(proc_labels.index('flat_division'))
+            self.ztv_frame.redisplay_image()
+
+    def load_flat_division_to_process_stack(self):
+        self.unload_flat_division_from_process_stack()
+        if self.flat_hdulist is not None:
+            process_fxn = ImageProcessAction(np.divide, self.flat_hdulist[0].data)
+            # assume that flat division should always be last in processing stack.
+            self.ztv_frame.image_process_functions_to_apply.insert(99999, ('flat_division', process_fxn))
+            self.ztv_frame.redisplay_image()
+
+    def load_flat_frame(self, filename):
+        if len(filename) == 0:
+            self.flat_hdulist = None
+            self.flat_header_button.Disable()
+            self.unload_flat_division_from_process_stack()
+            self.flat_checkbox.SetValue(False)
+        else:
+            self.flat_hdulist = self.ztv_frame.load_hdulist_from_fitsfile(filename)
+            self.flat_file_basename = os.path.basename(filename)
+            self.flat_header_button.Enable()
+            self.load_flat_division_to_process_stack()
+            self.flat_checkbox.SetValue(True)
+
+    def on_flat_checkbox(self, evt):
+        if evt.IsChecked():
+            self.load_flat_division_to_process_stack()
+        else:
+            self.unload_flat_division_from_process_stack()
 
     def on_activemq_instances_info_changed(self, msg):
         self.message_queue_choice.Clear()

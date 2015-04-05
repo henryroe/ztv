@@ -4,6 +4,7 @@ from wx.lib.pubsub.core.datamsg import Message
 import  wx.lib.layoutf as layoutf
 import numpy as np
 import threading
+import warnings
 import psutil
 import time
 import os
@@ -28,18 +29,20 @@ from matplotlib import cm
 from matplotlib.colors import SymLogNorm, Normalize  #  TODO: add PowerNorm once upgraded to matplotlib 1.4
 
 from .filepicker import FilePicker
+from .fits_header_dialog import FITSHeaderDialog
 # Intend: control panels are one per file with class name "MyPanel" in filename "my_panel.py"
 from .source_panel import SourcePanel
 from .plot_panel import PlotPanel
 from .phot_panel import PhotPanel
 from .stats_panel import StatsPanel
-from .color_control_panel import ColorControlPanel
+from .color_panel import ColorPanel
 
 import pdb
 
 
 class Error(Exception):
     pass
+
 
 def clear_ticks_and_frame_from_axes(axes):
     """
@@ -70,76 +73,6 @@ class ColorMaps():
 
     def all(self):
         return [a for a in cm.datad]
-
-
-class FITSHeaderDialog(wx.Dialog):
-    def __init__(self, parent, raw_header_str, caption,
-                 pos=wx.DefaultPosition, size=(500,300),
-                 style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER):
-        self.parent = parent
-        wx.Dialog.__init__(self, parent, -1, caption, pos, size, style)
-        x, y = pos
-        if x == -1 and y == -1:
-            self.CenterOnScreen(wx.BOTH)
-        self.cur_selection = (0, 0)
-        self.raw_header_str = raw_header_str
-        self.text = text = wx.TextCtrl(self, -1, raw_header_str, style=wx.TE_MULTILINE | wx.TE_READONLY)
-
-        font1 = wx.Font(12, wx.FONTFAMILY_MODERN, wx.NORMAL, wx.FONTWEIGHT_LIGHT, False)
-        self.text.SetFont(font1)
-        self.text.SetInitialSize((600,400))
-
-        main_sizer = wx.BoxSizer(wx.VERTICAL)
-        main_sizer.Add(self.text, 1, wx.EXPAND | wx.ALL, border=5)
-        ok = wx.Button(self, wx.ID_OK, "OK")
-        ok.SetDefault()
-        ok.Bind(wx.EVT_BUTTON, self.on_close)
-
-        buttons_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.search = wx.SearchCtrl(self, size=(200, -1), style=wx.TE_PROCESS_ENTER)
-        self.search.ShowSearchButton(True)
-        self.search.ShowCancelButton(True)
-        # TODO:  make layout of search & OK button prettier (OK should be right-aligned properly)
-        buttons_sizer.Add(self.search, 0, wx.ALL | wx.EXPAND)
-        buttons_sizer.Add((315, 0), 1, wx.EXPAND)
-        buttons_sizer.Add(ok, 0, wx.ALL)
-        main_sizer.Add(buttons_sizer, 0, wx.ALL, border=4)
-        self.SetSizerAndFit(main_sizer)
-        self.set_cur_selection()
-        self.Bind(wx.EVT_SEARCHCTRL_SEARCH_BTN, self.on_search, self.search)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_search, self.search)
-        self.last_search_str = ''
-        self.last_find_index = 0
-        self.is_dialog_still_open = True
-        self.Bind(wx.EVT_CLOSE, self.on_close)
-
-    def on_close(self, evt):
-        self.is_dialog_still_open = False
-        evt.Skip(True)
-
-    def set_cur_selection(self):
-        self.text.SetSelection(self.cur_selection[0], self.cur_selection[1])
-
-    def on_search(self, evt):
-        search_str = self.search.GetValue()
-        if search_str != "":
-            if search_str in self.raw_header_str:
-                if search_str != self.last_search_str:
-                    self.last_find_index = 0
-                pos0 = self.raw_header_str.find(search_str, self.last_find_index)
-                if pos0 == -1:
-                    pos0 = self.raw_header_str.find(search_str)
-                if pos0 - 80 < 0:
-                    start_selection = 0
-                else:
-                    start_selection = self.raw_header_str.find('\n', pos0 - 80) + 1
-                self.cur_selection = (start_selection,
-                                      self.raw_header_str.find('\n', pos0))
-                self.set_cur_selection()
-                self.last_find_index = self.raw_header_str.find('\n', pos0)
-                self.last_search_str = search_str
-        else:
-            self.last_search_str = ''
 
 
 class PrimaryImagePanel(wx.Panel):
@@ -230,23 +163,23 @@ class PrimaryImagePanel(wx.Panel):
             wx.EVT_MENU(image_scaling_submenu, self.scaling_to_eventID[scaling], self.on_change_scaling_event)
         menu.AppendMenu(-1, 'Scaling', image_scaling_submenu)
         menu.AppendSeparator()
-        self.popup_menu_fits_header_eventID = wx.NewId()
-        self._append_menu_item(menu, self.popup_menu_fits_header_eventID, 'FITS Header',
-                               self.on_display_fits_header)
+        self.popup_menu_cur_fits_header_eventID = wx.NewId()
+        self._append_menu_item(menu, self.popup_menu_cur_fits_header_eventID, 'FITS Header',
+                               self.on_display_cur_fits_header)
         self.popup_menu = menu
 
-    def on_display_fits_header(self, event):
-        raw_header_str = self.ztv_frame.fits_header.tostring()
+    def on_display_cur_fits_header(self, event):
+        raw_header_str = self.ztv_frame.cur_fits_hdulist[0].header.tostring()
         header_str = (('\n'.join([raw_header_str[i:i+80] for i in np.arange(0, len(raw_header_str), 80)
                                   if raw_header_str[i:i+80] != " "*80])) + '\n')
-        if hasattr(self, 'fits_header_dialog') and self.fits_header_dialog.is_dialog_still_open:
-            self.fits_header_dialog.SetTitle(self.ztv_frame.cur_fitsfile_basename)
-            self.fits_header_dialog.text.SetValue(header_str)
-            self.fits_header_dialog.last_find_index = 0
-            self.fits_header_dialog.on_search(None)
+        if hasattr(self, 'cur_fits_header_dialog') and self.cur_fits_header_dialog.is_dialog_still_open:
+            self.cur_fits_header_dialog.SetTitle(self.ztv_frame.cur_fitsfile_basename)
+            self.cur_fits_header_dialog.text.SetValue(header_str)
+            self.cur_fits_header_dialog.last_find_index = 0
+            self.cur_fits_header_dialog.on_search(None)
         else:
-            self.fits_header_dialog = FITSHeaderDialog(self, header_str, self.ztv_frame.cur_fitsfile_basename)
-            self.fits_header_dialog.Show()
+            self.cur_fits_header_dialog = FITSHeaderDialog(self, header_str, self.ztv_frame.cur_fitsfile_basename)
+            self.cur_fits_header_dialog.Show()
 
     def set_and_get_xy_limits(self):
         num_x_pixels = self.canvas.GetSize().x
@@ -317,10 +250,10 @@ class PrimaryImagePanel(wx.Panel):
             self.set_and_get_xy_limits()
 
     def reset_zoom_and_center(self, *args, **kwargs):
-        self.center.x = (self.ztv_frame.image.shape[1] / 2.) - 0.5
-        self.center.y = (self.ztv_frame.image.shape[0] / 2.) - 0.5
-        max_zoom_x = self.canvas.GetSize().x / float(self.ztv_frame.image.shape[1])
-        max_zoom_y = self.canvas.GetSize().y / float(self.ztv_frame.image.shape[0])
+        self.center.x = (self.ztv_frame.display_image.shape[1] / 2.) - 0.5
+        self.center.y = (self.ztv_frame.display_image.shape[0] / 2.) - 0.5
+        max_zoom_x = self.canvas.GetSize().x / float(self.ztv_frame.display_image.shape[1])
+        max_zoom_y = self.canvas.GetSize().y / float(self.ztv_frame.display_image.shape[0])
         self.zoom_factor = min(max_zoom_x, max_zoom_y)
         self.set_and_get_xy_limits()
 
@@ -339,10 +272,10 @@ class PrimaryImagePanel(wx.Panel):
             x1 = self.stats_rect.get_x() + self.stats_rect.get_width()
         if y1 is None:
             y1 = self.stats_rect.get_y() + self.stats_rect.get_height()
-        x0 = min(max(0, x0), self.ztv_frame.image.shape[1])
-        y0 = min(max(0, y0), self.ztv_frame.image.shape[0])
-        x1 = min(max(0, x1), self.ztv_frame.image.shape[1])
-        y1 = min(max(0, y1), self.ztv_frame.image.shape[0])
+        x0 = min(max(0, x0), self.ztv_frame.display_image.shape[1])
+        y0 = min(max(0, y0), self.ztv_frame.display_image.shape[0])
+        x1 = min(max(0, x1), self.ztv_frame.display_image.shape[1])
+        y1 = min(max(0, y1), self.ztv_frame.display_image.shape[0])
         if self.stats_rect is None:
             self.stats_rect = Rectangle((x0, y0), x1 - x0, y1 - y0, color='orange', fill=False, zorder=100)
             self.axes.add_patch(self.stats_rect)
@@ -399,9 +332,9 @@ class PrimaryImagePanel(wx.Panel):
                 self.update_stats_box(x0, y0, event.xdata, event.ydata)
             elif self.cursor_mode == 'Slice plot':
                 wx.CallAfter(Publisher().sendMessage, "new_slice_plot_xy1", (event.xdata, event.ydata))
-        if ((x >= 0) and (x < self.ztv_frame.image.shape[1]) and
-            (y >= 0) and (y < self.ztv_frame.image.shape[0])):
-            imval = self.ztv_frame.image[y, x]
+        if ((x >= 0) and (x < self.ztv_frame.display_image.shape[1]) and
+            (y >= 0) and (y < self.ztv_frame.display_image.shape[0])):
+            imval = self.ztv_frame.display_image[y, x]
             new_status_string = "x,y={},{}".format(x, y)
             if self.ztv_frame.image_radec is not None:
                 c = self.ztv_frame.image_radec[y, x]
@@ -450,10 +383,10 @@ class PrimaryImagePanel(wx.Panel):
         for scaling in self.ztv_frame.available_scalings:
             self.popup_menu.Check(self.scaling_to_eventID[scaling], False)
         self.popup_menu.Check(self.scaling_to_eventID[self.ztv_frame.scaling], True)
-        if self.ztv_frame.fits_header is None:
-            self.popup_menu.Enable(self.popup_menu_fits_header_eventID, False)
+        if self.ztv_frame.cur_fits_hdulist is None:
+            self.popup_menu.Enable(self.popup_menu_cur_fits_header_eventID, False)
         else:
-            self.popup_menu.Enable(self.popup_menu_fits_header_eventID, True)
+            self.popup_menu.Enable(self.popup_menu_cur_fits_header_eventID, True)
         self.figure.canvas.PopupMenuXY(self.popup_menu, event.x + 8,  event.y + 8)
 
     def on_cursor_leave(self, event):
@@ -482,7 +415,8 @@ class PrimaryImagePanel(wx.Panel):
         if hasattr(self, 'axes_image'):
             if self.axes_image in self.axes.images:
                 self.axes.images.remove(self.axes_image)
-        self.axes_image = self.axes.imshow(self.ztv_frame.image, interpolation='Nearest', norm=self.ztv_frame.norm,
+        self.axes_image = self.axes.imshow(self.ztv_frame.display_image, interpolation='Nearest', 
+                                           norm=self.ztv_frame.norm,
                                            cmap=self.ztv_frame.get_cmap_to_display(), zorder=0)
         clear_ticks_and_frame_from_axes(self.axes)
         self.set_and_get_xy_limits()
@@ -497,7 +431,8 @@ class OverviewImagePanel(wx.Panel):
         self.ztv_frame = self.GetTopLevelParent()
         self.figure = Figure(None, dpi)
         self.axes = self.figure.add_axes([0., 0., 1., 1.])
-        self.curview_rectangle = Rectangle((0, 0), self.ztv_frame.image.shape[1], self.ztv_frame.image.shape[0],
+        self.curview_rectangle = Rectangle((0, 0), self.ztv_frame.display_image.shape[1], 
+                                           self.ztv_frame.display_image.shape[0],
                                            color='green', fill=False, zorder=100)
         self.axes.add_patch(self.curview_rectangle)
         self.canvas = FigureCanvasWxAgg(self, -1, self.figure)
@@ -562,11 +497,11 @@ class OverviewImagePanel(wx.Panel):
                                     float(self.size[1])/self.figure.get_dpi())
 
     def set_xy_limits(self):
-        max_zoom_x = self.size.x / float(self.ztv_frame.image.shape[1])
-        max_zoom_y = self.size.y / float(self.ztv_frame.image.shape[0])
+        max_zoom_x = self.size.x / float(self.ztv_frame.display_image.shape[1])
+        max_zoom_y = self.size.y / float(self.ztv_frame.display_image.shape[0])
         self.zoom_factor = min(max_zoom_x, max_zoom_y)
-        x_cen = (self.ztv_frame.image.shape[1] / 2.) - 0.5
-        y_cen = (self.ztv_frame.image.shape[0] / 2.) - 0.5
+        x_cen = (self.ztv_frame.display_image.shape[1] / 2.) - 0.5
+        y_cen = (self.ztv_frame.display_image.shape[0] / 2.) - 0.5
         halfXsize = self.size.x / (self.zoom_factor * 2.)
         halfYsize = self.size.y / (self.zoom_factor * 2.)
         self.xlim = (x_cen - halfXsize, x_cen + halfXsize)
@@ -578,7 +513,8 @@ class OverviewImagePanel(wx.Panel):
         if hasattr(self, 'axes_image'):
             if self.axes_image in self.axes.images:
                 self.axes.images.remove(self.axes_image)
-        self.axes_image = self.axes.imshow(self.ztv_frame.image, interpolation='Nearest', norm=self.ztv_frame.norm,
+        self.axes_image = self.axes.imshow(self.ztv_frame.display_image, interpolation='Nearest',
+                                           norm=self.ztv_frame.norm,
                                            cmap=self.ztv_frame.get_cmap_to_display(), zorder=0)
         clear_ticks_and_frame_from_axes(self.axes)
         self.set_xy_limits()
@@ -616,7 +552,8 @@ class LoupeImagePanel(wx.Panel):
         if hasattr(self, 'axes_image'):
             if self.axes_image in self.axes.images:
                 self.axes.images.remove(self.axes_image)
-        self.axes_image = self.axes.imshow(self.ztv_frame.image, interpolation='Nearest', norm=self.ztv_frame.norm,
+        self.axes_image = self.axes.imshow(self.ztv_frame.display_image, interpolation='Nearest',
+                                           norm=self.ztv_frame.norm,
                                            cmap=self.ztv_frame.get_cmap_to_display(), zorder=0)
         clear_ticks_and_frame_from_axes(self.axes)
         self.figure.canvas.draw()
@@ -633,8 +570,8 @@ class ControlsNotebook(wx.Notebook):
         self.panel_id_to_name = {}
         self.source_panel = SourcePanel(self)
         self.AddPageAndStoreID(self.source_panel, "Source")
-        self.color_control_panel = ColorControlPanel(self)
-        self.AddPageAndStoreID(self.color_control_panel, "Color")
+        self.color_panel = ColorPanel(self)
+        self.AddPageAndStoreID(self.color_panel, "Color")
         self.plot_panel = PlotPanel(self)
         self.AddPageAndStoreID(self.plot_panel, "Plot")
         self.stats_panel = StatsPanel(self)
@@ -672,7 +609,9 @@ class ZTVFrame(wx.Frame):
         self.autoload_pausetime = self.autoload_pausetime_choices[2]
         self.autoload_match_string = ''
         self.autoload_filematch_thread = None
-        self.image = self.get_default_image()
+        self.image_process_functions_to_apply = []  # list of tuples of ('NameOrLabelIdentifier', fxn), where fxn must accept the image and return the processed image
+        self.raw_image = self.get_default_image()
+        self.display_image = self.raw_image.copy()
         self.available_cmaps = ColorMaps().basic()
         self.cmap = 'jet'  # will go back to gray later
         self.is_cmap_inverted = False
@@ -732,7 +671,7 @@ class ZTVFrame(wx.Frame):
         self.Layout()
         self.Centre(wx.BOTH)
         self.load_default_image()
-        self.fits_header = None
+        self.cur_fits_hdulist = None
         if launch_listen_thread:
             CommandListenerThread(self)
         self.set_cmap('gray')
@@ -832,11 +771,11 @@ class ZTVFrame(wx.Frame):
             wx.CallAfter(Publisher().sendMessage, "redraw_image", None)
 
     def set_clim_to_minmax(self, *args):
-        self.set_clim([self.image.min(), self.image.max()])
+        self.set_clim([self.display_image.min(), self.display_image.max()])
 
     def get_auto_clim_values(self, *args):
-        quartile = (self.image.max() - self.image.min()) / 4.0
-        return (self.image.min() + quartile, self.image.max() - quartile)
+        quartile = (self.display_image.max() - self.display_image.min()) / 4.0
+        return (self.display_image.min() + quartile, self.display_image.max() - quartile)
 
     def set_clim_to_auto(self, *args):
         # TODO:  Need to implement a sensible auto-minmax setting algorithm
@@ -865,41 +804,55 @@ class ZTVFrame(wx.Frame):
         else:
             sys.stderr.write("unrecognized scaling ({}) requested\n".format(scaling))
 
-    def load_numpy_array(self, msg):
+    def redisplay_image(self):
+        self.display_image = self.raw_image.copy()
+        for cur_imageproc_label, cur_imageproc_fxn in self.image_process_functions_to_apply:
+            self.display_image = cur_imageproc_fxn(self.display_image)
+        new_min, new_max = None, None
+        if self.min_value_mode_on_new_image == 'data-min/max':
+            new_min = self.display_image.min()
+        elif self.min_value_mode_on_new_image == 'auto':
+            auto_clim = self.get_auto_clim_values()
+            new_min = auto_clim[0]
+        if self.max_value_mode_on_new_image == 'data-min/max':
+            new_max = self.display_image.max()
+        elif self.max_value_mode_on_new_image == 'auto':
+            if self.min_value_mode_on_new_image != 'auto':
+                auto_clim = self.get_auto_clim_values()
+            new_max = auto_clim[1]
+        self.set_clim([new_min, new_max])
+        wx.CallAfter(Publisher().sendMessage, "redraw_image")
+
+    def load_numpy_array(self, msg, is_fits_file=False):
         if isinstance(msg, Message):
             image = msg.data
         else:
             image = msg
+        if not is_fits_file:
+            self.cur_fits_hdulist = None
         if image.ndim != 2:
             sys.stderr.write("Currently only support numpy arrays of 2-d; tried to load a {}-d numpy array".format(image.ndim))
         else:
-            self.image = image
+            self.raw_image = image  
             self.image_radec = None
-            new_min, new_max = None, None
-            if self.min_value_mode_on_new_image == 'data-min/max':
-                new_min = self.image.min()
-            elif self.min_value_mode_on_new_image == 'auto':
-                auto_clim = self.get_auto_clim_values()
-                new_min = auto_clim[0]
-            if self.max_value_mode_on_new_image == 'data-min/max':
-                new_max = self.image.max()
-            elif self.max_value_mode_on_new_image == 'auto':
-                if self.min_value_mode_on_new_image != 'auto':
-                    auto_clim = self.get_auto_clim_values()
-                new_max = auto_clim[1]
-            self.set_clim([new_min, new_max])
             # TODO:  do we want the next line uncommented?  issue:  in some very manual cases (i'm looking at a sequence of manually loaded disparate images, I probably do want reset_zoom_and_center.  BUT, when autoloading fits files from disk or listening to an activemq stream, I distinctly do NOT want to call reset_zoom_and_center.  Could create a parameter to control whether is called, but may be easier to just never call.  Think about it.
 #             self.primary_image_panel.reset_zoom_and_center()
-            self.fits_header = None
-            self.controls_notebook.source_panel.disable_show_header_button()
             self.cur_fitsfile_basename = ''
             self.redisplay_image()
             if self.default_image_loaded:  # last image loaded was the default, so:
                 self.primary_image_panel.reset_zoom_and_center()
             self.default_image_loaded = False
-            wx.CallAfter(Publisher().sendMessage, "new-image-loaded", None)
 
-
+    def load_hdulist_from_fitsfile(self, filename):
+        """
+        The purpose of wrapping fits.open inside this routine is to put 
+        all the warning suppressions, flags, etc in one place.
+        """
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            hdulist = fits.open(filename, ignore_missing_end=True)
+        return hdulist
+        
     def load_fits_file(self, msg):
         if isinstance(msg, Message):
             filename = msg.data
@@ -908,13 +861,10 @@ class ZTVFrame(wx.Frame):
         if isinstance(filename, str) or isinstance(filename, unicode):
             if filename.lower().endswith('.fits') or filename.lower().endswith('.fits.gz'):
                 if os.path.isfile(filename):
-                    # TODO: store full hdulist so that we can do other things with header
-                    hdulist = fits.open(filename, ignore_missing_end=True)
+                    self.cur_fits_hdulist = self.load_hdulist_from_fitsfile(filename)
                     # TODO: be more flexible about hdulist where image data is NOT just [0].data
                     # TODO also, in case of extended fits files need to deal with additional header info
-                    self.load_numpy_array(hdulist[0].data)
-                    self.fits_header = hdulist[0].header
-                    self.controls_notebook.source_panel.enable_show_header_button()
+                    self.load_numpy_array(self.cur_fits_hdulist[0].data, is_fits_file=True)
                     self.cur_fitsfile_basename = os.path.basename(filename)
                     self.cur_fitsfile_path = os.path.abspath(os.path.dirname(filename))
                     # TODO: better error handling for if WCS not available or partially available
@@ -922,8 +872,10 @@ class ZTVFrame(wx.Frame):
                         w = wcs.WCS(hdulist[0].header)
                         # TODO: (urgent) need to check ones/arange in following, do I have this reversed?
                         a = w.all_pix2world(
-                                  np.outer(np.ones(self.image.shape[0]), np.arange(self.image.shape[1])),
-                                  np.outer(np.arange(self.image.shape[0]), np.ones(self.image.shape[1])),
+                                  np.outer(np.ones(self.display_image.shape[0]), 
+                                           np.arange(self.display_image.shape[1])),
+                                  np.outer(np.arange(self.display_image.shape[0]), 
+                                           np.ones(self.display_image.shape[1])),
                                   0)
                         self.image_radec = ICRS(a[0]*units.degree, a[1]*units.degree)
                     except:  # just ignore radec if anything at all goes wrong.
@@ -949,9 +901,6 @@ class ZTVFrame(wx.Frame):
         self.load_numpy_array(self.get_default_image())
         self.primary_image_panel.reset_zoom_and_center()
         self.default_image_loaded = True
-
-    def redisplay_image(self):
-        wx.CallAfter(Publisher().sendMessage, "redraw_image")
 
     def kill_autoload_filematch_thread(self):
         if self.autoload_filematch_thread is not None:

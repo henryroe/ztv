@@ -4,7 +4,7 @@ from matplotlib import cm
 import numpy as np
 
 
-class ColorControlPanel(wx.Panel):
+class ColorPanel(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL)
         self.ztv_frame = self.GetTopLevelParent()
@@ -163,7 +163,7 @@ class ColorControlPanel(wx.Panel):
         wx.CallAfter(Publisher().sendMessage, "set_cmap", self.eventID_to_cmap[event.GetId()])
 
     def on_navigation_key(self, evt):
-        # TODO: figure out how to make tab order work the way I want.  Currently the following code works partly, but is ignored by some tabs.  Weird. Looks like it's an issue that tab is triggering some *other* event when it's a button that has focus.  Might have to play around with catching all key-presses inside of ColorControlPanel & passing along the non-tab keypresses???
+        # TODO: figure out how to make tab order work the way I want.  Currently the following code works partly, but is ignored by some tabs.  Weird. Looks like it's an issue that tab is triggering some *other* event when it's a button that has focus.  Might have to play around with catching all key-presses inside of ColorPanel & passing along the non-tab keypresses???
         tab_order = [self.minval_textctrl, self.maxval_textctrl,
                      self.auto_set_minmax_button,
                      self.set_min_button, self.set_minmax_button, self.set_max_button,
@@ -238,12 +238,12 @@ class ColorControlPanel(wx.Panel):
         self.ztv_frame.set_clim_to_minmax()
 
     def on_set_min_button(self, evt):
-        self.ztv_frame.set_clim([self.ztv_frame.image.min(), None])
+        self.ztv_frame.set_clim([self.ztv_frame.display_image.min(), None])
         if self.FindFocus() == self.minval_textctrl:
             self.minval_textctrl.SetSelection(-1, -1)
 
     def on_set_max_button(self, evt):
-        self.ztv_frame.set_clim([None, self.ztv_frame.image.max()])
+        self.ztv_frame.set_clim([None, self.ztv_frame.display_image.max()])
         if self.FindFocus() == self.maxval_textctrl:
             self.maxval_textctrl.SetSelection(-1, -1)
 

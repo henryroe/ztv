@@ -253,10 +253,10 @@ class PhotPanel(wx.Panel):
     def recalc_phot(self):
         self.xclicked_textctrl.SetValue("{:8.2f}".format(self.xclicked))
         self.yclicked_textctrl.SetValue("{:8.2f}".format(self.yclicked))
-        self.xcentroid,self.ycentroid = centroid(self.ztv_frame.image, self.xclicked, self.yclicked)
+        self.xcentroid,self.ycentroid = centroid(self.ztv_frame.display_image, self.xclicked, self.yclicked)
         self.xcentroid_textctrl.SetValue("{:8.2f}".format(self.xcentroid))
         self.ycentroid_textctrl.SetValue("{:8.2f}".format(self.ycentroid))
-        phot = aperture_phot(self.ztv_frame.image, self.xcentroid, self.ycentroid, 
+        phot = aperture_phot(self.ztv_frame.display_image, self.xcentroid, self.ycentroid, 
                              self.aprad, self.skyradin, self.skyradout, return_distances=True)
         aprad = phot['star_radius']
         skyradin = phot['sky_inner_radius']
@@ -273,7 +273,8 @@ class PhotPanel(wx.Panel):
         sensible_xmax = ((nice_factor*10**np.floor(np.log10(unrounded_xmax))) * 
                          np.ceil(unrounded_xmax / (nice_factor*10**np.floor(np.log10(unrounded_xmax)))))
         mask = phot['distances'] <= sensible_xmax
-        self.plot_panel.axes.plot(phot['distances'][mask].ravel(), self.ztv_frame.image[mask].ravel(), 'ko', markersize=1)
+        self.plot_panel.axes.plot(phot['distances'][mask].ravel(), self.ztv_frame.display_image[mask].ravel(), 
+                                  'ko', markersize=1)
         ylim = self.plot_panel.axes.get_ylim()
         n_sigma = 6.
         if (phot['sky_per_pixel'] - n_sigma*phot['sky_per_pixel_err']*np.sqrt(phot['n_sky_pix'])) > 0.:
@@ -292,7 +293,7 @@ class PhotPanel(wx.Panel):
         self.plot_panel.axes.set_xlim([0, sensible_xmax])
         mask = phot['distances'] <= aprad
         xs = phot['distances'][mask]
-        vals = self.ztv_frame.image[mask] - phot['sky_per_pixel']
+        vals = self.ztv_frame.display_image[mask] - phot['sky_per_pixel']
         p0 = [aprad*0.3, vals.max()]
         popt, pcov = curve_fit(fixed_gauss, xs, vals, p0=p0)
         xs = np.arange(0, aprad+0.1, 0.1)

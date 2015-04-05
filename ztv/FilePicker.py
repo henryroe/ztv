@@ -11,6 +11,8 @@ import pdb
 # TODO: limit default allowed_extensions to .fits/.fits.gz  (rather than .fits/.gz)
 # TODO: fix that is currently hardwired to .fits/.gz file endings and allow calling code to specify other options
 
+# TODO: implement a None option? or that None is italixiszed in text box and dropdown menu as a special thing?
+
 class Error(Exception):
     pass
 
@@ -74,14 +76,14 @@ class FilePicker(wx.Panel):
         self.current_textctrl.Bind(wx.EVT_TEXT, self.on_current_textctrl_changed)
         self.current_textctrl.Bind(wx.EVT_TEXT_ENTER, self.on_current_textctrl_entered)
         self.current_textctrl.Bind(wx.EVT_CHAR, self.on_key_press_textctrl, self.current_textctrl)
-        h_sizer.Add(wx.StaticText(self, -1, title), 0)
-        h_sizer.Add(self.current_textctrl, 1, wx.EXPAND)
+        h_sizer.Add(wx.StaticText(self, -1, title), 0, wx.ALIGN_CENTER_VERTICAL)
+        h_sizer.Add(self.current_textctrl, 1, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL)
         h_sizer.AddSpacer((2, 0), 0)
-        h_sizer.Add(self.recent_choice, 0)
+        h_sizer.Add(self.recent_choice, 0, wx.ALIGN_CENTER_VERTICAL)
         h_sizer.AddSpacer((2, 0), 0)
         self.browser_button = wx.Button(self, -1, '...', style=wx.BU_EXACTFIT)
         self.Bind(wx.EVT_BUTTON, self.on_browser_button, self.browser_button)
-        h_sizer.Add(self.browser_button, 0)
+        h_sizer.Add(self.browser_button, 0, wx.ALIGN_CENTER_VERTICAL)
         self.SetSizer(h_sizer)
         self.current_textctrl_SetValue(self.default_entry)
         self._on_load(self.current_textctrl_GetValue())
@@ -119,6 +121,11 @@ class FilePicker(wx.Panel):
         """
         self.current_textctrl_SetValue(new_entry)
         self.update_recent_choice()
+# TODO: fix where the checkmark appears in the recent choices popup menu
+#         if self.maintain_default_entry_in_recents == 0:
+#             self.recent_choice.SetSelection(1)
+#         else:
+#             self.recent_choice.SetSelection(0)
 
     def update_recent_choice(self):
         self.recent_choice.Clear()
@@ -227,8 +234,10 @@ class FilePicker(wx.Panel):
             cur_focused_item.SetFocus()
 
     def validate_current_textctrl_value(self):
-        new_entry = os.path.abspath(os.path.expanduser(self.current_textctrl_GetValue()))
         is_entry_valid = False
+        if (self.current_textctrl_GetValue() == self.default_entry):
+            is_entry_valid = True   # catch for case of default_entry == '' and nothing in field
+        new_entry = os.path.abspath(os.path.expanduser(self.current_textctrl_GetValue()))
         if self.is_files_not_dirs:
             if self.allow_glob_matching:
                 if len(glob.glob(new_entry)) > 0:
@@ -238,6 +247,8 @@ class FilePicker(wx.Panel):
         else:
             if os.path.isdir(new_entry):
                 is_entry_valid = True
+        if new_entry == self.default_entry:
+            is_entry_valid = True
         if is_entry_valid:
             if self.last_valid_entry == new_entry:
                 self.set_textctrl_background_color('ok')
@@ -326,7 +337,10 @@ class FilePicker(wx.Panel):
         if self.validate_current_textctrl_value():
             self.reset_auto_completion_info()
             new_entry = self.current_textctrl_GetValue()
-            self._on_load(os.path.abspath(new_entry))
+            if new_entry == self.default_entry:
+                self._on_load(new_entry)
+            else:
+                self._on_load(os.path.abspath(new_entry))
 
     def on_recent_choice(self, event):
         new_choice = event.GetString()
