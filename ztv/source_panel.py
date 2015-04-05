@@ -19,7 +19,8 @@ class SourcePanel(wx.Panel):
         Publisher().subscribe(self.on_fitsfile_loaded, "fitsfile-loaded")
         self.max_items_in_curfile_history = 20
         v_sizer1 = wx.BoxSizer(wx.VERTICAL)
-        
+        v_sizer1.AddSpacer((0, 0), 1, wx.EXPAND)
+
         h_current_filepicker_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.curfile_filepicker = FilePicker(self, title='')
         self.curfile_filepicker.on_load = self.ztv_frame.load_fits_file
@@ -100,6 +101,7 @@ class SourcePanel(wx.Panel):
         Publisher().subscribe(self.on_activemq_instances_info_changed, "activemq_instances_info-changed")
         self.Bind(wx.EVT_CHOICE, self.on_message_queue_choice, self.message_queue_choice)
         v_sizer1.Add(h_queue_sizer, 0, wx.EXPAND)
+        v_sizer1.AddSpacer((0, 0), 1, wx.EXPAND)
         self.SetSizer(v_sizer1)
         self.sky_header_button.Disable()
         self.flat_header_button.Disable()
