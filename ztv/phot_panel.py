@@ -268,54 +268,54 @@ class PhotPanel(wx.Panel):
         aprad_color = 'blue'
         skyrad_color = 'red'
         self.plot_panel.axes.cla()
-#         unrounded_xmax = max([aprad*2, skyradin*2, skyradout + (skyradout - skyradin)])
-        unrounded_xmax = skyradout + 0.2 * (skyradout - skyradin)
-        nice_factor = 10./5.
-        sensible_xmax = ((nice_factor*10**np.floor(np.log10(unrounded_xmax))) * 
-                         np.ceil(unrounded_xmax / (nice_factor*10**np.floor(np.log10(unrounded_xmax)))))
-        mask = phot['distances'] <= sensible_xmax
-        self.plot_panel.axes.plot(phot['distances'][mask].ravel(), self.ztv_frame.display_image[mask].ravel(), 
-                                  'ko', markersize=1)
-        ylim = self.plot_panel.axes.get_ylim()
-        n_sigma = 6.
-        if (phot['sky_per_pixel'] - n_sigma*phot['sky_per_pixel_err']*np.sqrt(phot['n_sky_pix'])) > 0.:
-            ylim = (phot['sky_per_pixel'] - n_sigma*phot['sky_per_pixel_err']*np.sqrt(phot['n_sky_pix']), ylim[1])
-        self.plot_panel.axes.set_ylim(ylim)
-        alpha = 0.25
-        self.plot_panel.axes.fill_between([0., aprad], [ylim[0], ylim[0]], [ylim[1], ylim[1]], 
-                                          facecolor=aprad_color, alpha=alpha)
-        self.plot_panel.axes.fill_between([skyradin, skyradout], [ylim[0], ylim[0]], [ylim[1], ylim[1]], 
-                                          facecolor=skyrad_color, alpha=alpha)
-        self.plot_panel.axes.plot([0, sensible_xmax], [phot['sky_per_pixel'], phot['sky_per_pixel']], '-r')
-        self.plot_panel.axes.plot([0, sensible_xmax], [phot['sky_per_pixel'] - phot['sky_per_pixel_err'], 
-                                                       phot['sky_per_pixel'] - phot['sky_per_pixel_err']], ':r')
-        self.plot_panel.axes.plot([0, sensible_xmax], [phot['sky_per_pixel'] + phot['sky_per_pixel_err'], 
-                                                       phot['sky_per_pixel'] + phot['sky_per_pixel_err']], ':r')
-        self.plot_panel.axes.set_xlim([0, sensible_xmax])
-        mask = phot['distances'] <= aprad
-        xs = phot['distances'][mask]
-        vals = self.ztv_frame.display_image[mask] - phot['sky_per_pixel']
-        p0 = [aprad*0.3, vals.max()]
-        popt, pcov = curve_fit(fixed_gauss, xs, vals, p0=p0)
-        xs = np.arange(0, aprad+0.1, 0.1)
-        c = popt[0] / (2. * np.sqrt(2. * np.log(2.)))
-        self.plot_panel.axes.plot(xs, phot['sky_per_pixel'] + 
-                                      popt[1] * np.exp(-((xs)**2) / (2.*c**2)), '-', color=aprad_color)
-        self.fwhm_textctrl.SetValue("{:0.3g}".format(np.abs(popt[0])))
-        
         if self.star_center_patch is not None:
             self.ztv_frame.primary_image_panel.axes.patches.remove(self.star_center_patch)
-        self.star_center_patch = Circle([self.xcentroid, self.ycentroid], 0.125, color=aprad_color)
-        self.ztv_frame.primary_image_panel.axes.add_patch(self.star_center_patch)
         if self.star_aperture_patch is not None:
             self.ztv_frame.primary_image_panel.axes.patches.remove(self.star_aperture_patch)
-        self.star_aperture_patch = Circle([self.xcentroid, self.ycentroid], aprad, color=aprad_color, alpha=alpha)
-        self.ztv_frame.primary_image_panel.axes.add_patch(self.star_aperture_patch)
         if self.sky_aperture_patch is not None:
             self.ztv_frame.primary_image_panel.axes.patches.remove(self.sky_aperture_patch)
-        self.sky_aperture_patch = Wedge([self.xcentroid, self.ycentroid], skyradout, 0., 360., 
-                                        width=skyradout-skyradin, color=skyrad_color, alpha=alpha)
-        self.ztv_frame.primary_image_panel.axes.add_patch(self.sky_aperture_patch)
+        if len(phot['distances']) > 5:
+            unrounded_xmax = skyradout + 0.2 * (skyradout - skyradin)
+            nice_factor = 10./5.
+            sensible_xmax = ((nice_factor*10**np.floor(np.log10(unrounded_xmax))) * 
+                             np.ceil(unrounded_xmax / (nice_factor*10**np.floor(np.log10(unrounded_xmax)))))
+            mask = phot['distances'] <= sensible_xmax
+            self.plot_panel.axes.plot(phot['distances'][mask].ravel(), self.ztv_frame.display_image[mask].ravel(), 
+                                      'ko', markersize=1)
+            ylim = self.plot_panel.axes.get_ylim()
+            n_sigma = 6.
+            if (phot['sky_per_pixel'] - n_sigma*phot['sky_per_pixel_err']*np.sqrt(phot['n_sky_pix'])) > 0.:
+                ylim = (phot['sky_per_pixel'] - n_sigma*phot['sky_per_pixel_err']*np.sqrt(phot['n_sky_pix']), ylim[1])
+            self.plot_panel.axes.set_ylim(ylim)
+            alpha = 0.25
+            self.plot_panel.axes.fill_between([0., aprad], [ylim[0], ylim[0]], [ylim[1], ylim[1]], 
+                                              facecolor=aprad_color, alpha=alpha)
+            self.plot_panel.axes.fill_between([skyradin, skyradout], [ylim[0], ylim[0]], [ylim[1], ylim[1]], 
+                                              facecolor=skyrad_color, alpha=alpha)
+            self.plot_panel.axes.plot([0, sensible_xmax], [phot['sky_per_pixel'], phot['sky_per_pixel']], '-r')
+            self.plot_panel.axes.plot([0, sensible_xmax], [phot['sky_per_pixel'] - phot['sky_per_pixel_err'], 
+                                                           phot['sky_per_pixel'] - phot['sky_per_pixel_err']], ':r')
+            self.plot_panel.axes.plot([0, sensible_xmax], [phot['sky_per_pixel'] + phot['sky_per_pixel_err'], 
+                                                           phot['sky_per_pixel'] + phot['sky_per_pixel_err']], ':r')
+            self.plot_panel.axes.set_xlim([0, sensible_xmax])
+            mask = phot['distances'] <= aprad
+            xs = phot['distances'][mask]
+            vals = self.ztv_frame.display_image[mask] - phot['sky_per_pixel']
+            p0 = [aprad*0.3, vals.max()]
+            popt, pcov = curve_fit(fixed_gauss, xs, vals, p0=p0)
+            xs = np.arange(0, aprad+0.1, 0.1)
+            c = popt[0] / (2. * np.sqrt(2. * np.log(2.)))
+            self.plot_panel.axes.plot(xs, phot['sky_per_pixel'] + 
+                                          popt[1] * np.exp(-((xs)**2) / (2.*c**2)), '-', color=aprad_color)
+            self.fwhm_textctrl.SetValue("{:0.3g}".format(np.abs(popt[0])))
+        
+            self.star_center_patch = Circle([self.xcentroid, self.ycentroid], 0.125, color=aprad_color)
+            self.ztv_frame.primary_image_panel.axes.add_patch(self.star_center_patch)
+            self.star_aperture_patch = Circle([self.xcentroid, self.ycentroid], aprad, color=aprad_color, alpha=alpha)
+            self.ztv_frame.primary_image_panel.axes.add_patch(self.star_aperture_patch)
+            self.sky_aperture_patch = Wedge([self.xcentroid, self.ycentroid], skyradout, 0., 360., 
+                                            width=skyradout-skyradin, color=skyrad_color, alpha=alpha)
+            self.ztv_frame.primary_image_panel.axes.add_patch(self.sky_aperture_patch)
         self.plot_panel.figure.canvas.draw()
         self.ztv_frame.primary_image_panel.figure.canvas.draw()
 

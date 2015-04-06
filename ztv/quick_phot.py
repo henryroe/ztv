@@ -24,6 +24,8 @@ def centroid(im, x0, y0, searchboxsize=5, centroidboxsize=9):
     ymax0 = int(np.round(y0 - searchboxsize/2. + 0.5))
     # in case of multiple maxima, want mean position
     subim = im[ymax0:ymax0 + searchboxsize, xmax0:xmax0 + searchboxsize]
+    if subim.size < 9:
+        return np.nan, np.nan
     ymax, xmax = [b.mean() for b in np.where(subim == subim.max())]
     xmax = int(np.round(xmax + xmax0 - centroidboxsize/2.))
     ymax = int(np.round(ymax + ymax0 - centroidboxsize/2.))
@@ -61,6 +63,11 @@ def aperture_phot(im, x, y, star_radius, sky_inner_radius, sky_outer_radius,
     sky_inner_radius - input sky_inner_radius
     sky_outer_radius - input sky_outer_radius 
     """
+    if np.isnan(x) or np.isnan(y):
+        return {'error-msg':'One or both of x/y were NaN.', 'x':x, 'y':y, 'star_radius': star_radius,
+                'sky_inner_radius': sky_inner_radius, 'sky_outer_radius': sky_outer_radius,
+                'n_star_pix':0, 'n_sky_pix':0, 'sky_per_pixel':np.nan, 'sky_per_pixel_err':np.nan,
+                'flux':np.nan, 'sky_err':np.nan, 'distances':[]}
     output = {'x': x, 'y': y, 'star_radius': star_radius,
               'sky_inner_radius': sky_inner_radius, 'sky_outer_radius': sky_outer_radius}
     xdist = np.outer(np.ones(im.shape[0]), np.arange(im.shape[1]) - x)

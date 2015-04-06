@@ -120,6 +120,7 @@ class SourcePanel(wx.Panel):
         self.SetSizer(v_sizer1)
         self.sky_header_button.Disable()
         self.flat_header_button.Disable()
+        Publisher().subscribe(self.update_cur_header_button_status, "redraw_image")
 
     def init_settings_popup_menu(self):
         menu = wx.Menu()
@@ -198,11 +199,11 @@ class SourcePanel(wx.Panel):
             self.flat_fits_header_dialog = FITSHeaderDialog(self, header_str, new_title)
             self.flat_fits_header_dialog.Show()
 
-    def enable_cur_header_button(self):
-        self.cur_header_button.Enable()
-
-    def disable_cur_header_button(self):
-        self.cur_header_button.Disable()
+    def update_cur_header_button_status(self, msg):
+        if self.ztv_frame.cur_fits_hdulist is not None:
+            self.cur_header_button.Enable()
+        else:
+            self.cur_header_button.Disable()
 
     def unload_sky_subtraction_from_process_stack(self):
         proc_labels = [x[0] for x in self.ztv_frame.image_process_functions_to_apply]

@@ -191,6 +191,7 @@ class StatsPanel(wx.Panel):
         v_sizer1.AddStretchSpacer(1.0)
         self.SetSizer(v_sizer1)
         Publisher().subscribe(self.update_stats, "stats_rect_updated")
+        Publisher().subscribe(self.update_stats, "redraw_image")
 
     def on_clear_button(self, evt):
         self.ztv_frame.primary_image_panel.clear_stats_box()

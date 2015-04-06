@@ -452,7 +452,7 @@ class OverviewImagePanel(wx.Panel):
         self.figure.canvas.draw()
 
     def on_button_press(self, event):
-        if event.dblclick:  # reset to fill primary_image_panel
+        if event.dblclick: 
             self.ztv_frame.primary_image_panel.reset_zoom_and_center()
         else:
             if self.curview_rectangle.contains(event)[0]:

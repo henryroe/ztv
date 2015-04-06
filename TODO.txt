@@ -14,7 +14,7 @@
 
 ## better document ActiveMQ usage/example/etc
 
-## rename fake_fits_maker.py & document it better
+## move fake_fits_maker.py into an example control panel
 
 ## Write up 'motivation' document referring back to atv (and to ds9 etc etc)
 
