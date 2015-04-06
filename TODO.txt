@@ -12,6 +12,8 @@
 
 ## some basic implementation of 3-d images, at least reading in from fits files
 
+## Activate minpos/maxpos fields in Stats panel
+
 
 # Medium high-priority for some future release:
 
@@ -41,10 +43,6 @@ want sensible, don't want garish  (some way to link to the panels?  background c
 
 ## consider in color panel: convert to using color stretches from astropy.visualization & add more
 
-## To color control panel:  add a histogram panel with click-and-drag min/max markers
-
-## To stats panel:  add ability to switch between circle (ellipse?) and box.  
-
 need to think through how circle defined - click cneter and drag out?  Confined within click-drag box (works better for ellipses?)
 
 need to think through if/how the stats panel changes to control 
@@ -64,7 +62,6 @@ e.g.:
     2015-03-24 08:57:59.055 Python[8660:1232061] -deviceDeltaX is deprecated for NSScrollWheel. Please use -scrollingDeltaX.
     2015-03-24 08:57:59.055 Python[8660:1232061] -deviceDeltaY is deprecated for NSScrollWheel. Please use -scrollingDeltaY.
 
-## Activate minpos/maxpos fields in Stats panel
 
 ## generic pass through of parameters for typical `z = ztv.ZTV()` launching
 
@@ -77,13 +74,16 @@ Is probably straightforward for simple things like minval, or even string filena
 Another issue is visibility - how to make it clear to user what one can do?  That's an argument for the extra complexity (and less flexibility) of just manually specifiying what can be passed through.
 
 
-## in source panel, with hiding/showing GUI elements, ideally should have everything dynamically re-arrange
 
 
 
 # Low priority for some future release:
 
-## make cmd-W work to close FITS header dialog
+## in source panel, with hiding/showing GUI elements, ideally should have everything dynamically re-arrange
+
+## To color control panel:  add a histogram panel with click-and-drag min/max markers
+
+## To stats panel:  add ability to switch between circle (ellipse?) and box.  
 
 ## crisper 'historgram' style plotting for slice plots when really zoomed in
 
