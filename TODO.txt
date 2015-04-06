@@ -16,6 +16,8 @@
 
 # Medium high-priority for some future release:
 
+## in min/max control, consider an additional mode_on_new_image of N-sigma above(below) median
+
 ## careful examination of slice plots and whether limits and exact paths across pixels are correct
 
 ## re-consider which color maps to include
@@ -40,14 +42,7 @@ want sensible, don't want garish  (some way to link to the panels?  background c
 
 ## found: problem when auto-loading fits files that typing into curfile/curdir fields is pain in the butt as cursor keep smoving.  think it's an issue in "on_fitsfile_loaded"???
 
-## consider in color panel: convert to using color stretches from astropy.visualization & add more
-
 ## To stats panel:  add ability to choose "recent" selection areas (e.g. switch back and forth between some different areas)
-
-## Allow enabling/disabling of components of SourcePanel at startup
-
-- allow enable/disable of ActiveMQ in SourcePanel at startup (default = off?) 
-- Allow enable/disable of Auto-load file in SourcePanel at startup (default = on?) 
 
 ## Fix bugs "deviceDeltaX" [Y] is deprecated, & continuousScroll is deprecated
 
@@ -74,9 +69,10 @@ Another issue is visibility - how to make it clear to user what one can do?  Tha
 
 # Low priority for some future release:
 
-## implement additional scalings from astropy.io that require some input to setup
+## Allow enabling/disabling of components of SourcePanel at startup
 
-scalings that require inputs & need additional work to implement:  'AsymmetricPercentile', 'ContrastBias', 'HistEq', 'Power',
+- allow enable/disable of ActiveMQ in SourcePanel at startup (default = off?) 
+- Allow enable/disable of Auto-load file in SourcePanel at startup (default = on?) 
 
 ## in source panel, with hiding/showing GUI elements, ideally should have everything dynamically re-arrange
 

@@ -629,11 +629,12 @@ class ZTVFrame(wx.Frame):
         Publisher().subscribe(self.set_norm, "scaling-changed")
         self.scaling = 'Linear'
         self.available_scalings = ['Linear', 'Asinh', 'Log', 'PowerDist', 'Sinh', 'Sqrt', 'Squared']
-        # scalings that require inputs & need additional work to implement:  'AsymmetricPercentile', 'ContrastBias', 'HistEq', 'Power',
+        # scalings that require inputs & need additional work to implement:  
+        #      'AsymmetricPercentile', 'ContrastBias', 'HistEq', 'Power'
+        # don't bother implementing these unless strong case is made they're needed in a way that existing can't satisfy
         self.available_value_modes_on_new_image = ['data-min/max', 'auto', 'constant']
         self.min_value_mode_on_new_image = 'data-min/max'
         self.max_value_mode_on_new_image = 'data-min/max'
-        # TODO:  consider an additional mode_on_new_image of N-sigma above(below) median
         Publisher().subscribe(self._add_activemq_instance, "add_activemq_instance")
         self.activemq_instances_info = {}  # will be dict of dicts of, e.g.:
                                            # {'server':'s1.me.com', 'port':61613, 'destination':'my.queue.name'}
@@ -687,10 +688,18 @@ class ZTVFrame(wx.Frame):
         self.accelerator_table.append((wx.ACCEL_CMD, ord('['), leftarrow_id))
         for n in np.arange(1,10):
             new_id = wx.NewId()
-            self.Bind(wx.EVT_MENU, self.on_cmd_shift_number, id=new_id)
+            self.Bind(wx.EVT_MENU, self.create_on_cmd_alt_number(n), id=new_id)
             self.accelerator_table.append((wx.ACCEL_CMD|wx.ACCEL_ALT, ord(str(n)), new_id))
         self.SetAcceleratorTable(wx.AcceleratorTable(self.accelerator_table))
         self.Show()
+        
+    def create_on_cmd_alt_number(self, n):
+        def on_cmd_alt_number(evt):
+            try:
+                self.controls_notebook.SetSelection(n - 1)
+            except:
+                pass  # if this page # doesn't exist...
+        return on_cmd_alt_number
 
     def kill_ztv(self, *args):
         self.Close()
@@ -700,11 +709,6 @@ class ZTVFrame(wx.Frame):
         new_key = str(server) + ':' + str(port) + ':' + str(destination)
         self.activemq_instances_info[new_key] = {'server':server, 'port':port, 'destination':destination}
         wx.CallAfter(Publisher().sendMessage, "activemq_instances_info-changed", None)
-
-    def on_cmd_shift_number(self, evt):
-          # HEREIAM: TODO
-        sys.stderr.write("TODO: implement switching amongst the available control panels with cmd-alt-#\n")
-        sys.stderr.write("      need to look online how to get the number key pressed back from the passed event\n")
         
     def on_cmd_left_arrow(self, evt):
         self.controls_notebook.SetSelection((self.controls_notebook.GetSelection() - 1) % 
