@@ -17,6 +17,7 @@ from astropy.io import fits
 from astropy import wcs
 from astropy.coordinates import ICRS
 from astropy import units
+import astropy.visualization
  
 import matplotlib
 matplotlib.interactive(True)
@@ -26,7 +27,7 @@ from matplotlib.figure import Figure
 from matplotlib.widgets import AxesWidget
 from matplotlib.patches import Rectangle
 from matplotlib import cm
-from matplotlib.colors import SymLogNorm, Normalize  #  TODO: add PowerNorm once upgraded to matplotlib 1.4
+from matplotlib.colors import Normalize
 
 from .filepicker import FilePicker
 from .fits_header_dialog import FITSHeaderDialog
@@ -415,8 +416,8 @@ class PrimaryImagePanel(wx.Panel):
         if hasattr(self, 'axes_image'):
             if self.axes_image in self.axes.images:
                 self.axes.images.remove(self.axes_image)
-        self.axes_image = self.axes.imshow(self.ztv_frame.display_image, interpolation='Nearest', 
-                                           norm=self.ztv_frame.norm,
+        self.axes_image = self.axes.imshow(self.ztv_frame.normalize(self.ztv_frame.display_image),
+                                           interpolation='Nearest', 
                                            cmap=self.ztv_frame.get_cmap_to_display(), zorder=0)
         clear_ticks_and_frame_from_axes(self.axes)
         self.set_and_get_xy_limits()
@@ -513,8 +514,8 @@ class OverviewImagePanel(wx.Panel):
         if hasattr(self, 'axes_image'):
             if self.axes_image in self.axes.images:
                 self.axes.images.remove(self.axes_image)
-        self.axes_image = self.axes.imshow(self.ztv_frame.display_image, interpolation='Nearest',
-                                           norm=self.ztv_frame.norm,
+        self.axes_image = self.axes.imshow(self.ztv_frame.normalize(self.ztv_frame.display_image), 
+                                           interpolation='Nearest',
                                            cmap=self.ztv_frame.get_cmap_to_display(), zorder=0)
         clear_ticks_and_frame_from_axes(self.axes)
         self.set_xy_limits()
@@ -552,8 +553,8 @@ class LoupeImagePanel(wx.Panel):
         if hasattr(self, 'axes_image'):
             if self.axes_image in self.axes.images:
                 self.axes.images.remove(self.axes_image)
-        self.axes_image = self.axes.imshow(self.ztv_frame.display_image, interpolation='Nearest',
-                                           norm=self.ztv_frame.norm,
+        self.axes_image = self.axes.imshow(self.ztv_frame.normalize(self.ztv_frame.display_image),
+                                           interpolation='Nearest',
                                            cmap=self.ztv_frame.get_cmap_to_display(), zorder=0)
         clear_ticks_and_frame_from_axes(self.axes)
         self.figure.canvas.draw()
@@ -623,13 +624,12 @@ class ZTVFrame(wx.Frame):
         Publisher().subscribe(self.set_clim_to_minmax, "set_clim_to_minmax")
         Publisher().subscribe(self.set_clim_to_auto, "set_clim_to_auto")
         Publisher().subscribe(self.set_clim, "set_clim")
-        self.norm = Normalize(vmin=self.clim[0], vmax=self.clim[1])
         Publisher().subscribe(self.set_scaling, "set_scaling")
         Publisher().subscribe(self.set_norm, "clim-changed")
         Publisher().subscribe(self.set_norm, "scaling-changed")
         self.scaling = 'Linear'
-        self.available_scalings = ['Linear', 'Log']  # TODO:  add 'PowerNorm' to this list once upgraded to matplotlib 1.4
-        # TODO: implement additional parameters on scaling, e.g. gamma for PowerNorm
+        self.available_scalings = ['Linear', 'Asinh', 'Log', 'PowerDist', 'Sinh', 'Sqrt', 'Squared']
+        # scalings that require inputs & need additional work to implement:  'AsymmetricPercentile', 'ContrastBias', 'HistEq', 'Power',
         self.available_value_modes_on_new_image = ['data-min/max', 'auto', 'constant']
         self.min_value_mode_on_new_image = 'data-min/max'
         self.max_value_mode_on_new_image = 'data-min/max'
@@ -794,13 +794,12 @@ class ZTVFrame(wx.Frame):
         self.set_clim([auto_clim[0], auto_clim[1]])
 
     def set_norm(self, *args):
-        if self.scaling == 'Linear':
-            self.norm = Normalize(vmin=self.clim[0], vmax=self.clim[1])
-        elif self.scaling == 'Log':
-            # TODO: figure out some algorithm for guessing at a reasonable linthresh
-            self.norm = SymLogNorm(linthresh=1.0, vmin=self.clim[0], vmax=self.clim[1])
-        # TODO:  add PowerNorm scaling once upgraded to matplotlib 1.4 & think about some way of setting gamma parameter
+        self._norm = Normalize(vmin=self.clim[0], vmax=self.clim[1])
+        self._scaling = eval('astropy.visualization.' + self.scaling + 'Stretch()')
         wx.CallAfter(Publisher().sendMessage, "redraw_image", None)
+
+    def normalize(self, im):
+        return self._scaling(self._norm(self.display_image))
 
     def set_scaling(self, msg):
         if isinstance(msg, Message):
