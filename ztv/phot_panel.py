@@ -186,6 +186,7 @@ class PhotPanel(wx.Panel):
 
         self.SetSizer(v_sizer1)
         Publisher().subscribe(self.update_phot_xy, "new_phot_xy")
+        Publisher().subscribe(self.recalc_phot, "redraw_image")
 
     def on_clear_button(self, evt):
         if self.star_center_patch is not None:
@@ -250,7 +251,7 @@ class PhotPanel(wx.Panel):
         self.xclicked, self.yclicked = x,y
         self.recalc_phot()
         
-    def recalc_phot(self):
+    def recalc_phot(self, msg=None):
         self.xclicked_textctrl.SetValue("{:8.2f}".format(self.xclicked))
         self.yclicked_textctrl.SetValue("{:8.2f}".format(self.yclicked))
         self.xcentroid,self.ycentroid = centroid(self.ztv_frame.display_image, self.xclicked, self.yclicked)

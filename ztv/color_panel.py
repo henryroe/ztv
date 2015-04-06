@@ -14,6 +14,8 @@ class ColorPanel(wx.Panel):
         self.cmap_to_eventID = {self.eventID_to_cmap[x]: x for x in self.eventID_to_cmap}
 
         v_sizer1 = wx.BoxSizer(wx.VERTICAL)
+        v_sizer1.AddSpacer((0, 0), 1, wx.EXPAND)
+
         values_sizer = wx.FlexGridSizer( 3, 5, 0, 0 )
         values_sizer.SetFlexibleDirection( wx.BOTH )
         values_sizer.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
@@ -122,7 +124,7 @@ class ColorPanel(wx.Panel):
         self.Bind(wx.EVT_CHOICE, self.on_choose_scaling, self.choose_scaling)
         cmap_sizer.Add(cmap_options_sizer, 0)
         v_sizer1.Add(cmap_sizer, 0)
-        v_sizer1.AddSpacer((0, 0), 0, wx.EXPAND)
+        v_sizer1.AddSpacer((0, 0), 1, wx.EXPAND)
         self.SetSizer(v_sizer1)
         self.last_minval_string = ''
         self.last_maxval_string = ''
