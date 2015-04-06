@@ -1,4 +1,4 @@
-
+import sys
 
 class ImageProcessAction():
     def __init__(self, math_function, x2):
@@ -17,5 +17,8 @@ class ImageProcessAction():
         self.math_function = math_function
         self.x2 = x2
     def __call__(self, x1):
+        if x1.shape != self.x2.shape:
+            sys.stderr.write("Warning: image process action not performed because shapes of arrays do not match")
+            return x1
         return self.math_function(x1, self.x2)
 
