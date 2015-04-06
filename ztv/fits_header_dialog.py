@@ -11,6 +11,7 @@ class FITSHeaderDialog(wx.Dialog):
             self.CenterOnScreen(wx.BOTH)
         self.cur_selection = (0, 0)
         self.raw_header_str = raw_header_str
+        self.raw_header_str_lower = raw_header_str.lower()
         self.text = text = wx.TextCtrl(self, -1, raw_header_str, style=wx.TE_MULTILINE | wx.TE_READONLY)
 
         font1 = wx.Font(12, wx.FONTFAMILY_MODERN, wx.NORMAL, wx.FONTWEIGHT_LIGHT, False)
@@ -49,22 +50,24 @@ class FITSHeaderDialog(wx.Dialog):
         self.text.SetSelection(self.cur_selection[0], self.cur_selection[1])
 
     def on_search(self, evt):
-        search_str = self.search.GetValue()
+        # search case-agnostic by converting everything to lower
+        search_str = self.search.GetValue().lower()
         if search_str != "":
-            if search_str in self.raw_header_str:
+            if search_str in self.raw_header_str_lower:
                 if search_str != self.last_search_str:
                     self.last_find_index = 0
-                pos0 = self.raw_header_str.find(search_str, self.last_find_index)
+                pos0 = self.raw_header_str_lower.find(search_str, self.last_find_index)
                 if pos0 == -1:
-                    pos0 = self.raw_header_str.find(search_str)
+                    pos0 = self.raw_header_str_lower.find(search_str)
                 if pos0 - 80 < 0:
                     start_selection = 0
                 else:
-                    start_selection = self.raw_header_str.find('\n', pos0 - 80) + 1
+                    start_selection = self.raw_header_str_lower.find('\n', pos0 - 80) + 1
                 self.cur_selection = (start_selection,
-                                      self.raw_header_str.find('\n', pos0))
+                                      self.raw_header_str_lower.find('\n', pos0))
                 self.set_cur_selection()
-                self.last_find_index = self.raw_header_str.find('\n', pos0)
+                self.last_find_index = self.raw_header_str_lower.find('\n', pos0)
                 self.last_search_str = search_str
         else:
             self.last_search_str = ''
+

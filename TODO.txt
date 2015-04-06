@@ -1,10 +1,19 @@
 # URGENT - before next release
 
-## Work through lots of example fits file inputs and make reading more robust, e.g. barfing on nirspec and pharo data currently
+## Write up 'motivation' document referring back to atv (and to ds9 etc etc)
 
 
 
 # Desirable before next release
+
+## move fake_fits_maker.py into an example control panel
+
+## think through colors of cursor boxes etc and making them make some sort of justifiable sense
+
+## some basic implementation of 3-d images, at least reading in from fits files
+
+
+# Medium high-priority for some future release:
 
 ## careful examination of slice plots and whether limits and exact paths across pixels are correct
 
@@ -13,15 +22,6 @@
 [based on:](https://jakevdp.github.io/blog/2014/10/16/how-bad-is-your-colormap/)
 
 ## better document ActiveMQ usage/example/etc
-
-## move fake_fits_maker.py into an example control panel
-
-## Write up 'motivation' document referring back to atv (and to ds9 etc etc)
-
-## think through colors of cursor boxes etc and making them make some sort of justifiable sense
-
-
-# Medium high-priority for some future release:
 
 ## add keyboard shortcuts to line/column plots (x/l and y/c) in plot mode
 
@@ -36,12 +36,6 @@ want sensible, don't want garish  (some way to link to the panels?  background c
 ## better 'auto' algorithm for min/max determination
 
 ## ability to do masked numpy arrays with different color value for masked positions
-
-## in "Show FITS header" search box is using strict capitalization - Should it allow sloppy capitalization?
-
-## Make which control panels are loaded optional, including a 'default' group.
-
-See ztv.ControlPanels class.
 
 ## found: problem when auto-loading fits files that typing into curfile/curdir fields is pain in the butt as cursor keep smoving.  think it's an issue in "on_fitsfile_loaded"???
 
