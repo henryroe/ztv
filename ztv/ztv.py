@@ -685,6 +685,10 @@ class ZTVFrame(wx.Frame):
         leftarrow_id = wx.NewId()
         self.Bind(wx.EVT_MENU, self.on_cmd_left_arrow, id=leftarrow_id)
         self.accelerator_table.append((wx.ACCEL_CMD, ord('['), leftarrow_id))
+        for n in np.arange(1,10):
+            new_id = wx.NewId()
+            self.Bind(wx.EVT_MENU, self.on_cmd_shift_number, id=new_id)
+            self.accelerator_table.append((wx.ACCEL_CMD|wx.ACCEL_ALT, ord(str(n)), new_id))
         self.SetAcceleratorTable(wx.AcceleratorTable(self.accelerator_table))
         self.Show()
 
@@ -697,6 +701,11 @@ class ZTVFrame(wx.Frame):
         self.activemq_instances_info[new_key] = {'server':server, 'port':port, 'destination':destination}
         wx.CallAfter(Publisher().sendMessage, "activemq_instances_info-changed", None)
 
+    def on_cmd_shift_number(self, evt):
+          # HEREIAM: TODO
+        sys.stderr.write("TODO: implement switching amongst the available control panels with cmd-alt-#\n")
+        sys.stderr.write("      need to look online how to get the number key pressed back from the passed event\n")
+        
     def on_cmd_left_arrow(self, evt):
         self.controls_notebook.SetSelection((self.controls_notebook.GetSelection() - 1) % 
                                             (max(self.controls_notebook.panel_id_to_name) + 1))
