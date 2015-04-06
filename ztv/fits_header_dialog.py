@@ -43,12 +43,11 @@ class FITSHeaderDialog(wx.Dialog):
         self.Bind(wx.EVT_CLOSE, self.on_close)
         new_id = wx.NewId()
         self.Bind(wx.EVT_MENU, self.on_cmd_w, id=new_id)
-        self.SetAcceleratorTable(wx.AcceleratorTable([(wx.ACCEL_CMD, ord(str(w)), new_id)]))
+        self.SetAcceleratorTable(wx.AcceleratorTable([(wx.ACCEL_CMD, ord(str('w')), new_id)]))
 
     def on_cmd_w(self, evt):
-        pass
-        # TODO: Need to figure out how to close dialog
-        # self.on_close(None)
+        self.is_dialog_still_open = False
+        self.Close()
 
     def on_close(self, evt):
         self.is_dialog_still_open = False
