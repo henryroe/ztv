@@ -156,13 +156,10 @@ class StatsPanel(wx.Panel):
                                            wx.TE_PROCESS_ENTER)
         self.minval_textctrl.SetFont(textentry_font)
         values_sizer.Add(self.minval_textctrl, 0, wx.ALL, 2)
-        # TODO: uncomment minpos & write code to fill in with, e.g.   100, 100  (for single min)
-        #       or:   (100, 100), (100, 101)...   for multi-min
-#         self.minpos_textctrl = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize,
-#                                            wx.TE_PROCESS_ENTER)
-#         self.minpos_textctrl.SetFont(textentry_font)
-#         values_sizer.Add(self.minpos_textctrl, 0, wx.ALL, 2)
-        values_sizer.AddSpacer((0,0), 0, wx.EXPAND)
+        self.minpos_textctrl = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize,
+                                           wx.TE_PROCESS_ENTER)
+        self.minpos_textctrl.SetFont(textentry_font)
+        values_sizer.Add(self.minpos_textctrl, 0, wx.ALL, 2)
         values_sizer.AddSpacer((0,0), 0, wx.EXPAND)
 
         values_sizer.AddSpacer((0,0), 0, wx.EXPAND)
@@ -173,13 +170,10 @@ class StatsPanel(wx.Panel):
                                            wx.TE_PROCESS_ENTER)
         self.maxval_textctrl.SetFont(textentry_font)
         values_sizer.Add(self.maxval_textctrl, 0, wx.ALL, 2)
-        # TODO: uncomment maxpos & write code to fill in with, e.g.   100, 100  (for single max)
-        #       or:   (100, 100), (100, 101)...   for multi-max
-#         self.maxpos_textctrl = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize,
-#                                            wx.TE_PROCESS_ENTER)
-#         self.maxpos_textctrl.SetFont(textentry_font)
-#         values_sizer.Add(self.maxpos_textctrl, 0, wx.ALL, 2)
-        values_sizer.AddSpacer((0,0), 0, wx.EXPAND)   
+        self.maxpos_textctrl = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize,
+                                           wx.TE_PROCESS_ENTER)
+        self.maxpos_textctrl.SetFont(textentry_font)
+        values_sizer.Add(self.maxpos_textctrl, 0, wx.ALL, 2)
              
         self.clear_button = wx.Button(self, wx.ID_ANY, u"Clear", wx.DefaultPosition, wx.DefaultSize, 0)
         values_sizer.Add(self.clear_button, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL, 2)
@@ -223,6 +217,8 @@ class StatsPanel(wx.Panel):
             self.robust_stdev_textctrl.SetValue('')
             self.minval_textctrl.SetValue('')
             self.maxval_textctrl.SetValue('')
+            self.minpos_textctrl.SetValue('')
+            self.maxpos_textctrl.SetValue('')
             self.set_textctrl_background_color(self.x0_textctrl, 'ok')
             self.set_textctrl_background_color(self.x1_textctrl, 'ok')
             self.set_textctrl_background_color(self.xsize_textctrl, 'ok')
@@ -264,6 +260,16 @@ class StatsPanel(wx.Panel):
             self.robust_stdev_textctrl.SetValue("{:0.4g}".format(robust_stdev))
             self.minval_textctrl.SetValue("{:0.4g}".format(stats_data.min()))
             self.maxval_textctrl.SetValue("{:0.4g}".format(stats_data.max()))
+            wmin = np.where(stats_data == stats_data.min())
+            wmin = [(wmin[1][i] + x0,wmin[0][i] + y0) for i in np.arange(wmin[0].size)]
+            if len(wmin) == 1:
+                wmin = wmin[0]
+            self.minpos_textctrl.SetValue("{}".format(wmin))
+            wmax = np.where(stats_data == stats_data.max())
+            wmax = [(wmax[1][i] + x0,wmax[0][i] + y0) for i in np.arange(wmax[0].size)]
+            if len(wmax) == 1:
+                wmax = wmax[0]
+            self.maxpos_textctrl.SetValue("{}".format(wmax))
         
     def on_navigation_key(self, evt):
         # TODO: figure out how to make tab order work the way I want.  Currently the following code works partly, but is ignored by some tabs.  Weird. Looks like it's an issue that tab is triggering some *other* event when it's a button that has focus.  Might have to play around with catching all key-presses inside of ColorControlPanel & passing along the non-tab keypresses???
