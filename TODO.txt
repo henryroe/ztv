@@ -74,6 +74,8 @@ Another issue is visibility - how to make it clear to user what one can do?  Tha
 
 # Low priority for some future release:
 
+## in stats panel:  tabbing through textctrl's doesn't loop around at the end
+
 ## Allow enabling/disabling of components of SourcePanel at startup
 
 - allow enable/disable of ActiveMQ in SourcePanel at startup (default = off?) 

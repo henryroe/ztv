@@ -2,7 +2,7 @@ import wx
 from wx.lib.pubsub import Publisher
 from matplotlib import cm
 import numpy as np
-
+from .ztv_lib import force_textctrl_color_update, set_textctrl_background_color, validate_textctrl_str
 
 class ColorPanel(wx.Panel):
     def __init__(self, parent):
@@ -12,6 +12,7 @@ class ColorPanel(wx.Panel):
         self.SetSizeHintsSz( wx.Size( 1024,512 ), wx.DefaultSize )
         self.eventID_to_cmap = {wx.NewId(): x for x in self.ztv_frame.available_cmaps}
         self.cmap_to_eventID = {self.eventID_to_cmap[x]: x for x in self.eventID_to_cmap}
+        self.last_string_values = {'minval':'', 'maxval':''}
 
         v_sizer1 = wx.BoxSizer(wx.VERTICAL)
         v_sizer1.AddSpacer((0, 0), 1, wx.EXPAND)
@@ -126,8 +127,6 @@ class ColorPanel(wx.Panel):
         v_sizer1.Add(cmap_sizer, 0)
         v_sizer1.AddSpacer((0, 0), 1, wx.EXPAND)
         self.SetSizer(v_sizer1)
-        self.last_minval_string = ''
-        self.last_maxval_string = ''
         Publisher().subscribe(self.on_clim_changed, "clim-changed")
         Publisher().subscribe(self.on_cmap_changed, "cmap-changed")
         Publisher().subscribe(self.on_is_cmap_inverted_changed, "is_cmap_inverted-changed")
@@ -248,90 +247,39 @@ class ColorPanel(wx.Panel):
         if self.FindFocus() == self.maxval_textctrl:
             self.maxval_textctrl.SetSelection(-1, -1)
 
-    def force_textctrl_color_update(self, textctrl):
-        cur_focused_item = self.FindFocus()
-        insertion_point = textctrl.GetInsertionPoint()
-        self.set_max_button.SetFocus()  # need to shift focus away & then back to force color update in GUI
-        textctrl.SetFocus()
-        textctrl.SetInsertionPoint(insertion_point)
-        if cur_focused_item is not None:
-            cur_focused_item.SetFocus()
-
-    def set_textctrl_background_color(self, textctrl_name, mode, tooltip=None):
-        if mode == 'ok':
-            color = (255,255,255)
-        elif mode == 'enter-needed':
-            color = (200,255,200)
-        elif mode == 'invalid':
-            # TODO:  implement: escape key brings up last valid value??
-            color = (255,200,200)
-        if textctrl_name == 'minval':
-            cur_textctrl = self.minval_textctrl
-        elif textctrl_name == 'maxval':
-            cur_textctrl = self.maxval_textctrl
-        cur_textctrl.SetBackgroundColour(color)
-        cur_textctrl.Refresh()
-        if tooltip is not None and not isinstance(tooltip, wx.ToolTip):
-            tooltip = wx.ToolTip(tooltip)
-        cur_textctrl.SetToolTip(tooltip)
-        self.force_textctrl_color_update(cur_textctrl)
-
     def on_clim_changed(self, *args):
         new_minval_str = "{: .9g}".format(self.ztv_frame.clim[0])
         new_maxval_str = "{: .9g}".format(self.ztv_frame.clim[1])
-        if new_minval_str != self.last_minval_string:
+        if new_minval_str != self.last_string_values['minval']:
             self.minval_textctrl.SetValue(new_minval_str)
-            self.set_textctrl_background_color('minval', 'ok')
-            self.last_minval_string = new_minval_str
-        if new_maxval_str != self.last_maxval_string:
+            set_textctrl_background_color(self.minval_textctrl, 'ok')
+            self.last_string_values['minval'] = new_minval_str
+            force_textctrl_color_update(self.minval_textctrl)
+        if new_maxval_str != self.last_string_values['maxval']:
             self.maxval_textctrl.SetValue(new_maxval_str)
-            self.set_textctrl_background_color('maxval', 'ok')
-            self.last_maxval_string = new_maxval_str
+            set_textctrl_background_color(self.maxval_textctrl, 'ok')
+            self.last_string_values['maxval'] = new_maxval_str
+            force_textctrl_color_update(self.maxval_textctrl)
 
     def on_cmap_changed(self, *args):
         self.cmap_button.SetBitmap(self.cmap_button_bitmaps[self.ztv_frame.cmap])
         self.cmap_button.SetLabel(self.ztv_frame.cmap)
 
-    def validate_minval_str(self):
-        try:
-            newval = float(self.minval_textctrl.GetValue())
-            if self.minval_textctrl.GetValue() == self.last_minval_string:
-                self.set_textctrl_background_color('minval', 'ok')
-            else:
-                self.set_textctrl_background_color('minval', 'enter-needed',
-                                                   'Press enter in this field to set new minimum value')
-            return True
-        except ValueError:
-            self.set_textctrl_background_color('minval', 'invalid', 'Entry cannot be converted to float')
-            return False
-
     def minval_textctrl_changed(self, evt):
-        self.validate_minval_str()
+        validate_textctrl_str(self.minval_textctrl, float, self.last_string_values['minval'])
 
     def minval_textctrl_entered(self, evt):
-        if self.validate_minval_str():
-            self.last_minval_string = self.minval_textctrl.GetValue()
+        if validate_textctrl_str(self.minval_textctrl, float, self.last_string_values['minval']):
+            self.last_string_values['minval'] = self.minval_textctrl.GetValue()
             self.ztv_frame.set_clim([float(self.minval_textctrl.GetValue()), None])
             self.minval_textctrl.SetSelection(-1, -1)
 
-    def validate_maxval_str(self):
-        try:
-            newval = float(self.maxval_textctrl.GetValue())
-            if self.maxval_textctrl.GetValue() == self.last_maxval_string:
-                self.set_textctrl_background_color('maxval', 'ok')
-            else:
-                self.set_textctrl_background_color('maxval', 'enter-needed',
-                                                   'Press enter in this field to set new maximum value')
-            return True
-        except ValueError:
-            self.set_textctrl_background_color('maxval', 'invalid', 'Entry cannot be converted to float')
-            return False
-
     def maxval_textctrl_changed(self, evt):
-        self.validate_maxval_str()
+        validate_textctrl_str(self.maxval_textctrl, float, self.last_string_values['maxval'])
 
     def maxval_textctrl_entered(self, evt):
-        if self.validate_maxval_str():
+        if validate_textctrl_str(self.maxval_textctrl, float, self.last_string_values['maxval']):
+            self.last_string_values['maxval'] = self.maxval_textctrl.GetValue()
             self.ztv_frame.set_clim([None, float(self.maxval_textctrl.GetValue())])
             self.maxval_textctrl.SetSelection(-1, -1)
 

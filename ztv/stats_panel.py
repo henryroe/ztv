@@ -4,7 +4,7 @@ from matplotlib import cm
 import numpy as np
 from astropy.stats import sigma_clipped_stats
 import sys
-from .ztv_lib import force_textctrl_color_update, set_textctrl_background_color, validate_textctrl_str
+from .ztv_lib import set_textctrl_background_color, validate_textctrl_str
 
 class StatsPanel(wx.Panel):
     def __init__(self, parent):
