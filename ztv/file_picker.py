@@ -122,8 +122,6 @@ class FilePicker(wx.Panel):
         self.current_textctrl_SetValue(new_entry)
         self.prepend_to_history(new_entry)
         cur_history = self.update_recent_choice()
-        sys.stderr.write("\n\nnew_entry = {}\n\n".format(new_entry))
-        sys.stderr.write("\n\ncur_history = {}\n\n".format(cur_history))
         self.recent_choice.SetSelection(cur_history.index(new_entry))
 
     def update_recent_choice(self):
