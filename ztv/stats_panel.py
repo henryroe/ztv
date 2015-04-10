@@ -4,6 +4,7 @@ from matplotlib import cm
 import numpy as np
 from astropy.stats import sigma_clipped_stats
 import sys
+from .ztv_lib import force_textctrl_color_update, set_textctrl_background_color, validate_textctrl_str
 
 class StatsPanel(wx.Panel):
     def __init__(self, parent):
@@ -219,12 +220,12 @@ class StatsPanel(wx.Panel):
             self.maxval_textctrl.SetValue('')
             self.minpos_textctrl.SetValue('')
             self.maxpos_textctrl.SetValue('')
-            self.set_textctrl_background_color(self.x0_textctrl, 'ok')
-            self.set_textctrl_background_color(self.x1_textctrl, 'ok')
-            self.set_textctrl_background_color(self.xsize_textctrl, 'ok')
-            self.set_textctrl_background_color(self.y0_textctrl, 'ok')
-            self.set_textctrl_background_color(self.y1_textctrl, 'ok')
-            self.set_textctrl_background_color(self.ysize_textctrl, 'ok')
+            set_textctrl_background_color(self.x0_textctrl, 'ok')
+            set_textctrl_background_color(self.x1_textctrl, 'ok')
+            set_textctrl_background_color(self.xsize_textctrl, 'ok')
+            set_textctrl_background_color(self.y0_textctrl, 'ok')
+            set_textctrl_background_color(self.y1_textctrl, 'ok')
+            set_textctrl_background_color(self.ysize_textctrl, 'ok')
         else:
             if x0 > x1:
                 x0,x1 = x1,x0
@@ -287,67 +288,24 @@ class StatsPanel(wx.Panel):
 #         sys.stderr.write("\n\nnew_focus = {}\n\n".format(new_focus))
         new_focus.SetFocus()
 
-    def force_textctrl_color_update(self, textctrl):
-        cur_focused_item = self.FindFocus()
-        insertion_point = textctrl.GetInsertionPoint()
-        self.mean_textctrl.SetFocus()  # need to shift focus away & then back to force color update in GUI
-        textctrl.SetFocus()
-        textctrl.SetInsertionPoint(insertion_point)
-        if cur_focused_item is not None:
-            cur_focused_item.SetFocus()
-
-    def set_textctrl_background_color(self, textctrl, mode, tooltip=None):
-        if mode == 'ok':
-            color = (255,255,255)
-        elif mode == 'enter-needed':
-            color = (200,255,200)
-        elif mode == 'invalid':
-            # TODO:  implement: escape key brings up last valid value??
-            color = (255,200,200)
-        textctrl.SetBackgroundColour(color)
-        textctrl.Refresh()
-        if tooltip is not None and not isinstance(tooltip, wx.ToolTip):
-            tooltip = wx.ToolTip(tooltip)
-        textctrl.SetToolTip(tooltip)
-        self.force_textctrl_color_update(textctrl)
-
-    def validate_textctrl_str(self, textctrl, validate_fxn, last_value):
-        """
-        can accept arbitrary functions in validate_fxn.  They just need to raise a ValueError if
-        they don't like the input.
-        """
-        try:
-            newval = validate_fxn(textctrl.GetValue())
-            if textctrl.GetValue() == last_value:
-                self.set_textctrl_background_color(textctrl, 'ok')
-            else:
-                self.set_textctrl_background_color(textctrl, 'enter-needed',
-                                                   'Press enter in this field to set new minimum value')
-            return True
-        except ValueError:
-            # TODO: figure out some (clever?) way of having validate_fxn give info about itself that is more useful in the following error tooltip message
-            self.set_textctrl_background_color(textctrl, 'invalid', 
-                                               'Entry cannot be converted to {}'.format(str(validate_fxn)))
-            return False
-
     def x0_textctrl_changed(self, evt):
-        self.validate_textctrl_str(self.x0_textctrl, int, self.last_string_values['x0'])
+        validate_textctrl_str(self.x0_textctrl, int, self.last_string_values['x0'])
 
     def x0_textctrl_entered(self, evt):
         if self.ztv_frame.primary_image_panel.stats_rect is None:
             return # TODO: some day allow manually typing in range values instead of requiring clicking to start a stats box
-        if self.validate_textctrl_str(self.x0_textctrl, int, self.last_string_values['x0']):
+        if validate_textctrl_str(self.x0_textctrl, int, self.last_string_values['x0']):
             self.last_string_values['x0'] = self.x0_textctrl.GetValue()
             self.ztv_frame.primary_image_panel.update_stats_box(int(self.last_string_values['x0']), None, None, None)
             self.x0_textctrl.SetSelection(-1, -1)
 
     def xsize_textctrl_changed(self, evt):
-        self.validate_textctrl_str(self.xsize_textctrl, int, self.last_string_values['xsize'])
+        validate_textctrl_str(self.xsize_textctrl, int, self.last_string_values['xsize'])
 
     def xsize_textctrl_entered(self, evt):
         if self.ztv_frame.primary_image_panel.stats_rect is None:
             return # TODO: some day allow manually typing in range values instead of requiring clicking to start a stats box
-        if self.validate_textctrl_str(self.xsize_textctrl, int, self.last_string_values['xsize']):
+        if validate_textctrl_str(self.xsize_textctrl, int, self.last_string_values['xsize']):
             self.last_string_values['xsize'] = self.xsize_textctrl.GetValue()
             xsize = int(self.last_string_values['xsize'])
             x0,y0,x1,y1 = self.get_x0y0x1y1_from_stats_rect()
@@ -358,34 +316,34 @@ class StatsPanel(wx.Panel):
             self.xsize_textctrl.SetSelection(-1, -1)
 
     def x1_textctrl_changed(self, evt):
-        self.validate_textctrl_str(self.x1_textctrl, int, self.last_string_values['x1'])
+        validate_textctrl_str(self.x1_textctrl, int, self.last_string_values['x1'])
 
     def x1_textctrl_entered(self, evt):
         if self.ztv_frame.primary_image_panel.stats_rect is None:
             return # TODO: some day allow manually typing in range values instead of requiring clicking to start a stats box
-        if self.validate_textctrl_str(self.x1_textctrl, int, self.last_string_values['x1']):
+        if validate_textctrl_str(self.x1_textctrl, int, self.last_string_values['x1']):
             self.last_string_values['x1'] = self.x1_textctrl.GetValue()
             self.ztv_frame.primary_image_panel.update_stats_box(None, None, int(self.last_string_values['x1']), None)
             self.x1_textctrl.SetSelection(-1, -1)
 
     def y0_textctrl_changed(self, evt):
-        self.validate_textctrl_str(self.y0_textctrl, int, self.last_string_values['y0'])
+        validate_textctrl_str(self.y0_textctrl, int, self.last_string_values['y0'])
 
     def y0_textctrl_entered(self, evt):
         if self.ztv_frame.primary_image_panel.stats_rect is None:
             return # TODO: some day allow manually typing in range values instead of requiring clicking to start a stats box
-        if self.validate_textctrl_str(self.y0_textctrl, int, self.last_string_values['y0']):
+        if validate_textctrl_str(self.y0_textctrl, int, self.last_string_values['y0']):
             self.last_string_values['y0'] = self.y0_textctrl.GetValue()
             self.ztv_frame.primary_image_panel.update_stats_box(None, int(self.last_string_values['y0']), None, None)
             self.y0_textctrl.SetSelection(-1, -1)
 
     def ysize_textctrl_changed(self, evt):
-        self.validate_textctrl_str(self.ysize_textctrl, int, self.last_string_values['ysize'])
+        validate_textctrl_str(self.ysize_textctrl, int, self.last_string_values['ysize'])
 
     def ysize_textctrl_entered(self, evt):
         if self.ztv_frame.primary_image_panel.stats_rect is None:
             return # TODO: some day allow manually typing in range values instead of requiring clicking to start a stats box
-        if self.validate_textctrl_str(self.ysize_textctrl, int, self.last_string_values['ysize']):
+        if validate_textctrl_str(self.ysize_textctrl, int, self.last_string_values['ysize']):
             self.last_string_values['ysize'] = self.ysize_textctrl.GetValue()
             ysize = int(self.last_string_values['ysize'])
             x0,y0,x1,y1 = self.get_x0y0x1y1_from_stats_rect()
@@ -396,12 +354,12 @@ class StatsPanel(wx.Panel):
             self.ysize_textctrl.SetSelection(-1, -1)
 
     def y1_textctrl_changed(self, evt):
-        self.validate_textctrl_str(self.y1_textctrl, int, self.last_string_values['y1'])
+        validate_textctrl_str(self.y1_textctrl, int, self.last_string_values['y1'])
 
     def y1_textctrl_entered(self, evt):
         if self.ztv_frame.primary_image_panel.stats_rect is None:
             return # TODO: some day allow manually typing in range values instead of requiring clicking to start a stats box
-        if self.validate_textctrl_str(self.y1_textctrl, int, self.last_string_values['y1']):
+        if validate_textctrl_str(self.y1_textctrl, int, self.last_string_values['y1']):
             self.last_string_values['y1'] = self.y1_textctrl.GetValue()
             self.ztv_frame.primary_image_panel.update_stats_box(None, None, None, int(self.last_string_values['y1']))
             self.y1_textctrl.SetSelection(-1, -1)

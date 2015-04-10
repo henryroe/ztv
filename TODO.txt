@@ -19,6 +19,10 @@
 
 ## think through colors of cursor boxes etc and making them make some sort of justifiable sense
 
+## in stats panel, should be able to enter just numbers (without first clicking/dragging a stats box) and it activates once enough info is specified
+
+## in stats panel, each editing of range step should make sense by itself.  not follow history.  e.g. xlow=1, xlow=3432, xlow=1
+
 ## in min/max control, consider an additional mode_on_new_image of N-sigma above(below) median
 
 ## careful examination of slice plots and whether limits and exact paths across pixels are correct
@@ -112,8 +116,6 @@ need to think through how circle defined - click cneter and drag out?  Confined 
 ## Consider re-vamping method of monitoring for new/changed FITS files on disk
 
 [e.g. see](https://github.com/joh/when-changed)
-
-## in filepicker: fix where checkmark is in recent/history popupmenu list when there's a maintain-default.
 
 ## fix that ctrl-c in ipython is killing ztv gui, even when run via a separate process with ztv_api
 
