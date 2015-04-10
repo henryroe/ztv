@@ -23,7 +23,7 @@ class ColorPanel(wx.Panel):
 
         self.minval_static_text = wx.StaticText( self, wx.ID_ANY, u"Min", wx.DefaultPosition, wx.DefaultSize, 0 )
         self.minval_static_text.Wrap( -1 )
-        values_sizer.Add(self.minval_static_text, 0, wx.ALL, 0)
+        values_sizer.Add(self.minval_static_text, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL, 0)
 
         textentry_font = wx.Font(14, wx.FONTFAMILY_MODERN, wx.NORMAL, wx.FONTWEIGHT_LIGHT, False)
 
@@ -77,7 +77,7 @@ class ColorPanel(wx.Panel):
 
         maxval_static_text = wx.StaticText( self, wx.ID_ANY, u"Max", wx.DefaultPosition, wx.DefaultSize, 0 )
         maxval_static_text.Wrap( -1 )
-        values_sizer.Add(maxval_static_text, 0, wx.ALL, 2)
+        values_sizer.Add(maxval_static_text, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL, 2)
 
         self.maxval_textctrl = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize,
                                            wx.TE_PROCESS_ENTER)
