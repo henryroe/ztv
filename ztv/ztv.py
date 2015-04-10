@@ -600,7 +600,6 @@ class ZTVFrame(wx.Frame):
         Publisher().subscribe(self.load_default_image, "load_default_image")
         self.cur_fitsfile_basename = ''
         self.cur_fitsfile_path = ''
-        self.default_image_loaded = False
         self.autoload_mode = None # other options are "file-match" and "activemq-stream"
         # TODO:  implement autoloading based on self.autoload_mode
         self.autoload_pausetime_choices = [0.1, 0.5, 1, 2, 5, 10]
@@ -845,15 +844,15 @@ class ZTVFrame(wx.Frame):
         if image.ndim != 2:
             sys.stderr.write("Currently only support numpy arrays of 2-d; tried to load a {}-d numpy array".format(image.ndim))
         else:
+            need_to_reset_zoom_and_center = False
+            if image.shape != self.raw_image.shape:
+                need_to_reset_zoom_and_center = True
             self.raw_image = image  
             self.image_radec = None
-            # TODO:  do we want the next line uncommented?  issue:  in some very manual cases (i'm looking at a sequence of manually loaded disparate images, I probably do want reset_zoom_and_center.  BUT, when autoloading fits files from disk or listening to an activemq stream, I distinctly do NOT want to call reset_zoom_and_center.  Could create a parameter to control whether is called, but may be easier to just never call.  Think about it.
-#             self.primary_image_panel.reset_zoom_and_center()
             self.cur_fitsfile_basename = ''
             self.redisplay_image()
-            if self.default_image_loaded:  # last image loaded was the default, so:
+            if need_to_reset_zoom_and_center:
                 self.primary_image_panel.reset_zoom_and_center()
-            self.default_image_loaded = False
 
     def load_hdulist_from_fitsfile(self, filename):
         """
@@ -912,7 +911,6 @@ class ZTVFrame(wx.Frame):
     def load_default_image(self, *args):
         self.load_numpy_array(self.get_default_image())
         self.primary_image_panel.reset_zoom_and_center()
-        self.default_image_loaded = True
 
     def kill_autoload_filematch_thread(self):
         if self.autoload_filematch_thread is not None:
