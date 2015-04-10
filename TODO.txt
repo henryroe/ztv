@@ -8,13 +8,16 @@
 
 ## move fake_fits_maker.py into an example control panel
 
-## think through colors of cursor boxes etc and making them make some sort of justifiable sense
+- including better document ActiveMQ usage/example/etc
+- think through what info should ztv pull from activemq msg to then display in self.SetTitle of main frame?
 
 ## some basic implementation of 3-d images, at least reading in from fits files
 
 
 
 # Medium high-priority for some future release:
+
+## think through colors of cursor boxes etc and making them make some sort of justifiable sense
 
 ## in min/max control, consider an additional mode_on_new_image of N-sigma above(below) median
 
@@ -23,8 +26,6 @@
 ## re-consider which color maps to include
 
 [based on:](https://jakevdp.github.io/blog/2014/10/16/how-bad-is-your-colormap/)
-
-## better document ActiveMQ usage/example/etc
 
 ## add keyboard shortcuts to line/column plots (x/l and y/c) in plot mode
 
@@ -111,6 +112,8 @@ need to think through how circle defined - click cneter and drag out?  Confined 
 ## Consider re-vamping method of monitoring for new/changed FITS files on disk
 
 [e.g. see](https://github.com/joh/when-changed)
+
+## in filepicker: fix where checkmark is in recent/history popupmenu list when there's a maintain-default.
 
 ## fix that ctrl-c in ipython is killing ztv gui, even when run via a separate process with ztv_api
 

@@ -591,8 +591,10 @@ class ZTVFrame(wx.Frame):
     # TODO: create __init__ input parameters for essentially every adjustable parameter
     def __init__(self, title=None, launch_listen_thread=False):
         if title is None:
-            title = 'ztv'
-        wx.Frame.__init__(self, None, title=title, pos=wx.DefaultPosition, size=wx.Size(1024,512),
+            self.base_title = 'ztv'
+        else:
+            self.base_title = title
+        wx.Frame.__init__(self, None, title=self.base_title, pos=wx.DefaultPosition, size=wx.Size(1024,512),
                           style = wx.DEFAULT_FRAME_STYLE)
         Publisher().subscribe(self.kill_ztv, 'kill_ztv')
         Publisher().subscribe(self.load_numpy_array, "load_numpy_array")
@@ -853,6 +855,7 @@ class ZTVFrame(wx.Frame):
             self.redisplay_image()
             if need_to_reset_zoom_and_center:
                 self.primary_image_panel.reset_zoom_and_center()
+            self.SetTitle(self.base_title)
 
     def load_hdulist_from_fitsfile(self, filename):
         """
@@ -878,6 +881,7 @@ class ZTVFrame(wx.Frame):
                     self.load_numpy_array(self.cur_fits_hdulist[0].data, is_fits_file=True)
                     self.cur_fitsfile_basename = os.path.basename(filename)
                     self.cur_fitsfile_path = os.path.abspath(os.path.dirname(filename))
+                    self.SetTitle(self.base_title + ': ' + self.cur_fitsfile_basename)
                     # TODO: better error handling for if WCS not available or partially available
                     try:
                         w = wcs.WCS(hdulist[0].header)
