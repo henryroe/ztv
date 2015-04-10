@@ -892,7 +892,7 @@ class ZTVFrame(wx.Frame):
                         self.image_radec = ICRS(a[0]*units.degree, a[1]*units.degree)
                     except:  # just ignore radec if anything at all goes wrong.
                         self.image_radec = None
-                    wx.CallAfter(Publisher().sendMessage, "fitsfile-loaded", None)
+                    wx.CallAfter(Publisher().sendMessage, "fitsfile-loaded", filename)
                 else:
                     raise Error("Cannot find file: {}".format(filename))
             else:

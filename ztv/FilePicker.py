@@ -120,6 +120,7 @@ class FilePicker(wx.Panel):
         It is not used internally.
         """
         self.current_textctrl_SetValue(new_entry)
+        self.prepend_to_history(new_entry)
         self.update_recent_choice()
 # TODO: fix where the checkmark appears in the recent choices popup menu
 #         if self.maintain_default_entry_in_recents == 0:

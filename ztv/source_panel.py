@@ -49,7 +49,8 @@ class SourcePanel(wx.Panel):
         self.flat_checkbox = wx.CheckBox(self, -1, "")
         self.Bind(wx.EVT_CHECKBOX, self.on_flat_checkbox, self.flat_checkbox)
         self.flat_filepicker_sizer.Add(self.flat_checkbox, 0, wx.ALIGN_CENTER_VERTICAL)
-        self.flatfile_filepicker = FilePicker(self, title='Flat:', default_entry='', maintain_default_entry_in_recents=0)
+        self.flatfile_filepicker = FilePicker(self, title='Flat:', default_entry='', 
+                                              maintain_default_entry_in_recents=0)
         self.flatfile_filepicker.on_load = self.load_flat_frame
         self.flat_filepicker_sizer.Add(self.flatfile_filepicker, 1, wx.EXPAND)
         self.flat_header_button = wx.Button(self, wx.ID_ANY, u"hdr", wx.DefaultPosition, wx.DefaultSize,
