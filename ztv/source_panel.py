@@ -1,6 +1,6 @@
 import wx
 from wx.lib.pubsub import Publisher
-from .filepicker import FilePicker
+from .file_picker import FilePicker
 from .fits_header_dialog import FITSHeaderDialog
 from .image_process_action import ImageProcessAction
 import numpy as np
@@ -21,43 +21,44 @@ class SourcePanel(wx.Panel):
         v_sizer1 = wx.BoxSizer(wx.VERTICAL)
         v_sizer1.AddSpacer((0, 0), 1, wx.EXPAND)
 
-        h_current_filepicker_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.curfile_filepicker = FilePicker(self, title='')
-        self.curfile_filepicker.on_load = self.ztv_frame.load_fits_file
-        h_current_filepicker_sizer.Add(self.curfile_filepicker, 1, wx.EXPAND)
+        h_current_file_picker_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.curfile_file_picker = FilePicker(self, title='')
+        self.curfile_file_picker.on_load = self.ztv_frame.load_fits_file
+        h_current_file_picker_sizer.Add(self.curfile_file_picker, 1, wx.EXPAND)
         self.cur_header_button = wx.Button(self, wx.ID_ANY, u"hdr", wx.DefaultPosition, wx.DefaultSize,
                                             style=wx.BU_EXACTFIT)
-        h_current_filepicker_sizer.Add(self.cur_header_button, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
+        h_current_file_picker_sizer.Add(self.cur_header_button, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
         self.cur_header_button.Bind(wx.EVT_BUTTON, self.ztv_frame.primary_image_panel.on_display_cur_fits_header)
-        v_sizer1.Add(h_current_filepicker_sizer, 0, wx.EXPAND)
+        v_sizer1.Add(h_current_file_picker_sizer, 0, wx.EXPAND)
 
         v_sizer1.AddSpacer((0, 5), 0, wx.EXPAND)
-        self.sky_filepicker_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.sky_file_picker_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.sky_checkbox = wx.CheckBox(self, -1, "")
         self.Bind(wx.EVT_CHECKBOX, self.on_sky_checkbox, self.sky_checkbox)
-        self.sky_filepicker_sizer.Add(self.sky_checkbox, 0, wx.ALIGN_CENTER_VERTICAL)
-        self.skyfile_filepicker = FilePicker(self, title='Sky:', default_entry='', maintain_default_entry_in_recents=0)
-        self.skyfile_filepicker.on_load = self.load_sky_frame
-        self.sky_filepicker_sizer.Add(self.skyfile_filepicker, 1, wx.EXPAND)
+        self.sky_file_picker_sizer.Add(self.sky_checkbox, 0, wx.ALIGN_CENTER_VERTICAL)
+        self.skyfile_file_picker = FilePicker(self, title='Sky:', default_entry='', 
+                                              maintain_default_entry_in_recents=0)
+        self.skyfile_file_picker.on_load = self.load_sky_frame
+        self.sky_file_picker_sizer.Add(self.skyfile_file_picker, 1, wx.EXPAND)
         self.sky_header_button = wx.Button(self, wx.ID_ANY, u"hdr", wx.DefaultPosition, wx.DefaultSize,
                                            style=wx.BU_EXACTFIT)
-        self.sky_filepicker_sizer.Add(self.sky_header_button, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
+        self.sky_file_picker_sizer.Add(self.sky_header_button, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
         self.sky_header_button.Bind(wx.EVT_BUTTON, self.on_display_sky_fits_header)
-        v_sizer1.Add(self.sky_filepicker_sizer, 0, wx.EXPAND)
+        v_sizer1.Add(self.sky_file_picker_sizer, 0, wx.EXPAND)
 
-        self.flat_filepicker_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.flat_file_picker_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.flat_checkbox = wx.CheckBox(self, -1, "")
         self.Bind(wx.EVT_CHECKBOX, self.on_flat_checkbox, self.flat_checkbox)
-        self.flat_filepicker_sizer.Add(self.flat_checkbox, 0, wx.ALIGN_CENTER_VERTICAL)
-        self.flatfile_filepicker = FilePicker(self, title='Flat:', default_entry='', 
-                                              maintain_default_entry_in_recents=0)
-        self.flatfile_filepicker.on_load = self.load_flat_frame
-        self.flat_filepicker_sizer.Add(self.flatfile_filepicker, 1, wx.EXPAND)
+        self.flat_file_picker_sizer.Add(self.flat_checkbox, 0, wx.ALIGN_CENTER_VERTICAL)
+        self.flatfile_file_picker = FilePicker(self, title='Flat:', default_entry='', 
+                                               maintain_default_entry_in_recents=0)
+        self.flatfile_file_picker.on_load = self.load_flat_frame
+        self.flat_file_picker_sizer.Add(self.flatfile_file_picker, 1, wx.EXPAND)
         self.flat_header_button = wx.Button(self, wx.ID_ANY, u"hdr", wx.DefaultPosition, wx.DefaultSize,
                                             style=wx.BU_EXACTFIT)
-        self.flat_filepicker_sizer.Add(self.flat_header_button, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
+        self.flat_file_picker_sizer.Add(self.flat_header_button, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
         self.flat_header_button.Bind(wx.EVT_BUTTON, self.on_display_flat_fits_header)
-        v_sizer1.Add(self.flat_filepicker_sizer, 0, wx.EXPAND)
+        v_sizer1.Add(self.flat_file_picker_sizer, 0, wx.EXPAND)
 
         self.autoload_sizer = wx.BoxSizer(wx.VERTICAL)        
         self.autoload_sizer.AddSpacer((0, 5), 0, wx.EXPAND)
@@ -79,13 +80,13 @@ class SourcePanel(wx.Panel):
         h_sizer.Add(wx.StaticText(self, -1, u"sec"), 0)
         self.autoload_sizer.Add(h_sizer, 0, wx.EXPAND)
         self.autoload_sizer.AddSpacer((0, 5), 0, wx.EXPAND)
-        self.autoload_curdir_filepicker = FilePicker(self, title='Dir:', is_files_not_dirs=False)
-        self.autoload_sizer.Add(self.autoload_curdir_filepicker, 0, wx.EXPAND)
-        self.autoload_curfile_filepicker = FilePicker(self, title='Filename Pattern:', allow_glob_matching=True,
-                                                      assumed_prefix=os.path.expanduser('~/'))
-        self.autoload_curdir_filepicker.on_load = self.autoload_curfile_filepicker.set_assumed_prefix
-        self.autoload_curfile_filepicker.on_load = self.autoload_curfile_filepicker_on_load
-        self.autoload_sizer.Add(self.autoload_curfile_filepicker, 0, wx.EXPAND)
+        self.autoload_curdir_file_picker = FilePicker(self, title='Dir:', is_files_not_dirs=False)
+        self.autoload_sizer.Add(self.autoload_curdir_file_picker, 0, wx.EXPAND)
+        self.autoload_curfile_file_picker = FilePicker(self, title='Filename Pattern:', allow_glob_matching=True,
+                                                       assumed_prefix=os.path.expanduser('~/'))
+        self.autoload_curdir_file_picker.on_load = self.autoload_curfile_file_picker.set_assumed_prefix
+        self.autoload_curfile_file_picker.on_load = self.autoload_curfile_file_picker_on_load
+        self.autoload_sizer.Add(self.autoload_curfile_file_picker, 0, wx.EXPAND)
         v_sizer1.Add(self.autoload_sizer, 0, wx.EXPAND)
         
         self.activemq_sizer = wx.BoxSizer(wx.VERTICAL)        
@@ -146,15 +147,15 @@ class SourcePanel(wx.Panel):
 
     def on_settings_menu_sky_item(self, evt):
         if evt.IsChecked():
-            self.sky_filepicker_sizer.ShowItems(True)
+            self.sky_file_picker_sizer.ShowItems(True)
         else:
-            self.sky_filepicker_sizer.ShowItems(False)
+            self.sky_file_picker_sizer.ShowItems(False)
 
     def on_settings_menu_flat_item(self, evt):
         if evt.IsChecked():
-            self.flat_filepicker_sizer.ShowItems(True)
+            self.flat_file_picker_sizer.ShowItems(True)
         else:
-            self.flat_filepicker_sizer.ShowItems(False)
+            self.flat_file_picker_sizer.ShowItems(False)
 
     def on_settings_menu_autoload_item(self, evt):
         if evt.IsChecked():
@@ -301,13 +302,13 @@ class SourcePanel(wx.Panel):
 
     # TODO: look into what happens when change autoload_curdir, but not autoload_curfile.  Need to validate whether autoload_curfile is still valid and handle correclty, including updating ztv_frame.autoload_match_string
 
-    def autoload_curfile_filepicker_on_load(self, new_entry):
+    def autoload_curfile_file_picker_on_load(self, new_entry):
         new_path = os.path.dirname(new_entry) + '/'
-        self.autoload_curdir_filepicker.set_current_entry(new_path)
-        self.autoload_curdir_filepicker.prepend_to_history(new_path)
-        self.autoload_curdir_filepicker.set_textctrl_background_color('ok')
-        self.autoload_curfile_filepicker.set_current_entry(os.path.basename(new_entry))
-        self.autoload_curfile_filepicker.set_assumed_prefix(new_path)
+        self.autoload_curdir_file_picker.set_current_entry(new_path)
+        self.autoload_curdir_file_picker.prepend_to_history(new_path)
+        self.autoload_curdir_file_picker.set_textctrl_background_color('ok')
+        self.autoload_curfile_file_picker.set_current_entry(os.path.basename(new_entry))
+        self.autoload_curfile_file_picker.set_assumed_prefix(new_path)
         self.ztv_frame.autoload_match_string = new_entry
 
     def on_autoload_checkbox(self, evt):
@@ -330,7 +331,7 @@ class SourcePanel(wx.Panel):
             self.ztv_frame.kill_activemq_listener_thread()
 
     def on_fitsfile_loaded(self, msg):
-        self.curfile_filepicker.pause_on_current_textctrl_changed = True
-        self.curfile_filepicker.set_current_entry(os.path.join(self.ztv_frame.cur_fitsfile_path,
+        self.curfile_file_picker.pause_on_current_textctrl_changed = True
+        self.curfile_file_picker.set_current_entry(os.path.join(self.ztv_frame.cur_fitsfile_path,
                                                                self.ztv_frame.cur_fitsfile_basename))
-        self.curfile_filepicker.pause_on_current_textctrl_changed = False
+        self.curfile_file_picker.pause_on_current_textctrl_changed = False
