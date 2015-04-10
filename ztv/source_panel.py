@@ -233,6 +233,9 @@ class SourcePanel(wx.Panel):
             self.sky_header_button.Enable()
             self.load_sky_subtraction_to_process_stack()
             self.sky_checkbox.SetValue(True)
+            self.skyfile_file_picker.pause_on_current_textctrl_changed = True
+            self.skyfile_file_picker.set_current_entry(filename)
+            self.flatfile_file_picker.pause_on_current_textctrl_changed = False
 
     def on_sky_checkbox(self, evt):
         if evt.IsChecked():
@@ -266,6 +269,9 @@ class SourcePanel(wx.Panel):
             self.flat_header_button.Enable()
             self.load_flat_division_to_process_stack()
             self.flat_checkbox.SetValue(True)
+            self.flatfile_file_picker.pause_on_current_textctrl_changed = True
+            self.flatfile_file_picker.set_current_entry(filename)
+            self.flatfile_file_picker.pause_on_current_textctrl_changed = False
 
     def on_flat_checkbox(self, evt):
         if evt.IsChecked():
@@ -333,5 +339,5 @@ class SourcePanel(wx.Panel):
     def on_fitsfile_loaded(self, msg):
         self.curfile_file_picker.pause_on_current_textctrl_changed = True
         self.curfile_file_picker.set_current_entry(os.path.join(self.ztv_frame.cur_fitsfile_path,
-                                                               self.ztv_frame.cur_fitsfile_basename))
+                                                                self.ztv_frame.cur_fitsfile_basename))
         self.curfile_file_picker.pause_on_current_textctrl_changed = False

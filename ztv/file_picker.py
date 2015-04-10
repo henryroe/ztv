@@ -121,16 +121,16 @@ class FilePicker(wx.Panel):
         """
         self.current_textctrl_SetValue(new_entry)
         self.prepend_to_history(new_entry)
-        self.update_recent_choice()
-# TODO: fix where the checkmark appears in the recent choices popup menu
-#         if self.maintain_default_entry_in_recents == 0:
-#             self.recent_choice.SetSelection(1)
-#         else:
-#             self.recent_choice.SetSelection(0)
+        cur_history = self.update_recent_choice()
+        sys.stderr.write("\n\nnew_entry = {}\n\n".format(new_entry))
+        sys.stderr.write("\n\ncur_history = {}\n\n".format(cur_history))
+        self.recent_choice.SetSelection(cur_history.index(new_entry))
 
     def update_recent_choice(self):
         self.recent_choice.Clear()
-        self.recent_choice.AppendItems(self.get_history())
+        cur_history = self.get_history()
+        self.recent_choice.AppendItems(cur_history)
+        return cur_history
 
     def prepend_to_history(self, new_entry):
         if new_entry in self.history:  # pop if necessary so we can reinsert at start of list
