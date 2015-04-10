@@ -23,8 +23,6 @@
 
 ## in stats panel, each editing of range step should make sense by itself.  not follow history.  e.g. xlow=1, xlow=3432, xlow=1
 
-## in min/max control, consider an additional mode_on_new_image of N-sigma above(below) median
-
 ## careful examination of slice plots and whether limits and exact paths across pixels are correct
 
 ## re-consider which color maps to include
@@ -74,6 +72,8 @@ Another issue is visibility - how to make it clear to user what one can do?  Tha
 
 # Low priority for some future release:
 
+## in min/max control, consider an additional mode_on_new_image of N-sigma above(below) median
+
 ## in source panel '/User/hroe/' (not a filename) shouldn't appear in the history popup menu
 
 ## in stats panel:  tabbing through textctrl's doesn't loop around at the end
@@ -93,11 +93,7 @@ need to think through how circle defined - click cneter and drag out?  Confined 
 
 ## crisper 'historgram' style plotting for slice plots when really zoomed in
 
-## Clean-up layout in Phot panel  (e.g. align fields in output part & create a minimum initial size for the plot panel)
-
 ## run through a syntax checker and cleanup most/all objections (e.g. "x*y" vs. "x * y")
-
-## in stats panel:  fix vertical alignment of "# pixels" field and text label.  should be centered on the two input rows.
 
 ## consider:  in Source panel->Autoload, should dir/file be combined in to single field?
 

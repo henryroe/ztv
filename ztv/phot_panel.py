@@ -9,6 +9,7 @@ from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg
 from matplotlib.patches import Circle, Wedge
 from scipy.optimize import curve_fit
 from .quick_phot import centroid, aperture_phot
+from .ztv_lib import validate_textctrl_str
 import numpy as np
 
 import sys
@@ -200,49 +201,6 @@ class PhotPanel(wx.Panel):
             self.sky_aperture_patch = None
         self.ztv_frame.primary_image_panel.figure.canvas.draw()
 
-    def force_textctrl_color_update(self, textctrl):
-        cur_focused_item = self.FindFocus()
-        insertion_point = textctrl.GetInsertionPoint()
-        self.xclicked_textctrl.SetFocus()  # need to shift focus away & then back to force color update in GUI
-        textctrl.SetFocus()
-        textctrl.SetInsertionPoint(insertion_point)
-        if cur_focused_item is not None:
-            cur_focused_item.SetFocus()
-
-    def set_textctrl_background_color(self, textctrl, mode, tooltip=None):
-        if mode == 'ok':
-            color = (255,255,255)
-        elif mode == 'enter-needed':
-            color = (200,255,200)
-        elif mode == 'invalid':
-            # TODO:  implement: escape key brings up last valid value??
-            color = (255,200,200)
-        textctrl.SetBackgroundColour(color)
-        textctrl.Refresh()
-        if tooltip is not None and not isinstance(tooltip, wx.ToolTip):
-            tooltip = wx.ToolTip(tooltip)
-        textctrl.SetToolTip(tooltip)
-        self.force_textctrl_color_update(textctrl)
-
-    def validate_textctrl_str(self, textctrl, validate_fxn, last_value):
-        """
-        can accept arbitrary functions in validate_fxn.  They just need to raise a ValueError if
-        they don't like the input.
-        """
-        try:
-            newval = validate_fxn(textctrl.GetValue())
-            if textctrl.GetValue() == last_value:
-                self.set_textctrl_background_color(textctrl, 'ok')
-            else:
-                self.set_textctrl_background_color(textctrl, 'enter-needed',
-                                                   'Press enter in this field to set new minimum value')
-            return True
-        except ValueError:
-            # TODO: figure out some (clever?) way of having validate_fxn give info about itself that is more useful in the following error tooltip message
-            self.set_textctrl_background_color(textctrl, 'invalid', 
-                                               'Entry cannot be converted to {}'.format(str(validate_fxn)))
-            return False
-
     def update_phot_xy(self, msg):
         if isinstance(msg, Message):
             x,y = msg.data
@@ -320,36 +278,45 @@ class PhotPanel(wx.Panel):
         self.ztv_frame.primary_image_panel.figure.canvas.draw()
 
     def aprad_textctrl_changed(self, evt):
-        self.validate_textctrl_str(self.aprad_textctrl, float, self.last_string_values['aprad'])
+        validate_textctrl_str(self.aprad_textctrl, lambda x: float(x) if float(x) > 0 else float('x'), 
+                              self.last_string_values['aprad'])
 
     def aprad_textctrl_entered(self, evt):
-        if self.validate_textctrl_str(self.aprad_textctrl, float, self.last_string_values['aprad']):
+        if validate_textctrl_str(self.aprad_textctrl, lambda x: float(x) if float(x) > 0 else float('x'), 
+                                 self.last_string_values['aprad']):
             self.last_string_values['aprad'] = self.aprad_textctrl.GetValue()
             self.aprad = float(self.last_string_values['aprad'])
             self.recalc_phot()
-            self.validate_textctrl_str(self.aprad_textctrl, float, self.last_string_values['aprad'])
+            validate_textctrl_str(self.aprad_textctrl, lambda x: float(x) if float(x) > 0 else float('x'), 
+                                  self.last_string_values['aprad'])
             self.aprad_textctrl.SetSelection(-1, -1)
 
     def skyradin_textctrl_changed(self, evt):
-        self.validate_textctrl_str(self.skyradin_textctrl, float, self.last_string_values['skyradin'])
+        validate_textctrl_str(self.skyradin_textctrl, lambda x: float(x) if float(x) > 0 else float('x'), 
+                              self.last_string_values['skyradin'])
 
     def skyradin_textctrl_entered(self, evt):
-        if self.validate_textctrl_str(self.skyradin_textctrl, float, self.last_string_values['skyradin']):
+        if validate_textctrl_str(self.skyradin_textctrl, lambda x: float(x) if float(x) > 0 else float('x'), 
+                                 self.last_string_values['skyradin']):
             self.last_string_values['skyradin'] = self.skyradin_textctrl.GetValue()
             self.skyradin = float(self.last_string_values['skyradin'])
             self.recalc_phot()
-            self.validate_textctrl_str(self.skyradin_textctrl, float, self.last_string_values['skyradin'])
+            validate_textctrl_str(self.skyradin_textctrl, lambda x: float(x) if float(x) > 0 else float('x'), 
+                                  self.last_string_values['skyradin'])
             self.skyradin_textctrl.SetSelection(-1, -1)
 
     def skyradout_textctrl_changed(self, evt):
-        self.validate_textctrl_str(self.skyradout_textctrl, float, self.last_string_values['skyradout'])
+        validate_textctrl_str(self.skyradout_textctrl, lambda x: float(x) if float(x) > 0 else float('x'), 
+                              self.last_string_values['skyradout'])
 
     def skyradout_textctrl_entered(self, evt):
-        if self.validate_textctrl_str(self.skyradout_textctrl, float, self.last_string_values['skyradout']):
+        if validate_textctrl_str(self.skyradout_textctrl, lambda x: float(x) if float(x) > 0 else float('x'), 
+                                 self.last_string_values['skyradout']):
             self.last_string_values['skyradout'] = self.skyradout_textctrl.GetValue()
             self.skyradout = float(self.last_string_values['skyradout'])
             self.recalc_phot()
-            self.validate_textctrl_str(self.skyradout_textctrl, float, self.last_string_values['skyradout'])
+            validate_textctrl_str(self.skyradout_textctrl, lambda x: float(x) if float(x) > 0 else float('x'), 
+                                  self.last_string_values['skyradout'])
             self.skyradout_textctrl.SetSelection(-1, -1)
             
 #TODO: set up reasonable defaults for aprad, skyradin, & skyradout
