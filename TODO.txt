@@ -74,6 +74,8 @@ Another issue is visibility - how to make it clear to user what one can do?  Tha
 
 # Low priority for some future release:
 
+## in source panel '/User/hroe/' (not a filename) shouldn't appear in the history popup menu
+
 ## in stats panel:  tabbing through textctrl's doesn't loop around at the end
 
 ## Allow enabling/disabling of components of SourcePanel at startup

@@ -5,6 +5,7 @@ import glob
 import sys
 import subprocess
 import pdb
+from .ztv_lib import set_textctrl_background_color
 
 # TODO:  fix tab order through controls
 # TODO:  fix alignment in text field, ideally would be right aligned, but may not be able to do that on OSX
@@ -62,7 +63,7 @@ class FilePicker(wx.Panel):
         self.title = title
         self.last_valid_entry = ''
         self.reset_auto_completion_info()
-        self.current_textctrl_mode = 'ok'
+        self.current_textctrl_mode_is_ok = True
         self.pause_on_current_textctrl_changed = False
 
         h_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -148,7 +149,7 @@ class FilePicker(wx.Panel):
         self.prepend_to_history(self.last_valid_entry)
         self.update_recent_choice()
         self.on_load(self.last_valid_entry)
-        self.set_textctrl_background_color('ok')
+        set_textctrl_background_color(self.current_textctrl, 'ok')
 
     def get_history(self):
         """
@@ -211,27 +212,6 @@ class FilePicker(wx.Panel):
         self.auto_completion_info = {'current_base':'', 'possible_completions':[],
                                      'current_completion':'', 'current_selection':(0, 0)}
 
-    def set_textctrl_background_color(self, mode, tooltip=None):
-        cur_focused_item = self.FindFocus()
-        self.current_textctrl_mode = mode
-        if mode == 'ok':
-            color = (255,255,255)
-        elif mode == 'enter-needed':
-            color = (200,255,200)
-        elif mode == 'invalid':
-            color = (255,200,200)
-        self.current_textctrl.SetBackgroundColour(color)
-        self.current_textctrl.Refresh()
-        if tooltip is not None and not isinstance(tooltip, wx.ToolTip):
-            tooltip = wx.ToolTip(tooltip)
-        self.current_textctrl.SetToolTip(tooltip)
-        selection = self.current_textctrl.GetSelection()
-        self.recent_choice.SetFocus()
-        self.current_textctrl.SetFocus()
-        self.current_textctrl.SetSelection(selection[0], selection[1])
-        if cur_focused_item is not None:
-            cur_focused_item.SetFocus()
-
     def validate_current_textctrl_value(self):
         is_entry_valid = False
         if (self.current_textctrl_GetValue() == self.default_entry):
@@ -248,19 +228,22 @@ class FilePicker(wx.Panel):
                 is_entry_valid = True
         if new_entry == self.default_entry:
             is_entry_valid = True
+        self.current_textctrl_mode_is_ok = False
         if is_entry_valid:
             if self.last_valid_entry == new_entry:
-                self.set_textctrl_background_color('ok')
+                set_textctrl_background_color(self.current_textctrl, 'ok')
+                self.current_textctrl_mode_is_ok = True
             else:
-                self.set_textctrl_background_color('enter-needed', 'Press enter in this field to load')
+                set_textctrl_background_color(self.current_textctrl, 'enter-needed', 
+                                              'Press enter in this field to load')
             return True
         else:
-            self.set_textctrl_background_color('invalid', 'Not found on disk')
+            set_textctrl_background_color(self.current_textctrl, 'invalid', 'Not found on disk')
             return False
 
     def on_key_press_textctrl(self, evt):
         if evt.GetKeyCode() == wx.WXK_TAB:
-            if self.current_textctrl_mode == 'ok':
+            if self.current_textctrl_mode_is_ok:
                 if evt.ShiftDown():
                     evt.Skip()
                 else:
@@ -384,7 +367,7 @@ class MyFrame(wx.Frame):
         new_path = os.path.dirname(new_entry) + '/'
         self.dir_picker.set_current_entry(new_path)
         self.dir_picker.prepend_to_history(new_path)
-        self.dir_picker.set_textctrl_background_color('ok')
+        set_textctrl_background_color(self.dir_picker.current_textctrl, 'ok')
         self.file_picker.set_current_entry(os.path.basename(new_entry))
         self.file_picker.set_assumed_prefix(new_path)
 
