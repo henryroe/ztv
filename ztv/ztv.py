@@ -1043,6 +1043,9 @@ class CommandListenerThread(threading.Thread):
                 x = pickle.loads(in_str.replace("\\()", "\n"))
             except EOFError:  # means we are done here...
                 return
+            except ValueError:    # HEREIAM:  think we hit this when randomly in an encoded image we see a \\()?
+                sys.stderr.write("\n\nin_str = {}\n\n".format(in_str))
+                raise
             if not isinstance(x, tuple):
                 raise Error("ListenThread only accepts tuples")
             if x[0] == 'get_available_cmaps':

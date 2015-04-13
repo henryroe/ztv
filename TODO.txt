@@ -2,6 +2,31 @@
 
 ## Write up 'motivation' document referring back to atv (and to ds9 etc etc)
 
+## Semi-repeatable crashing bug in loading np.arrays from command line:
+
+    In [251]: Exception in thread Thread-2:
+    Traceback (most recent call last):
+      File "/Applications/Canopy.app/appdata/canopy-1.5.1.2730.macosx-x86_64/Canopy.app/Contents/lib/python2.7/threading.py", line 810, in __bootstrap_inner
+        self.run()
+      File "/Users/hroe/Dropbox/py/ztv/ztv/ztv.py", line 1043, in run
+        x = pickle.loads(in_str.replace("\\()", "\n"))
+      File "/Applications/Canopy.app/appdata/canopy-1.5.1.2730.macosx-x86_64/Canopy.app/Contents/lib/python2.7/pickle.py", line 1382, in loads
+        return Unpickler(file).load()
+      File "/Applications/Canopy.app/appdata/canopy-1.5.1.2730.macosx-x86_64/Canopy.app/Contents/lib/python2.7/pickle.py", line 858, in load
+        dispatch[key](self)
+      File "/Applications/Canopy.app/appdata/canopy-1.5.1.2730.macosx-x86_64/Canopy.app/Contents/lib/python2.7/pickle.py", line 966, in load_string
+        raise ValueError, "insecure string pickle"
+    ValueError: insecure string pickle
+
+is gotten after some (random number, but dozen-ish)  repeats of the final `load` line of:
+
+    import ztv ; z = ztv.ZTV() ; z.load('../ztv/test_data/simple_image.fits')
+    import ztv.fits_faker_panel as ffp
+    a = ffp.FakeFitsMaker()
+    z.load((a.make_data_frame() - a.sky_frame)/a.flat_frame)
+
+Might be only once I start pounding in the z.load repeatedly fast?
+
 
 
 # Desirable before next release
@@ -116,6 +141,8 @@ need to think through how circle defined - click cneter and drag out?  Confined 
 ## Consider re-vamping method of monitoring for new/changed FITS files on disk
 
 [e.g. see](https://github.com/joh/when-changed)
+
+## consider in phot panel radial plot:  click-and-drag to adjust aprad and skyrad in/out??
 
 ## fix that ctrl-c in ipython is killing ztv gui, even when run via a separate process with ztv_api
 
