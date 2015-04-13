@@ -1,4 +1,6 @@
 import wx
+import sys
+import pickle
 
 def force_textctrl_color_update(textctrl):
     cur_focused_item = textctrl.GetParent().FindFocus()
@@ -45,3 +47,27 @@ def validate_textctrl_str(textctrl, validate_fxn, last_value):
         set_textctrl_background_color(textctrl, 'invalid', 
                                       'Entry cannot be converted to {}'.format(str(validate_fxn)))
         return False
+
+# point is to make improbably that would ever happen to appear inside a pickled image and be mistaken
+end_of_message_message = ("---EndOfMessage---"*10) + "\n"   
+
+def send_to_pipe(pipe, msg): 
+    """
+    Pickle & send to stdout a message.
+    Used primarily to communicate back-and-forth with a separately launched ztv process.
+    """
+    if isinstance(msg, str):
+        msg = (msg,)
+    pkl = pickle.dumps(msg)
+    pipe.write(pkl + '\n' + end_of_message_message)
+    pipe.flush()
+
+def listen_to_pipe(pipe):
+    """
+    Will listen on pipe until has seen end_of_message_message, then strip the 
+    end_of_message_message and return the unpickled version of the preceding message
+    """
+    in_str = ""
+    while not in_str.endswith('\n' + end_of_message_message):
+        in_str += pipe.readline()
+    return pickle.loads(in_str.replace('\n' + end_of_message_message, ''))

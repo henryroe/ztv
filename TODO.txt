@@ -2,31 +2,6 @@
 
 ## Write up 'motivation' document referring back to atv (and to ds9 etc etc)
 
-## Semi-repeatable crashing bug in loading np.arrays from command line:
-
-    In [251]: Exception in thread Thread-2:
-    Traceback (most recent call last):
-      File "/Applications/Canopy.app/appdata/canopy-1.5.1.2730.macosx-x86_64/Canopy.app/Contents/lib/python2.7/threading.py", line 810, in __bootstrap_inner
-        self.run()
-      File "/Users/hroe/Dropbox/py/ztv/ztv/ztv.py", line 1043, in run
-        x = pickle.loads(in_str.replace("\\()", "\n"))
-      File "/Applications/Canopy.app/appdata/canopy-1.5.1.2730.macosx-x86_64/Canopy.app/Contents/lib/python2.7/pickle.py", line 1382, in loads
-        return Unpickler(file).load()
-      File "/Applications/Canopy.app/appdata/canopy-1.5.1.2730.macosx-x86_64/Canopy.app/Contents/lib/python2.7/pickle.py", line 858, in load
-        dispatch[key](self)
-      File "/Applications/Canopy.app/appdata/canopy-1.5.1.2730.macosx-x86_64/Canopy.app/Contents/lib/python2.7/pickle.py", line 966, in load_string
-        raise ValueError, "insecure string pickle"
-    ValueError: insecure string pickle
-
-is gotten after some (random number, but dozen-ish)  repeats of the final `load` line of:
-
-    import ztv ; z = ztv.ZTV() ; z.load('../ztv/test_data/simple_image.fits')
-    import ztv.fits_faker_panel as ffp
-    a = ffp.FakeFitsMaker()
-    z.load((a.make_data_frame() - a.sky_frame)/a.flat_frame)
-
-Might be only once I start pounding in the z.load repeatedly fast?
-
 
 
 # Desirable before next release
@@ -91,8 +66,9 @@ Is probably straightforward for simple things like minval, or even string filena
 
 Another issue is visibility - how to make it clear to user what one can do?  That's an argument for the extra complexity (and less flexibility) of just manually specifiying what can be passed through.
 
+## ZTVFrame.ztvframe_pid as a signaling device isn't working
 
-
+the ztvframe_pid is grabbed correctly, but the PID isn't actually fully killed until the overall python session is killed.  (something changes with the process when the window is closed, but it's not actually cleaned up fully/correctly.)  This is an issue both for processes that may be watching (e.g. fits_fake_panel.py), but also that if you launch a ton of ztv sessions from same python session, you are leaving cruft around that will eventually slow things down.
 
 
 # Low priority for some future release:

@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import wx
 from wx.lib.pubsub import Publisher
 from .file_picker import FilePicker
@@ -7,6 +8,7 @@ import numpy as np
 import os
 import os.path
 import sys
+from .ztv_lib import set_textctrl_background_color
 
 class SourcePanel(wx.Panel):
     def __init__(self, parent):
@@ -312,7 +314,7 @@ class SourcePanel(wx.Panel):
         new_path = os.path.dirname(new_entry) + '/'
         self.autoload_curdir_file_picker.set_current_entry(new_path)
         self.autoload_curdir_file_picker.prepend_to_history(new_path)
-        self.autoload_curdir_file_picker.set_textctrl_background_color('ok')
+        set_textctrl_background_color(self.autoload_curdir_file_picker.current_textctrl, 'ok')
         self.autoload_curfile_file_picker.set_current_entry(os.path.basename(new_entry))
         self.autoload_curfile_file_picker.set_assumed_prefix(new_path)
         self.ztv_frame.autoload_match_string = new_entry

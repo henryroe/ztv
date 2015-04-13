@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import wx
 from wx.lib.pubsub import Publisher
 from wx.lib.pubsub.core.datamsg import Message
@@ -29,7 +30,7 @@ from matplotlib.patches import Rectangle
 from matplotlib import cm
 from matplotlib.colors import Normalize
 
-from .filepicker import FilePicker
+from .file_picker import FilePicker
 from .fits_header_dialog import FITSHeaderDialog
 # Intend: control panels are one per file with class name "MyPanel" in filename "my_panel.py"
 from .source_panel import SourcePanel
@@ -37,6 +38,7 @@ from .plot_panel import PlotPanel
 from .phot_panel import PhotPanel
 from .stats_panel import StatsPanel
 from .color_panel import ColorPanel
+from .ztv_lib import send_to_pipe, listen_to_pipe
 
 import pdb
 
@@ -590,6 +592,7 @@ class ControlsNotebook(wx.Notebook):
 class ZTVFrame(wx.Frame):
     # TODO: create __init__ input parameters for essentially every adjustable parameter
     def __init__(self, title=None, launch_listen_thread=False):
+        self.ztvframe_pid = os.getpid()  # some add-on control panels will want this to pass to subprocs for knowing when to kill themselves, but NOTE: currently (as of 2015-04-13) on OS X is not working right as process doesn't die fully until uber-python session is killed.
         if title is None:
             self.base_title = 'ztv'
         else:
@@ -1028,36 +1031,28 @@ class CommandListenerThread(threading.Thread):
         self.daemon = True
         self.start()
 
-    def _send(self, x):
-        if isinstance(x, str):
-            x = (x,)
-        pkl = pickle.dumps(x).replace("\n", "\\()")
-        sys.stdout.write(pkl + '\n')
-        sys.stdout.flush()
-
     def run(self):
         keep_running = True
         while keep_running:
-            in_str = sys.stdin.readline()
             try:
-                x = pickle.loads(in_str.replace("\\()", "\n"))
+                x = listen_to_pipe(sys.stdin)
             except EOFError:  # means we are done here...
                 return
             if not isinstance(x, tuple):
                 raise Error("ListenThread only accepts tuples")
             if x[0] == 'get_available_cmaps':
-                self._send(('available_cmaps', self.ztv_frame.available_cmaps))
+                self.send_to_pipe(sys.stdout, ('available_cmaps', self.ztv_frame.available_cmaps))
             else:
                 wx.CallAfter(Publisher().sendMessage, x[0], *x[1:])
 
 
 class ZTVMain():
-    # TODO: add generic pass through of parameters, e.g. load a file
     def __init__(self, title=None, masterPID=-1, launch_listen_thread=False):
         WatchMasterPIDThread(masterPID)
         app = wx.App(False)
         self.frame = ZTVFrame(title=title, launch_listen_thread=launch_listen_thread)
         app.MainLoop()
+        # TODO: need to figure out why ztvframe_pid is being left alive
 
 if __name__ == '__main__':
     ZTVMain()

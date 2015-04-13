@@ -1,9 +1,10 @@
+from __future__ import absolute_import
 import subprocess
 import os
 import os.path
 import pickle
 import numpy as np
-
+from .ztv_lib import send_to_pipe, listen_to_pipe
 
 class Error(Exception):
     pass
@@ -18,7 +19,6 @@ class ZTV():
     This is the primary way of opening and interacting with a ztv gui instance.
     Optional keyword arguments:
         title:  string to be displayed as window title at top of ztv gui
-
     There are intentionally few keyword arguments.  (The only one is 'title', which sets
     the name at the top of the ztv gui window.)
 
@@ -38,23 +38,11 @@ class ZTV():
         cmd += 'masterPID=' + str(os.getpid()) +")'"
         self._subproc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
 
-    def _send(self, x):
-        if isinstance(x, str):
-            x = (x,)
-        pkl = pickle.dumps(x).replace("\n", "\\()")
-        self._subproc.stdin.write(pkl + '\n')
-        self._subproc.stdin.flush()
-
-    def _receive(self):
-        in_str = self._subproc.stdout.readline()
-        x = pickle.loads(in_str.replace("\\()", "\n"))
-        return x
-
     def close(self):
         """
         Shutdown this instance of ZTV
         """
-        self._send("kill_ztv")
+        send_to_pipe(self._subproc.stdin, "kill_ztv")
 
     def _load_numpy_array(self, image):
         """
@@ -63,7 +51,7 @@ class ZTV():
         Currently only accepts 2-d arrays
         """
         if isinstance(image, np.ndarray):
-            self._send(('load_numpy_array', image))
+            send_to_pipe(self._subproc.stdin, ('load_numpy_array', image))
         else:
             raise Error('Tried to send type {} instead of a numpy array'.format(type(image)))
 
@@ -87,7 +75,7 @@ class ZTV():
         (or any other capitalization of those file suffixes)
         """
         if self._validate_fits_filename(filename):
-            self._send(('load_fits_file', filename))
+            send_to_pipe(self._subproc.stdin, ('load_fits_file', filename))
 
     def load(self, input):
         """
@@ -107,14 +95,14 @@ class ZTV():
         """
         Load the default nonsense image
         """
-        self._send("load_default_image")
+        send_to_pipe(self._subproc.stdin, "load_default_image")
 
     def get_available_cmaps(self):
         """
         Returns available color maps as a list of strings
         """
-        self._send("get_available_cmaps")
-        x = self._receive()
+        send_to_pipe(self._subproc.stdin, "get_available_cmaps")
+        x = listen_to_pipe(self._subproc.stdout)
         if x[0] == 'available_cmaps':
             return x[1]
         else:
@@ -130,25 +118,25 @@ class ZTV():
             e.g. 'gray' is in the list, but one can request either 'gray' or 'gray_r'
                  'Blues_r' is in the list, but one can request either 'Blues' or 'Blues_r'
         """
-        self._send(('set_cmap', cmap))
+        send_to_pipe(self._subproc.stdin, ('set_cmap', cmap))
 
     def invert_cmap(self):
         """
         Invert the current colormap
         """
-        self._send('invert_cmap')
+        send_to_pipe(self._subproc.stdin, 'invert_cmap')
 
     def reset_minmax(self):
         """
         Reset the min/max to the image's full range
         """
-        self._send('set_clim_to_minmax')
+        send_to_pipe(self._subproc.stdin, 'set_clim_to_minmax')
 
     def auto_minmax(self):
         """
         Set the min/max to the automatic setting
         """
-        self._send('set_clim_to_auto')
+        send_to_pipe(self._subproc.stdin, 'set_clim_to_auto')
 
     def set_minmax(self, minval=None, maxval=None):
         """
@@ -158,25 +146,25 @@ class ZTV():
 
         See ZTV.reset_minmax() for resetting the min/max to the image's full range
         """
-        self._send(('set_clim', (minval, maxval)))
+        send_to_pipe(self._subproc.stdin, ('set_clim', (minval, maxval)))
 
     def reset_zoom_and_center(self):
-        self._send('reset_zoom_and_center')
+        send_to_pipe(self._subproc.stdin, 'reset_zoom_and_center')
 
     def set_zoom(self, zoom):
-        self._send(('set_zoom_factor', zoom))
+        send_to_pipe(self._subproc.stdin, ('set_zoom_factor', zoom))
 
     def set_xy_center(self, *args):
         if len(args) == 1:
             x,y = args[0]
         else:
             x,y = args[0], args[1]
-        self._send(('set_xy_center', (x, y)))
+        send_to_pipe(self._subproc.stdin, ('set_xy_center', (x, y)))
 
     def add_activemq(self, server=None, port=61613, destination=None):
         if server is None:
             raise Error('Must specify a server address in server keyword, e.g.  "myserver.mywebsite.com"')
         if destination is None:
             raise Error('Must specify a message queue to follow in destination keyword')
-        self._send(('add_activemq_instance', (server, port, destination)))
+        send_to_pipe(self._subproc.stdin, ('add_activemq_instance', (server, port, destination)))
 
