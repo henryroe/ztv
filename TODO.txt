@@ -1,28 +1,55 @@
 # URGENT - before next release
 
-## Write up 'motivation' document referring back to atv (and to ds9 etc etc)
-
-
-
-# Desirable before next release
-
 ## some basic implementation of 3-d images, at least reading in from fits files
 
+## write up README/DESCRIPTION other doc files
+
+## Write up 'motivation' document referring back to atv (and to ds9 etc etc)  (is this in DESCRIPTION.rst or README.rst??)
+
+## implement & document additional commands to ztv_api
+
+## write up example fits faker panel to manual
+
+## add an example script that pulls the HST 'finger of god' image from the web, scales, and makes pretty
+
+## clean up version number issues
+
+https://packaging.python.org/en/latest/single_source_version.html
+
+## write up release notes
+
+## Final to releasing:
+
+### get appropriate dependencies, so can pip install easily & properly, in "install_requires" in setup.py
+
+### write up pip install documentation
+
+### test out on pypi-test
+
+### Get set up on to github and ensure correct set of files going up
+
+### release to pypi
+
+### confirm latest up to github
 
 
-# Medium high-priority for some future release:
+# For some future release
 
-## add a icon/symbol to controls-notebook that has active cursor (or none if not a cursor with a panel)
+## figure out how I want to visually distinguish in GUI between editable and non-editable (but copy-able) text fields
+
+## [Harvest ideas from this blog post on setup.py tricks](http://www.pydanny.com/python-dot-py-tricks.html)
 
 ## add ActiveMQ example into fits_faker_panel.py
 
 ## think through what info should ztv pull from activemq msg to then display in self.SetTitle of main frame?
 
-## think through colors of cursor boxes etc and making them make some sort of justifiable sense
-
 ## in stats panel, should be able to enter just numbers (without first clicking/dragging a stats box) and it activates once enough info is specified
 
-## in stats panel, each editing of range step should make sense by itself.  not follow history.  e.g. xlow=1, xlow=3432, xlow=1
+## in stats panel, each editing of range step should make sense by itself.  not dependent on prior history.  e.g. xlow=1, xlow=3432, xlow=1
+
+right now it's screwed up, esp. if you're reversing low/high.
+
+## To stats panel:  add ability to choose "recent" selection areas (e.g. switch back and forth between some different areas)
 
 ## careful examination of slice plots and whether limits and exact paths across pixels are correct
 
@@ -32,17 +59,15 @@ Probably build this in to ztv.py and send new_slice_plot_xy[0/1] messages.  But,
 
 ## control panel for drawing/managing shapes (lines, boxes, circles)
 
-## think through overplotting colors, e.g. slice plot vs stats etc
+## re-visit colors of overplotted things, e.g. slice plot and stats box etc
 
 want sensible, don't want garish  (some way to link to the panels?  background colors? underlining of titles on tabs?)
 
 ## ability to do masked numpy arrays with different color value for masked positions
 
-## found: problem when auto-loading fits files that typing into curfile/curdir fields is pain in the butt as cursor keep smoving.  think it's an issue in "on_fitsfile_loaded"???
+## fix bug: problem when auto-loading fits files that typing into curfile/curdir fields is pain in the butt as cursor keep smoving.  think it's an issue in "on_fitsfile_loaded"???
 
-## To stats panel:  add ability to choose "recent" selection areas (e.g. switch back and forth between some different areas)
-
-## Fix bugs "deviceDeltaX" [Y] is deprecated, & continuousScroll is deprecated
+## Fix error/warning messages: "deviceDeltaX" [Y] is deprecated, & continuousScroll is deprecated
 
 e.g.:
 
@@ -50,8 +75,7 @@ e.g.:
     2015-03-24 08:57:59.055 Python[8660:1232061] -deviceDeltaX is deprecated for NSScrollWheel. Please use -scrollingDeltaX.
     2015-03-24 08:57:59.055 Python[8660:1232061] -deviceDeltaY is deprecated for NSScrollWheel. Please use -scrollingDeltaY.
 
-
-## generic pass through of parameters for typical `z = ztv.ZTV()` launching
+## think through generic pass through of parameters for typical `z = ztv.ZTV()` launching
 
 add to:
     class ZTVMain()  # in ztv.py
@@ -60,13 +84,6 @@ add to:
 Is probably straightforward for simple things like minval, or even string filenames to load a fits file.  But, gets complicated quickly if passing numpy arrays for display.  Will need to think about how to do.  Or, whether to just do limited subset.  
 
 Another issue is visibility - how to make it clear to user what one can do?  That's an argument for the extra complexity (and less flexibility) of just manually specifiying what can be passed through.
-
-## ZTVFrame.ztvframe_pid as a signaling device isn't working
-
-the ztvframe_pid is grabbed correctly, but the PID isn't actually fully killed until the overall python session is killed.  (something changes with the process when the window is closed, but it's not actually cleaned up fully/correctly.)  This is an issue both for processes that may be watching (e.g. fits_fake_panel.py), but also that if you launch a ton of ztv sessions from same python session, you are leaving cruft around that will eventually slow things down.
-
-
-# Low priority for some future release:
 
 ## re-consider which color maps to include
 
@@ -83,7 +100,7 @@ the ztvframe_pid is grabbed correctly, but the PID isn't actually fully killed u
 - allow enable/disable of ActiveMQ in SourcePanel at startup (default = off?) 
 - Allow enable/disable of Auto-load file in SourcePanel at startup (default = on?) 
 
-## in source panel, with hiding/showing GUI elements, ideally should have everything dynamically re-arrange
+## in source panel, with hiding/showing GUI elements, ideally should have everything dynamically re-arrange.  This probably requires deleting/adding the elements, not just hiding/showing
 
 ## To color control panel:  add a histogram panel with click-and-drag min/max markers
 
@@ -94,8 +111,6 @@ need to think through how circle defined - click cneter and drag out?  Confined 
 ## crisper 'historgram' style plotting for slice plots when really zoomed in
 
 ## run through a syntax checker and cleanup most/all objections (e.g. "x*y" vs. "x * y")
-
-## consider:  in Source panel->Autoload, should dir/file be combined in to single field?
 
 ## in source panel fields:  tab to complete doesn't work at first attempt in fields after clicking.  have to type a character first.  After that behavior is correct.  (launch ztv; click in a field, hit tab.  nothing.  type a character (even not matching), delete it, hit tab -> works)
 
@@ -109,7 +124,7 @@ need to think through how circle defined - click cneter and drag out?  Confined 
 
 ## consider:  what color should be used for blank/fill space in ImagePanels?  (currently white, but should it be black? adjustable?)
 
-## design & implement global keyboard shortcuts, e.g. cmd-o for opening a file
+## design & implement global keyboard shortcuts, e.g. cmd-o for opening a file, what else??
 
 ## access catalogs (local & internet) and overplot
 
@@ -131,3 +146,14 @@ Problem:
     
 I think fix will be around the `ztv_api.py` line that launches ztv with: `subprocess.Popen`.
 
+## Upon ztv.close() (or cmd-Q or any of the other ways of closing a ztv window) the process doesn't terminate cleanly (v. low priority)
+
+e.g.
+    import ztv
+    z = ztv.ZTV()
+    z.close()  # leaves a process dangling, but not using hardly any resources.
+               # AND, it goes away the moment you reassign z as python does it's cleanup properly.
+
+This isn't much of an issue, even if relaunching ztv a bunch of times, b/c usually you'd be doing that into the same name & therefore the earlier processes would get cleaned up on their own.
+
+this mean that ZTVFrame.ztvframe_pid as a signaling device isn't working.  the ztvframe_pid is grabbed correctly, but the PID isn't actually fully killed until the overall python session is killed.  (something changes with the process when the window is closed, but it's not actually cleaned up fully/correctly.)  This is an issue both for processes that may be watching (e.g. fits_fake_panel.py), but also that if you launch a ton of ztv sessions from same python session under different names, you are leaving cruft around that may eventually slow things down.

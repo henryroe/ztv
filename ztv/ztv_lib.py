@@ -1,6 +1,8 @@
 import wx
 import sys
 import pickle
+from threading import Thread
+from Queue import Queue, Empty
 
 def force_textctrl_color_update(textctrl):
     cur_focused_item = textctrl.GetParent().FindFocus()
@@ -51,7 +53,7 @@ def validate_textctrl_str(textctrl, validate_fxn, last_value):
 # point is to make improbably that would ever happen to appear inside a pickled image and be mistaken
 end_of_message_message = ("---EndOfMessage---"*10) + "\n"   
 
-def send_to_pipe(pipe, msg): 
+def send_to_stream(stream, msg): 
     """
     Pickle & send to stdout a message.
     Used primarily to communicate back-and-forth with a separately launched ztv process.
@@ -59,15 +61,59 @@ def send_to_pipe(pipe, msg):
     if isinstance(msg, str):
         msg = (msg,)
     pkl = pickle.dumps(msg)
-    pipe.write(pkl + '\n' + end_of_message_message)
-    pipe.flush()
+    stream.write(pkl + '\n' + end_of_message_message)
+    stream.flush()
 
-def listen_to_pipe(pipe):
+class UnexpectedEndOfStream(Exception): pass
+
+class StreamListenerTimeOut(Exception): pass
+
+def _accumulate_to_queue(stream, queue):
+    while True:
+        line = stream.readline()
+        if line:
+            queue.put(line)
+        else:
+# TODO: rather than return, should really raise the Error, but then code elsewhere needs to be catching for it
+#             raise UnexpectedEndOfStream
+            return
+
+class StreamListener():
+    def __init__(self, stream):
+        """
+        stream: e.g, stdin/stdout
+        """
+        self.stream = stream
+        self.queue = Queue()
+        self.thread = Thread(target=_accumulate_to_queue, args=(self.stream,self.queue))
+        self.thread.daemon = True
+        self.thread.start() 
+
+    def read_pickled_message(self, timeout=None):
+        try:
+            block = timeout is not None
+            msg = ""
+            while not msg.endswith('\n' + end_of_message_message):
+                msg += self.queue.get(block=block, timeout=timeout)
+            return pickle.loads(msg.replace('\n' + end_of_message_message, ''))
+        except Empty:
+            raise StreamListenerTimeOut
+
+
+def listen_to_pipe(pipe, timeout=None):
     """
     Will listen on pipe until has seen end_of_message_message, then strip the 
     end_of_message_message and return the unpickled version of the preceding message
+    
+    If timeout is None, then will just do a traditional blocking call of readline() 
+                        (i.e. will *never* return if a newline never comes in)
+    If timeout is not None, then if length of output hasn't changed in timeout seconds,
+                        then raise a timeout exception
     """
     in_str = ""
-    while not in_str.endswith('\n' + end_of_message_message):
-        in_str += pipe.readline()
+    if timeout is None:
+        while not in_str.endswith('\n' + end_of_message_message):
+            in_str += pipe.readline()
+    else:
+        pass
     return pickle.loads(in_str.replace('\n' + end_of_message_message, ''))

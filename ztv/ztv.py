@@ -39,7 +39,7 @@ from .plot_panel import PlotPanel
 from .phot_panel import PhotPanel
 from .stats_panel import StatsPanel
 from .color_panel import ColorPanel
-from .ztv_lib import send_to_pipe, listen_to_pipe
+from .ztv_lib import send_to_stream, StreamListener, StreamListenerTimeOut
 
 import pdb
 
@@ -690,7 +690,7 @@ class ZTVFrame(wx.Frame):
         self.load_default_image()
         self.cur_fits_hdulist = None
         if launch_listen_thread:
-            CommandListenerThread(self)
+            self.command_listener_thread = CommandListenerThread(self)
         self.set_cmap('gray')
         temp_id = wx.NewId()
         self.Bind(wx.EVT_MENU, self.kill_ztv, id=temp_id)
@@ -961,14 +961,14 @@ class ActiveMQListener(object):
     def __init__(self, ztv_frame):
         self.ztv_frame = ztv_frame
     def on_error(self, headers, message):
-        print('received an error %s' % message)
+        sys.stderr.write("received an error: {}\n".format(message))
     def on_message(self, headers, message):
         try:
             msg = pickle.loads(message)
             if msg.has_key('image_data'):
                 wx.CallAfter(Publisher().sendMessage, "load_numpy_array", msg['image_data'])
         except UnpicklingError:
-            print('received an unhandled message ({})'.format(message))
+            sys.stderr.write('received an unhandled message ({})\n'.format(message))
 
 
 class ActiveMQListenerThread(threading.Thread):
@@ -1048,21 +1048,25 @@ class CommandListenerThread(threading.Thread):
         threading.Thread.__init__(self)
         self.ztv_frame = ztv_frame
         self.daemon = True
+        self.keep_running = True
         self.start()
 
     def run(self):
-        keep_running = True
-        while keep_running:
+        stream_listener = StreamListener(sys.stdin)
+        while self.keep_running:
             try:
-                x = listen_to_pipe(sys.stdin)
+                x = stream_listener.read_pickled_message(timeout=1.)
             except EOFError:  # means we are done here...
                 return
-            if not isinstance(x, tuple):
-                raise Error("ListenThread only accepts tuples")
-            if x[0] == 'get_available_cmaps':
-                self.send_to_pipe(sys.stdout, ('available_cmaps', self.ztv_frame.available_cmaps))
+            except StreamListenerTimeOut:
+                pass
             else:
-                wx.CallAfter(Publisher().sendMessage, x[0], *x[1:])
+                if not isinstance(x, tuple):
+                    raise Error("ListenThread only accepts tuples")
+                if x[0] == 'get_available_cmaps':
+                    send_to_stream(sys.stdout, ('available_cmaps', self.ztv_frame.available_cmaps))
+                else:
+                    wx.CallAfter(Publisher().sendMessage, x[0], *x[1:])
 
 
 class ZTVMain():

@@ -4,7 +4,7 @@ import os
 import os.path
 import pickle
 import numpy as np
-from .ztv_lib import send_to_pipe, listen_to_pipe
+from .ztv_lib import send_to_stream, StreamListener, StreamListenerTimeOut
 import importlib
 
 class Error(Exception):
@@ -46,12 +46,14 @@ class ZTV():
             cmd += 'title="' + title + '",'
         cmd += 'masterPID=' + str(os.getpid()) +")'"
         self._subproc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
+        self.stream_listener = StreamListener(self._subproc.stdout)
 
     def close(self):
         """
         Shutdown this instance of ZTV
         """
-        send_to_pipe(self._subproc.stdin, "kill_ztv")
+        send_to_stream(self._subproc.stdin, "kill_ztv")
+        # self._subproc.terminate()   # TODO: neither .terminate() nor .kill() seem to close out the subprocess, something must be holding it up.
 
     def _load_numpy_array(self, image):
         """
@@ -60,7 +62,7 @@ class ZTV():
         Currently only accepts 2-d arrays
         """
         if isinstance(image, np.ndarray):
-            send_to_pipe(self._subproc.stdin, ('load_numpy_array', image))
+            send_to_stream(self._subproc.stdin, ('load_numpy_array', image))
         else:
             raise Error('Tried to send type {} instead of a numpy array'.format(type(image)))
 
@@ -84,7 +86,7 @@ class ZTV():
         (or any other capitalization of those file suffixes)
         """
         if self._validate_fits_filename(filename):
-            send_to_pipe(self._subproc.stdin, ('load_fits_file', filename))
+            send_to_stream(self._subproc.stdin, ('load_fits_file', filename))
 
     def load(self, input):
         """
@@ -104,18 +106,22 @@ class ZTV():
         """
         Load the default nonsense image
         """
-        send_to_pipe(self._subproc.stdin, "load_default_image")
+        send_to_stream(self._subproc.stdin, "load_default_image")
 
     def get_available_cmaps(self):
         """
         Returns available color maps as a list of strings
         """
-        send_to_pipe(self._subproc.stdin, "get_available_cmaps")
-        x = listen_to_pipe(self._subproc.stdout)
-        if x[0] == 'available_cmaps':
-            return x[1]
+        send_to_stream(self._subproc.stdin, "get_available_cmaps")
+        try:
+            x = self.stream_listener.read_pickled_message(timeout=10.)
+        except StreamListenerTimeOut:
+            raise Error("get_available_cmaps did not receive return value from ztv.")
         else:
-            raise Error("Unrecognized return value from ztv. {}".format(x))
+            if x[0] == 'available_cmaps':
+                return x[1]
+            else:
+                raise Error("Unrecognized return value from ztv. {}".format(x))
 
     def set_cmap(self, cmap):
         """
@@ -127,25 +133,25 @@ class ZTV():
             e.g. 'gray' is in the list, but one can request either 'gray' or 'gray_r'
                  'Blues_r' is in the list, but one can request either 'Blues' or 'Blues_r'
         """
-        send_to_pipe(self._subproc.stdin, ('set_cmap', cmap))
+        send_to_stream(self._subproc.stdin, ('set_cmap', cmap))
 
     def invert_cmap(self):
         """
         Invert the current colormap
         """
-        send_to_pipe(self._subproc.stdin, 'invert_cmap')
+        send_to_stream(self._subproc.stdin, 'invert_cmap')
 
     def reset_minmax(self):
         """
         Reset the min/max to the image's full range
         """
-        send_to_pipe(self._subproc.stdin, 'set_clim_to_minmax')
+        send_to_stream(self._subproc.stdin, 'set_clim_to_minmax')
 
     def auto_minmax(self):
         """
         Set the min/max to the automatic setting
         """
-        send_to_pipe(self._subproc.stdin, 'set_clim_to_auto')
+        send_to_stream(self._subproc.stdin, 'set_clim_to_auto')
 
     def set_minmax(self, minval=None, maxval=None):
         """
@@ -155,25 +161,25 @@ class ZTV():
 
         See ZTV.reset_minmax() for resetting the min/max to the image's full range
         """
-        send_to_pipe(self._subproc.stdin, ('set_clim', (minval, maxval)))
+        send_to_stream(self._subproc.stdin, ('set_clim', (minval, maxval)))
 
     def reset_zoom_and_center(self):
-        send_to_pipe(self._subproc.stdin, 'reset_zoom_and_center')
+        send_to_stream(self._subproc.stdin, 'reset_zoom_and_center')
 
     def set_zoom(self, zoom):
-        send_to_pipe(self._subproc.stdin, ('set_zoom_factor', zoom))
+        send_to_stream(self._subproc.stdin, ('set_zoom_factor', zoom))
 
     def set_xy_center(self, *args):
         if len(args) == 1:
             x,y = args[0]
         else:
             x,y = args[0], args[1]
-        send_to_pipe(self._subproc.stdin, ('set_xy_center', (x, y)))
+        send_to_stream(self._subproc.stdin, ('set_xy_center', (x, y)))
 
     def add_activemq(self, server=None, port=61613, destination=None):
         if server is None:
             raise Error('Must specify a server address in server keyword, e.g.  "myserver.mywebsite.com"')
         if destination is None:
             raise Error('Must specify a message queue to follow in destination keyword')
-        send_to_pipe(self._subproc.stdin, ('add_activemq_instance', (server, port, destination)))
+        send_to_stream(self._subproc.stdin, ('add_activemq_instance', (server, port, destination)))
 

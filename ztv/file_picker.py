@@ -92,8 +92,8 @@ class FilePicker(wx.Panel):
 
     def on_load(self, new_entry):
         # this is really a placeholder method, to be replaced when this class is implemented with a method that actually does something
-        print("on_load called for {}".format(new_entry))
-
+        pass
+        
     def set_assumed_prefix(self, new_prefix):
         self.assumed_prefix = new_prefix
         self.update_recent_choice()
