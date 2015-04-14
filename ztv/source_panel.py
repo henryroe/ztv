@@ -220,7 +220,7 @@ class SourcePanel(wx.Panel):
         proc_labels = [x[0] for x in self.ztv_frame.image_process_functions_to_apply]
         if 'sky_subtraction' in proc_labels:
             self.ztv_frame.image_process_functions_to_apply.pop(proc_labels.index('sky_subtraction'))
-            self.ztv_frame.redisplay_image()
+            wx.CallAfter(Publisher().sendMessage, "image_process_functions_to_apply-changed", None)
 
     def load_sky_subtraction_to_process_stack(self):
         self.unload_sky_subtraction_from_process_stack()
@@ -228,7 +228,7 @@ class SourcePanel(wx.Panel):
             process_fxn = ImageProcessAction(np.subtract, self.sky_hdulist[0].data)
             # assume that sky subtraction should always be first in processing stack.
             self.ztv_frame.image_process_functions_to_apply.insert(0, ('sky_subtraction', process_fxn))
-            self.ztv_frame.redisplay_image()
+            wx.CallAfter(Publisher().sendMessage, "image_process_functions_to_apply-changed", None)
 
     def load_sky_frame(self, filename, start_sky_correction=True):
         if len(filename) == 0:
@@ -257,7 +257,7 @@ class SourcePanel(wx.Panel):
         proc_labels = [x[0] for x in self.ztv_frame.image_process_functions_to_apply]
         if 'flat_division' in proc_labels:
             self.ztv_frame.image_process_functions_to_apply.pop(proc_labels.index('flat_division'))
-            self.ztv_frame.redisplay_image()
+            wx.CallAfter(Publisher().sendMessage, "image_process_functions_to_apply-changed", None)
 
     def load_flat_division_to_process_stack(self):
         self.unload_flat_division_from_process_stack()
@@ -265,7 +265,7 @@ class SourcePanel(wx.Panel):
             process_fxn = ImageProcessAction(np.divide, self.flat_hdulist[0].data)
             # assume that flat division should always be last in processing stack.
             self.ztv_frame.image_process_functions_to_apply.insert(99999, ('flat_division', process_fxn))
-            self.ztv_frame.redisplay_image()
+            wx.CallAfter(Publisher().sendMessage, "image_process_functions_to_apply-changed", None)
 
     def load_flat_frame(self, filename, start_flat_correction=True):
         if len(filename) == 0:

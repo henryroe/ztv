@@ -627,8 +627,11 @@ class ZTVFrame(wx.Frame):
         self.autoload_match_string = ''
         self.autoload_filematch_thread = None
         self.image_process_functions_to_apply = []  # list of tuples of ('NameOrLabelIdentifier', fxn), where fxn must accept the image and return the processed image
-        self.raw_image = self.get_default_image()
-        self.display_image = self.raw_image.copy()
+        self.raw_image = self.get_default_image()   # underlying raw data, can be 2-d [y,x] or 3-d [z,y,x]
+        self.proc_image = self.raw_image.copy()     # raw_image processed with currently selected flat/sky/etc
+        self.cur_display_frame_num = 0              # ignored if raw_image/proc_image is 2-d, otherwise 
+                                                    # display_image is proc_image[self.cur_display_frame_num,:,:]
+        self.display_image = self.raw_image.copy()  # 2-d array of what is currently displayed on-screen
         self.available_cmaps = ColorMaps().basic()
         self.cmap = 'jet'  # will go back to gray later
         self.is_cmap_inverted = False
@@ -643,6 +646,8 @@ class ZTVFrame(wx.Frame):
         Publisher().subscribe(self.set_scaling, "set_scaling")
         Publisher().subscribe(self.set_norm, "clim-changed")
         Publisher().subscribe(self.set_norm, "scaling-changed")
+        Publisher().subscribe(self.recalc_proc_image, "image_process_functions_to_apply-changed")
+        Publisher().subscribe(self.recalc_display_image, "cur_display_frame_num-changed")
         self.scaling = 'Linear'
         self.available_scalings = ['Linear', 'Asinh', 'Log', 'PowerDist', 'Sinh', 'Sqrt', 'Squared']
         # scalings that require inputs & need additional work to implement:  
@@ -670,7 +675,38 @@ class ZTVFrame(wx.Frame):
         self.controls_images_sizer.Add(self.overview_image_panel, 0, wx.ALL, border=5)
         self.loupe_image_panel = LoupeImagePanel(self)
         self.controls_images_sizer.Add(self.loupe_image_panel, 0, wx.BOTTOM|wx.RIGHT|wx.TOP, border=5)
-        self.controls_images_sizer.AddSpacer((0, 0), 0, wx.EXPAND, 5)
+        
+        self.frame_number_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        
+        self.frame_number_fullleft_button = wx.Button(self, -1, unichr(0x21e4), style=wx.BU_EXACTFIT)
+#         self.Bind(wx.EVT_BUTTON, self.on_frame_number_fullleft_button, self.frame_number_fullleft_button)
+        self.frame_number_sizer.Add(self.frame_number_fullleft_button, 0, wx.ALIGN_CENTER_VERTICAL)
+
+        self.frame_number_left_button = wx.Button(self, -1, unichr(0x2190), style=wx.BU_EXACTFIT)
+#         self.Bind(wx.EVT_BUTTON, self.on_frame_number_left_button, self.frame_number_left_button)
+        self.frame_number_sizer.Add(self.frame_number_left_button, 0, wx.ALIGN_CENTER_VERTICAL)
+
+  # HEREIAM:  incorporating frame number controls....
+        textentry_font = wx.Font(14, wx.FONTFAMILY_MODERN, wx.NORMAL, wx.FONTWEIGHT_LIGHT, False)
+        self.frame_number_textctrl = wx.TextCtrl(self, wx.ID_ANY, '0', wx.DefaultPosition, wx.Size(40, 21),
+                                       wx.TE_PROCESS_ENTER|wx.TE_CENTRE)
+        self.frame_number_textctrl.SetFont(textentry_font)
+        self.frame_number_sizer.Add(self.frame_number_textctrl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+#         self.frame_number_textctrl.Bind(wx.EVT_TEXT, self.frame_number_textctrl_changed)
+#         self.frame_number_textctrl.Bind(wx.EVT_TEXT_ENTER, self.frame_number_textctrl_entered)
+
+        self.frame_number_right_button = wx.Button(self, -1, unichr(0x2192), style=wx.BU_EXACTFIT)
+#         self.Bind(wx.EVT_BUTTON, self.on_frame_number_right_button, self.frame_number_right_button)
+        self.frame_number_sizer.Add(self.frame_number_right_button, 0, wx.ALIGN_CENTER_VERTICAL)
+
+        self.frame_number_fullright_button = wx.Button(self, -1, unichr(0x21e5), style=wx.BU_EXACTFIT)
+#         self.Bind(wx.EVT_BUTTON, self.on_frame_number_fullright_button, self.frame_number_fullright_button)
+        self.frame_number_sizer.Add(self.frame_number_fullright_button, 0, wx.ALIGN_CENTER_VERTICAL)
+
+          # HEREIAM
+        self.controls_images_sizer.AddSpacer((0, 0), 1, wx.EXPAND, 0)
+        self.controls_images_sizer.Add(self.frame_number_sizer, 0, wx.ALIGN_RIGHT|wx.ALIGN_BOTTOM)
+        
         self.controls_sizer.Add(self.controls_images_sizer, 0, wx.EXPAND, border=5)
         self.controls_notebook_sizer = wx.BoxSizer(wx.VERTICAL)
         self.controls_notebook = ControlsNotebook(self)        
@@ -803,7 +839,11 @@ class ZTVFrame(wx.Frame):
         self.set_clim([self.display_image.min(), self.display_image.max()])
 
     def get_auto_clim_values(self, *args):
-        # 'cheat' for speed by sampling only a subset of pts
+        """
+        Set min/max of display to n_sigma_below and n_sigma_above background
+        
+        'cheat' for speed by sampling only a subset of pts
+        """
         n_pts = 1000
         stepsize = self.display_image.size/n_pts
         robust_mean, robust_median, robust_stdev = sigma_clipped_stats(self.display_image.ravel()[0::stepsize])
@@ -811,9 +851,6 @@ class ZTVFrame(wx.Frame):
         n_sigma_above = 6.
         sys.stderr.write("\n\nauto_clim = {}\n\n".format((robust_mean - n_sigma_below * robust_stdev, robust_mean + n_sigma_above * robust_stdev)))
         return (robust_mean - n_sigma_below * robust_stdev, robust_mean + n_sigma_above * robust_stdev)
-      # HEREIAM
-#         quartile = (self.display_image.max() - self.display_image.min()) / 4.0
-#         return (self.display_image.min() + quartile, self.display_image.max() - quartile)
 
     def set_clim_to_auto(self, *args):
         # TODO: need to add calling this from ztv_api
@@ -839,10 +876,29 @@ class ZTVFrame(wx.Frame):
         else:
             sys.stderr.write("unrecognized scaling ({}) requested\n".format(scaling))
 
-    def redisplay_image(self):
-        self.display_image = self.raw_image.copy()
+    def set_cur_display_frame_num(self, msg):
+        if isinstance(msg, Message):
+            n = msg.data
+        else:
+            n = msg
+        self.cur_display_frame_num = n
+        wx.CallAfter(Publisher().sendMessage, "cur_display_frame_num-changed", None)
+
+    def recalc_proc_image(self, msg=None):
+        self.proc_image = self.raw_image.copy()
         for cur_imageproc_label, cur_imageproc_fxn in self.image_process_functions_to_apply:
-            self.display_image = cur_imageproc_fxn(self.display_image)
+            self.proc_image = cur_imageproc_fxn(self.proc_image)
+        self.recalc_display_image()
+        
+    def recalc_display_image(self, msg=None):
+        if self.proc_image.ndim == 2:
+            self.display_image = self.proc_image.copy()
+        elif self.proc_image.ndim == 3:
+            # clip self.cur_display_frame_num to allowed range
+            self.display_image = self.proc_image[min(max(0, self.cur_display_frame_num), 
+                                                     self.proc_image.shape[0] - 1), :, :]
+        else:
+            raise Error("proc_image must be 2-d or 3-d, was instead {}-d".format(self.proc_image.ndim))
         new_min, new_max = None, None
         if self.min_value_mode_on_new_image == 'data-min/max':
             new_min = self.display_image.min()
@@ -857,7 +913,7 @@ class ZTVFrame(wx.Frame):
             new_max = auto_clim[1]
         self.set_clim([new_min, new_max])
         wx.CallAfter(Publisher().sendMessage, "redraw_image")
-
+  
     def load_numpy_array(self, msg, is_fits_file=False):
         if isinstance(msg, Message):
             image = msg.data
@@ -865,16 +921,20 @@ class ZTVFrame(wx.Frame):
             image = msg
         if not is_fits_file:
             self.cur_fits_hdulist = None
-        if image.ndim != 2:
-            sys.stderr.write("Currently only support numpy arrays of 2-d; tried to load a {}-d numpy array".format(image.ndim))
+        if (image.ndim != 2) and (image.ndim != 3):
+            sys.stderr.write("Only supports numpy arrays of 2-d or 3-d; tried to load a {}-d numpy array".format(image.ndim))
         else:
             need_to_reset_zoom_and_center = False
-            if image.shape != self.raw_image.shape:
+            self.cur_display_frame_num = 0
+              # HEREIAM:  need to figure out how to handle the loading/display of the image correctly now that am moving to 3-d
+            old_2d_shape = self.raw_image.shape[-2:]
+            new_2d_shape = image.shape[-2:]
+            if new_2d_shape != old_2d_shape:
                 need_to_reset_zoom_and_center = True
             self.raw_image = image  
             self.image_radec = None
             self.cur_fitsfile_basename = ''
-            self.redisplay_image()
+            self.recalc_proc_image()
             if need_to_reset_zoom_and_center:
                 self.primary_image_panel.reset_zoom_and_center()
             self.SetTitle(self.base_title)

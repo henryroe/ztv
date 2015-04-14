@@ -2,6 +2,11 @@
 
 ## some basic implementation of 3-d images, at least reading in from fits files
 
+pause and consider how best to implement
+
+figure out how to deal with image_radec in load_fits_file for 3-d case
+
+
 ## write up README/DESCRIPTION other doc files
 
 ## Write up 'motivation' document referring back to atv (and to ds9 etc etc)  (is this in DESCRIPTION.rst or README.rst??)
@@ -34,6 +39,8 @@ https://packaging.python.org/en/latest/single_source_version.html
 
 
 # For some future release
+
+## in source panel offer option to access N most recent images (I think in source panel, and not overall 3-d image number controller)
 
 ## figure out how I want to visually distinguish in GUI between editable and non-editable (but copy-able) text fields
 
