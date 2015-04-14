@@ -19,6 +19,7 @@ from astropy import wcs
 from astropy.coordinates import ICRS
 from astropy import units
 import astropy.visualization
+from astropy.stats import sigma_clipped_stats
  
 import matplotlib
 matplotlib.interactive(True)
@@ -802,13 +803,20 @@ class ZTVFrame(wx.Frame):
         self.set_clim([self.display_image.min(), self.display_image.max()])
 
     def get_auto_clim_values(self, *args):
-        quartile = (self.display_image.max() - self.display_image.min()) / 4.0
-        return (self.display_image.min() + quartile, self.display_image.max() - quartile)
+        # 'cheat' for speed by sampling only a subset of pts
+        n_pts = 1000
+        stepsize = self.display_image.size/n_pts
+        robust_mean, robust_median, robust_stdev = sigma_clipped_stats(self.display_image.ravel()[0::stepsize])
+        n_sigma_below = 1.0
+        n_sigma_above = 6.
+        sys.stderr.write("\n\nauto_clim = {}\n\n".format((robust_mean - n_sigma_below * robust_stdev, robust_mean + n_sigma_above * robust_stdev)))
+        return (robust_mean - n_sigma_below * robust_stdev, robust_mean + n_sigma_above * robust_stdev)
+      # HEREIAM
+#         quartile = (self.display_image.max() - self.display_image.min()) / 4.0
+#         return (self.display_image.min() + quartile, self.display_image.max() - quartile)
 
     def set_clim_to_auto(self, *args):
-        # TODO:  Need to implement a sensible auto-minmax setting algorithm
         # TODO: need to add calling this from ztv_api
-        sys.stderr.write("\nNeed to implement a sensible auto-minmax setting algorithm\n")
         auto_clim = self.get_auto_clim_values()
         self.set_clim([auto_clim[0], auto_clim[1]])
 

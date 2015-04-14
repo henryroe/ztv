@@ -18,7 +18,6 @@
 
 ## think through what info should ztv pull from activemq msg to then display in self.SetTitle of main frame?
 
-
 ## think through colors of cursor boxes etc and making them make some sort of justifiable sense
 
 ## in stats panel, should be able to enter just numbers (without first clicking/dragging a stats box) and it activates once enough info is specified

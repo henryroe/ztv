@@ -12,7 +12,7 @@ class FakeFitsMaker(threading.Thread):
         self.ztv_frame_pid = ztv_frame_pid  # will kill self if this pid no longer alive
         self.nx = 512
         self.ny = 512
-        self.flat_field_pixel_to_pixel_fractional_1sigma = 0.7
+        self.flat_field_pixel_to_pixel_fractional_1sigma = 0.15
         self.sky_pattern_mean_cts = 9000.
         self.sky_pattern_row_to_row_variation_1sigma_cts = 2000.
         self.saturation_cts = 2**16
