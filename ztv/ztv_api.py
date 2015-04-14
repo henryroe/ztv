@@ -5,6 +5,7 @@ import os.path
 import pickle
 import numpy as np
 from .ztv_lib import send_to_pipe, listen_to_pipe
+import importlib
 
 class Error(Exception):
     pass
@@ -30,9 +31,17 @@ class ZTV():
         z.set_cmap('jet')
         z.set_minmax(0.3 * (2**16), 0.7 * (2**16))
     """
-    def __init__(self, title=None):
-        # TODO: add generic passthrough of commands, e.g. load fits file?
-        cmd = "python -c 'from ztv.ztv import ZTVMain ; ZTVMain(launch_listen_thread=True, "
+    def __init__(self, title=None, control_panels_module_path=None):
+        # TODO: add generic passthrough of commands, e.g. load fits file? or way to execute sequence of commands from arguments after launch?
+        if control_panels_module_path is None:
+            cmd = "python -c 'from ztv.ztv import ZTVMain ; ZTVMain(launch_listen_thread=True,"
+        else:
+#             cmd = ("python -c 'from ztv.ztv import ZTVMain ; control_panels_module = None ; ZTVMain(launch_listen_thread=True, " +
+#                    "control_panels_to_load=control_panels_module.control_panels_to_load,")
+            cmd = ("python -c 'from ztv.ztv import ZTVMain ; import importlib ; " + 
+                   "control_panels_module = importlib.import_module(\"" + 
+                   control_panels_module_path + "\") ; ZTVMain(launch_listen_thread=True, " +
+                   "control_panels_to_load=control_panels_module.control_panels_to_load,")
         if title is not None:
             cmd += 'title="' + title + '",'
         cmd += 'masterPID=' + str(os.getpid()) +")'"

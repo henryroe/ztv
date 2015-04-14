@@ -565,38 +565,35 @@ class LoupeImagePanel(wx.Panel):
 class ControlsNotebook(wx.Notebook):
     # see "Book" Controls -> Notebook example in wxpython demo
     def __init__(self, parent):
-        self.parent = parent
         wx.Notebook.__init__(self, parent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0)  
-        # NOTE: Warning: this indexing scheme for tracking pages is fragile.  Insert pages, add pages, delete pages, etc will screw it up
-        self.cur_new_page_index = 0  # will increment and keep track of ImageId numbers in self.panel_name_to_id
+        self.ztv_frame = self.GetTopLevelParent()
+        # NOTE: Warning: this indexing scheme for tracking pages is fragile.  Inserting on the fly pages, add pages, delete pages, etc will screw it up
+        self.cur_new_panel_index = 0  # will increment and keep track of ImageId numbers in self.panel_name_to_id
         self.panel_name_to_id = {}
         self.panel_id_to_name = {}
-        self.source_panel = SourcePanel(self)
-        self.AddPageAndStoreID(self.source_panel, "Source")
-        self.color_panel = ColorPanel(self)
-        self.AddPageAndStoreID(self.color_panel, "Color")
-        self.plot_panel = PlotPanel(self)
-        self.AddPageAndStoreID(self.plot_panel, "Plot")
-        self.stats_panel = StatsPanel(self)
-        self.AddPageAndStoreID(self.stats_panel, "Stats")
-        self.phot_panel = PhotPanel(self)
-        self.AddPageAndStoreID(self.phot_panel, "Phot")
+        self.panels_by_id = {}
+        for cur_title, cur_panel in self.ztv_frame.control_panels_to_load:
+            self.AddPanelAndStoreID(cur_panel(self), cur_title)
         
-    def AddPageAndStoreID(self, page, text, **kwargs):
-        self.panel_name_to_id[text] = self.cur_new_page_index
-        self.panel_id_to_name[self.cur_new_page_index] = text
-        self.cur_new_page_index += 1
-        self.AddPage(page, text, imageId=self.panel_name_to_id[text])
+    def AddPanelAndStoreID(self, panel, text, **kwargs):
+        self.panel_name_to_id[text] = self.cur_new_panel_index
+        self.panel_id_to_name[self.cur_new_panel_index] = text
+        self.panels_by_id[self.cur_new_panel_index] = panel
+        self.cur_new_panel_index += 1
+        self.AddPage(panel, text, imageId=self.panel_name_to_id[text])
         
 
 class ZTVFrame(wx.Frame):
     # TODO: create __init__ input parameters for essentially every adjustable parameter
-    def __init__(self, title=None, launch_listen_thread=False):
+    def __init__(self, title=None, launch_listen_thread=False, control_panels_to_load=None):
         self.ztvframe_pid = os.getpid()  # some add-on control panels will want this to pass to subprocs for knowing when to kill themselves, but NOTE: currently (as of 2015-04-13) on OS X is not working right as process doesn't die fully until uber-python session is killed.
         if title is None:
             self.base_title = 'ztv'
         else:
             self.base_title = title
+        if control_panels_to_load is None:
+            from .default_panels import control_panels_to_load
+        self.control_panels_to_load = control_panels_to_load
         wx.Frame.__init__(self, None, title=self.base_title, pos=wx.DefaultPosition, size=wx.Size(1024,512),
                           style = wx.DEFAULT_FRAME_STYLE)
         Publisher().subscribe(self.kill_ztv, 'kill_ztv')
@@ -661,7 +658,7 @@ class ZTVFrame(wx.Frame):
         self.controls_images_sizer.AddSpacer((0, 0), 0, wx.EXPAND, 5)
         self.controls_sizer.Add(self.controls_images_sizer, 0, wx.EXPAND, border=5)
         self.controls_notebook_sizer = wx.BoxSizer(wx.VERTICAL)
-        self.controls_notebook = ControlsNotebook(self)
+        self.controls_notebook = ControlsNotebook(self)        
         self.controls_notebook_sizer.Add(self.controls_notebook, 1, wx.EXPAND | wx.ALL, border=0)
         self.controls_sizer.Add(self.controls_notebook_sizer, 1, wx.EXPAND, border=0)
         self.main_sizer.Add(self.controls_sizer, 0, wx.EXPAND, border=5)
@@ -1047,10 +1044,11 @@ class CommandListenerThread(threading.Thread):
 
 
 class ZTVMain():
-    def __init__(self, title=None, masterPID=-1, launch_listen_thread=False):
+    def __init__(self, title=None, masterPID=-1, launch_listen_thread=False, control_panels_to_load=None):
         WatchMasterPIDThread(masterPID)
         app = wx.App(False)
-        self.frame = ZTVFrame(title=title, launch_listen_thread=launch_listen_thread)
+        self.frame = ZTVFrame(title=title, launch_listen_thread=launch_listen_thread,
+                              control_panels_to_load=control_panels_to_load)
         app.MainLoop()
         # TODO: need to figure out why ztvframe_pid is being left alive
 
