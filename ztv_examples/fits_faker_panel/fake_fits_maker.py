@@ -8,8 +8,8 @@ import threading
 
 
 class FakeFitsMaker(threading.Thread):
-    def __init__(self, ztvframe_pid=None):
-        self.ztvframe_pid = ztvframe_pid  # will kill self if this pid no longer alive
+    def __init__(self, ztv_frame_pid=None):
+        self.ztv_frame_pid = ztv_frame_pid  # will kill self if this pid no longer alive
         self.nx = 512
         self.ny = 512
         self.flat_field_pixel_to_pixel_fractional_1sigma = 0.1
@@ -18,7 +18,10 @@ class FakeFitsMaker(threading.Thread):
         self.seeing_gauss_width = 2.0  # not fwhm....being lazy
         self.n_bkgd_stars = 50
         
-        self.delay_between_frames_sec = 1.0
+        self.n_moving_objects = 10
+        self.moving_objects = []
+        
+        self.delay_between_frames_sec = 2.0
         
         self.data_dir = '/tmp/'
         self.files_to_delete = []
@@ -31,23 +34,22 @@ class FakeFitsMaker(threading.Thread):
         self.write_to_fits_file(self.flat_frame, 'flat_frame.fits')
         threading.Thread.__init__(self)
         self.daemon = True
-        self.start()
 
     def run(self):
-        keep_running = True
-        while keep_running:
+        self.keep_running = True
+        while self.keep_running:
             im = self.make_data_frame()
             self.write_to_fits_file(im, 'current.fits')
             self.write_to_fits_file(im, 'n{:04d}.fits'.format(self.frame_number))
             self.frame_number += 1
             time.sleep(self.delay_between_frames_sec)
-            if not psutil.pid_exists(self.ztvframe_pid):
-                keep_running = False
+            if not psutil.pid_exists(self.ztv_frame_pid):
+                self.keep_running = False
         self.delete_files()
     
     def set_up_bkgd_stars(self):
         flux_lognormal_sigma = 1.0
-        flux_multiplier = 2500.
+        flux_multiplier = 7000.
         self.bkgd_stars = {}
         self.bkgd_stars['x'] = np.random.uniform(low=0., high=self.nx - 1, size=self.n_bkgd_stars)
         self.bkgd_stars['y'] = np.random.uniform(low=0., high=self.ny - 1, size=self.n_bkgd_stars)
@@ -59,6 +61,26 @@ class FakeFitsMaker(threading.Thread):
             dys = np.outer(np.arange(self.ny), np.ones(self.nx)) - self.bkgd_stars['y'][i]
             self.bkgd_stars_frame += (self.bkgd_stars['peak_cts'][i] *
                                       np.exp(-((dxs)**2 + (dys)**2) / (2. * self.seeing_gauss_width**2)))
+
+    def new_moving_object(self):
+        flux_lognormal_sigma = 1.0
+        flux_multiplier = 10000.
+        new_object = {'peak_cts': flux_multiplier * np.random.lognormal(sigma=flux_lognormal_sigma)}
+        new_object['x'] = 0.
+        new_object['y'] = np.random.uniform(low=1., high=self.ny - 2)
+        new_object['dx'] = np.random.normal(loc=20, scale=15.)
+        new_object['dy'] = np.random.normal(loc=0., scale=10.)
+        return new_object
+        
+    def advance_moving_objects(self):
+        remaining_moving_objects = []
+        for cur_moving_object in self.moving_objects:
+            cur_moving_object['x'] += cur_moving_object['dx']
+            cur_moving_object['y'] += cur_moving_object['dy']
+            if ((cur_moving_object['x'] >= 0.) and (cur_moving_object['y'] >= 0.) and
+                (cur_moving_object['x'] < self.nx) and (cur_moving_object['y'] < self.ny)):
+                remaining_moving_objects.append(cur_moving_object)
+        self.moving_objects = remaining_moving_objects
 
     def calc_one_sky(self):
         return np.array([np.random.poisson(a, size=self.nx) for a in self.sky_frame_row_baseline])
@@ -75,7 +97,15 @@ class FakeFitsMaker(threading.Thread):
                                            size=[self.ny, self.nx])
                                            
     def make_data_frame(self):
-        im = (self.bkgd_stars_frame + self.calc_one_sky()) / self.flat_frame
+        im = self.bkgd_stars_frame.copy()
+        self.advance_moving_objects()
+        while len(self.moving_objects) < self.n_moving_objects:
+            self.moving_objects.append(self.new_moving_object())
+        for cur_moving_object in self.moving_objects:
+            dxs = np.outer(np.ones(self.ny), np.arange(self.nx)) - cur_moving_object['x']
+            dys = np.outer(np.arange(self.ny), np.ones(self.nx)) - cur_moving_object['y']
+            im += (cur_moving_object['peak_cts'] * np.exp(-((dxs)**2 + (dys)**2) / (2. * self.seeing_gauss_width**2)))
+        im = (im + self.calc_one_sky()) / self.flat_frame
         for x in np.arange(self.nx):  # has to be a better way than this dumb/slow loop
             for y in np.arange(self.ny):
                 im[y, x] = np.random.poisson(im[y, x])
@@ -96,4 +126,5 @@ class FakeFitsMaker(threading.Thread):
             
 
 if __name__ == '__main__':
-    FakeFitsMaker()
+    f = FakeFitsMaker()
+    f.start()

@@ -70,6 +70,8 @@ Another issue is visibility - how to make it clear to user what one can do?  Tha
 
 the ztvframe_pid is grabbed correctly, but the PID isn't actually fully killed until the overall python session is killed.  (something changes with the process when the window is closed, but it's not actually cleaned up fully/correctly.)  This is an issue both for processes that may be watching (e.g. fits_fake_panel.py), but also that if you launch a ton of ztv sessions from same python session, you are leaving cruft around that will eventually slow things down.
 
+# in source panel, return on auto-load file filename pattern should turn auto-load to ON
+
 
 # Low priority for some future release:
 

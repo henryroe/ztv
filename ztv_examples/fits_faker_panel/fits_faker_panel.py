@@ -1,4 +1,6 @@
+from __future__ import absolute_import
 import wx
+from .fake_fits_maker import FakeFitsMaker
             
 class FitsFakerPanel(wx.Panel):
     def __init__(self, parent):
@@ -17,9 +19,25 @@ class FitsFakerPanel(wx.Panel):
         static_text.Wrap( -1 )
         v_sizer1.Add(static_text, 0, wx.ALL|wx.ALIGN_CENTER|wx.ALIGN_CENTER_VERTICAL, 0)
 
-#         self.clear_button = wx.Button(self, wx.ID_ANY, u"Clear", wx.DefaultPosition, wx.DefaultSize, 0)
-#         h_sizer2.Add(self.clear_button, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 2)
-#         self.clear_button.Bind(wx.EVT_BUTTON, self.on_clear_button)
+        self.launch_button = wx.Button(self, wx.ID_ANY, u"Launch Fake Fits Maker", wx.DefaultPosition, wx.DefaultSize, 0)
+        v_sizer1.Add(self.launch_button, 0, wx.ALL|wx.ALIGN_CENTER|wx.ALIGN_CENTER_VERTICAL, 2)
+        self.launch_button.Bind(wx.EVT_BUTTON, self.on_launch_button)
+
+        self.halt_button = wx.Button(self, wx.ID_ANY, u"Halt Fake Fits Maker", wx.DefaultPosition, wx.DefaultSize, 0)
+        v_sizer1.Add(self.halt_button, 0, wx.ALL|wx.ALIGN_CENTER|wx.ALIGN_CENTER_VERTICAL, 2)
+        self.halt_button.Bind(wx.EVT_BUTTON, self.on_halt_button)
+        self.halt_button.Disable()
 
         v_sizer1.AddSpacer((0, 0), 1, wx.EXPAND)
         self.SetSizer(v_sizer1)
+
+    def on_launch_button(self, evt):
+        self.fake_fits_maker = FakeFitsMaker(ztv_frame_pid=self.ztv_frame.ztv_frame_pid)
+        self.fake_fits_maker.start()
+        self.launch_button.Disable()
+        self.halt_button.Enable()
+        
+    def on_halt_button(self, evt):
+        self.launch_button.Enable()
+        self.halt_button.Disable()
+        self.fake_fits_maker.keep_running = False

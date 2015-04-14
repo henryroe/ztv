@@ -586,7 +586,7 @@ class ControlsNotebook(wx.Notebook):
 class ZTVFrame(wx.Frame):
     # TODO: create __init__ input parameters for essentially every adjustable parameter
     def __init__(self, title=None, launch_listen_thread=False, control_panels_to_load=None):
-        self.ztvframe_pid = os.getpid()  # some add-on control panels will want this to pass to subprocs for knowing when to kill themselves, but NOTE: currently (as of 2015-04-13) on OS X is not working right as process doesn't die fully until uber-python session is killed.
+        self.ztv_frame_pid = os.getpid()  # some add-on control panels will want this to pass to subprocs for knowing when to kill themselves, but NOTE: currently (as of 2015-04-13) on OS X is not working right as process doesn't die fully until uber-python session is killed.
         if title is None:
             self.base_title = 'ztv'
         else:
