@@ -27,6 +27,15 @@ class FitsFakerPanel(wx.Panel):
         v_sizer1.Add(self.halt_button, 0, wx.ALL|wx.ALIGN_CENTER|wx.ALIGN_CENTER_VERTICAL, 2)
         self.halt_button.Bind(wx.EVT_BUTTON, self.on_halt_button)
         self.halt_button.Disable()
+        
+        static_text = wx.StaticText(self, wx.ID_ANY, u"Note: clicking 'Halt' will delete files in /tmp/ for you", wx.DefaultPosition, 
+                                    wx.DefaultSize, wx.ALIGN_CENTER )
+        static_text.Wrap( -1 )
+        v_sizer1.Add(static_text, 0, wx.ALL|wx.ALIGN_CENTER|wx.ALIGN_CENTER_VERTICAL, 0)
+        static_text = wx.StaticText(self, wx.ID_ANY, u"If you don't click Halt, you may want to go clean up *.fits in /tmp/", 
+                                    wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_CENTER )
+        static_text.Wrap( -1 )
+        v_sizer1.Add(static_text, 0, wx.ALL|wx.ALIGN_CENTER|wx.ALIGN_CENTER_VERTICAL, 0)
 
         v_sizer1.AddSpacer((0, 0), 1, wx.EXPAND)
         self.SetSizer(v_sizer1)
@@ -36,6 +45,11 @@ class FitsFakerPanel(wx.Panel):
         self.fake_fits_maker.start()
         self.launch_button.Disable()
         self.halt_button.Enable()
+        source_panel_id = self.ztv_frame.controls_notebook.panel_name_to_id['Source']
+        self.ztv_frame.controls_notebook.panels_by_id[source_panel_id].load_sky_frame('/tmp/sky_frame.fits', False)
+        self.ztv_frame.controls_notebook.panels_by_id[source_panel_id].load_flat_frame('/tmp/flat_frame.fits', False)
+        self.ztv_frame.controls_notebook.panels_by_id[source_panel_id].autoload_curfile_file_picker_on_load('/tmp/n*.fits')
+        
         
     def on_halt_button(self, evt):
         self.launch_button.Enable()

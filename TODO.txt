@@ -6,16 +6,18 @@
 
 # Desirable before next release
 
-## move fake_fits_maker.py into an example control panel
-
-- including better document ActiveMQ usage/example/etc
-- think through what info should ztv pull from activemq msg to then display in self.SetTitle of main frame?
-
 ## some basic implementation of 3-d images, at least reading in from fits files
 
 
 
 # Medium high-priority for some future release:
+
+## add a icon/symbol to controls-notebook that has active cursor (or none if not a cursor with a panel)
+
+## add ActiveMQ example into fits_faker_panel.py
+
+## think through what info should ztv pull from activemq msg to then display in self.SetTitle of main frame?
+
 
 ## think through colors of cursor boxes etc and making them make some sort of justifiable sense
 
@@ -24,10 +26,6 @@
 ## in stats panel, each editing of range step should make sense by itself.  not follow history.  e.g. xlow=1, xlow=3432, xlow=1
 
 ## careful examination of slice plots and whether limits and exact paths across pixels are correct
-
-## re-consider which color maps to include
-
-[based on:](https://jakevdp.github.io/blog/2014/10/16/how-bad-is-your-colormap/)
 
 ## add keyboard shortcuts to line/column plots (x/l and y/c) in plot mode
 
@@ -70,10 +68,12 @@ Another issue is visibility - how to make it clear to user what one can do?  Tha
 
 the ztvframe_pid is grabbed correctly, but the PID isn't actually fully killed until the overall python session is killed.  (something changes with the process when the window is closed, but it's not actually cleaned up fully/correctly.)  This is an issue both for processes that may be watching (e.g. fits_fake_panel.py), but also that if you launch a ton of ztv sessions from same python session, you are leaving cruft around that will eventually slow things down.
 
-# in source panel, return on auto-load file filename pattern should turn auto-load to ON
-
 
 # Low priority for some future release:
+
+## re-consider which color maps to include
+
+[based on:](https://jakevdp.github.io/blog/2014/10/16/how-bad-is-your-colormap/)
 
 ## in min/max control, consider an additional mode_on_new_image of N-sigma above(below) median
 

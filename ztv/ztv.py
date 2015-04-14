@@ -100,9 +100,9 @@ class PrimaryImagePanel(wx.Panel):
                                          np.arange(cmap_bitmap_width, dtype=np.uint8)))
             self.cmap_bitmaps[cmap] = wx.BitmapFromBufferRGBA(cmap_bitmap_width, cmap_bitmap_height,
                                                               np.uint8(np.round(rgba*255)))
-        self.available_cursor_modes = [ # ('None', self.set_cursor_to_none_mode),
-                                       ('Pan', self.set_cursor_to_pan_mode),
+        self.available_cursor_modes = [# ('None', self.set_cursor_to_none_mode),
                                        ('Zoom', self.set_cursor_to_zoom_mode),
+                                       ('Pan', self.set_cursor_to_pan_mode),
                                        ('Slice plot', self.set_cursor_to_plot_mode),
                                        ('Stats box', self.set_cursor_to_stats_box_mode),
                                        ('Phot', self.set_cursor_to_phot_mode)]
@@ -140,7 +140,7 @@ class PrimaryImagePanel(wx.Panel):
         menu = wx.Menu()
         menu.Append(wx.NewId(), 'Cursor mode:').Enable(False)
         self.cursor_mode_to_eventID = {}
-        cmd_num = 0
+        cmd_num = 1
         for cursor_mode, fxn in self.available_cursor_modes:
             wx_id = wx.NewId()
             menu.AppendCheckItem(wx_id, '   ' + cursor_mode + '\tCtrl+' + str(cmd_num))
@@ -204,25 +204,31 @@ class PrimaryImagePanel(wx.Panel):
 
     def set_cursor_to_none_mode(self, event):
         self.cursor_mode = 'None'
+        self.ztv_frame.controls_notebook.highlight_page(None)
 
     def set_cursor_to_zoom_mode(self, event):
         self.cursor_mode = 'Zoom'
+        self.ztv_frame.controls_notebook.highlight_page(None)
 
     def set_cursor_to_pan_mode(self, event):
         self.cursor_mode = 'Pan'
+        self.ztv_frame.controls_notebook.highlight_page(None)
 
     def set_cursor_to_stats_box_mode(self, event):
         self.cursor_mode = 'Stats box'
         self.ztv_frame.controls_notebook.SetSelection(self.ztv_frame.controls_notebook.panel_name_to_id['Stats'])
+        self.ztv_frame.controls_notebook.highlight_page('Stats')
         
     def set_cursor_to_plot_mode(self, event):
         self.cursor_mode = 'Slice plot'
         self.ztv_frame.controls_notebook.SetSelection(self.ztv_frame.controls_notebook.panel_name_to_id['Plot'])
-        
+        self.ztv_frame.controls_notebook.highlight_page('Plot')
+
     def set_cursor_to_phot_mode(self, event):
         self.cursor_mode = 'Phot'
         self.ztv_frame.controls_notebook.SetSelection(self.ztv_frame.controls_notebook.panel_name_to_id['Phot'])
-        
+        self.ztv_frame.controls_notebook.highlight_page('Phot')
+
     def on_key_press(self, event):
         # TODO: figure out why keypresses are only recognized after a click in the matplotlib frame.
         if event.key in ['c', 'C', 'v', 'V', 'y', 'Y']:
@@ -582,6 +588,14 @@ class ControlsNotebook(wx.Notebook):
         self.cur_new_panel_index += 1
         self.AddPage(panel, text, imageId=self.panel_name_to_id[text])
         
+    def highlight_page(self, panel_name=None):
+        highlight_char = unichr(0x2022)
+        for cur_id in self.panels_by_id:
+            if self.GetPageText(cur_id).startswith(highlight_char):
+                self.SetPageText(cur_id, self.GetPageText(cur_id)[1:])
+        if panel_name is not None:
+            new_name = highlight_char + self.GetPageText(self.panel_name_to_id[panel_name])
+            self.SetPageText(self.panel_name_to_id[panel_name], new_name)
 
 class ZTVFrame(wx.Frame):
     # TODO: create __init__ input parameters for essentially every adjustable parameter

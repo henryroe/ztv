@@ -82,11 +82,13 @@ class SourcePanel(wx.Panel):
         h_sizer.Add(wx.StaticText(self, -1, u"sec"), 0)
         self.autoload_sizer.Add(h_sizer, 0, wx.EXPAND)
         self.autoload_sizer.AddSpacer((0, 5), 0, wx.EXPAND)
-        self.autoload_curdir_file_picker = FilePicker(self, title='Dir:', is_files_not_dirs=False)
-        self.autoload_sizer.Add(self.autoload_curdir_file_picker, 0, wx.EXPAND)
-        self.autoload_curfile_file_picker = FilePicker(self, title='Filename Pattern:', allow_glob_matching=True,
-                                                       assumed_prefix=os.path.expanduser('~/'))
-        self.autoload_curdir_file_picker.on_load = self.autoload_curfile_file_picker.set_assumed_prefix
+#         self.autoload_curdir_file_picker = FilePicker(self, title='Dir:', is_files_not_dirs=False)
+#         self.autoload_sizer.Add(self.autoload_curdir_file_picker, 0, wx.EXPAND)
+#         self.autoload_curfile_file_picker = FilePicker(self, title='Filename Pattern:', allow_glob_matching=True,
+#                                                        assumed_prefix=os.path.expanduser('~/'))
+#         self.autoload_curdir_file_picker.on_load = self.autoload_curfile_file_picker.set_assumed_prefix
+#         self.autoload_curfile_file_picker.on_load = self.autoload_curfile_file_picker_on_load
+        self.autoload_curfile_file_picker = FilePicker(self, title='Filename Pattern:', allow_glob_matching=True)
         self.autoload_curfile_file_picker.on_load = self.autoload_curfile_file_picker_on_load
         self.autoload_sizer.Add(self.autoload_curfile_file_picker, 0, wx.EXPAND)
         v_sizer1.Add(self.autoload_sizer, 0, wx.EXPAND)
@@ -125,6 +127,11 @@ class SourcePanel(wx.Panel):
         self.sky_header_button.Disable()
         self.flat_header_button.Disable()
         Publisher().subscribe(self.update_cur_header_button_status, "redraw_image")
+        
+#         TODO: while hidden is the correct default for activemq, this should be handled with an argument
+# TODO: but, following two lines of code fail, because layout is then messed up
+#         self.settings_menu_activemq_item.Check(False)
+#         self.activemq_sizer.ShowItems(False)
 
     def init_settings_popup_menu(self):
         menu = wx.Menu()
@@ -223,7 +230,7 @@ class SourcePanel(wx.Panel):
             self.ztv_frame.image_process_functions_to_apply.insert(0, ('sky_subtraction', process_fxn))
             self.ztv_frame.redisplay_image()
 
-    def load_sky_frame(self, filename):
+    def load_sky_frame(self, filename, start_sky_correction=True):
         if len(filename) == 0:
             self.sky_hdulist = None
             self.sky_header_button.Disable()
@@ -233,8 +240,9 @@ class SourcePanel(wx.Panel):
             self.sky_hdulist = self.ztv_frame.load_hdulist_from_fitsfile(filename)
             self.sky_file_basename = os.path.basename(filename)
             self.sky_header_button.Enable()
-            self.load_sky_subtraction_to_process_stack()
-            self.sky_checkbox.SetValue(True)
+            if start_sky_correction:
+                self.load_sky_subtraction_to_process_stack()
+                self.sky_checkbox.SetValue(True)
             self.skyfile_file_picker.pause_on_current_textctrl_changed = True
             self.skyfile_file_picker.set_current_entry(filename)
             self.flatfile_file_picker.pause_on_current_textctrl_changed = False
@@ -259,7 +267,7 @@ class SourcePanel(wx.Panel):
             self.ztv_frame.image_process_functions_to_apply.insert(99999, ('flat_division', process_fxn))
             self.ztv_frame.redisplay_image()
 
-    def load_flat_frame(self, filename):
+    def load_flat_frame(self, filename, start_flat_correction=True):
         if len(filename) == 0:
             self.flat_hdulist = None
             self.flat_header_button.Disable()
@@ -269,8 +277,9 @@ class SourcePanel(wx.Panel):
             self.flat_hdulist = self.ztv_frame.load_hdulist_from_fitsfile(filename)
             self.flat_file_basename = os.path.basename(filename)
             self.flat_header_button.Enable()
-            self.load_flat_division_to_process_stack()
-            self.flat_checkbox.SetValue(True)
+            if start_flat_correction:
+                self.load_flat_division_to_process_stack()
+                self.flat_checkbox.SetValue(True)
             self.flatfile_file_picker.pause_on_current_textctrl_changed = True
             self.flatfile_file_picker.set_current_entry(filename)
             self.flatfile_file_picker.pause_on_current_textctrl_changed = False
@@ -308,16 +317,16 @@ class SourcePanel(wx.Panel):
     def on_choose_autoload_pausetime(self, evt):
         self.ztv_frame.autoload_pausetime = float(evt.GetString())
 
-    # TODO: look into what happens when change autoload_curdir, but not autoload_curfile.  Need to validate whether autoload_curfile is still valid and handle correclty, including updating ztv_frame.autoload_match_string
-
     def autoload_curfile_file_picker_on_load(self, new_entry):
         new_path = os.path.dirname(new_entry) + '/'
-        self.autoload_curdir_file_picker.set_current_entry(new_path)
-        self.autoload_curdir_file_picker.prepend_to_history(new_path)
-        set_textctrl_background_color(self.autoload_curdir_file_picker.current_textctrl, 'ok')
-        self.autoload_curfile_file_picker.set_current_entry(os.path.basename(new_entry))
-        self.autoload_curfile_file_picker.set_assumed_prefix(new_path)
+        self.autoload_curfile_file_picker.set_current_entry(new_entry)
         self.ztv_frame.autoload_match_string = new_entry
+        self.message_queue_checkbox.SetValue(False)
+        self.autoload_checkbox.SetValue(True)
+        self.ztv_frame.kill_activemq_listener_thread()
+        self.ztv_frame.autoload_mode = 'file-match'
+        self.ztv_frame.launch_autoload_filematch_thread()
+        set_textctrl_background_color(self.autoload_curfile_file_picker.current_textctrl, 'ok')
 
     def on_autoload_checkbox(self, evt):
         if evt.IsChecked():
