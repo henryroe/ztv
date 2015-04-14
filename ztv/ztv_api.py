@@ -58,8 +58,6 @@ class ZTV():
     def _load_numpy_array(self, image):
         """
         Load a numpy array into the image.
-
-        Currently only accepts 2-d arrays
         """
         if isinstance(image, np.ndarray):
             send_to_stream(self._subproc.stdin, ('load_numpy_array', image))
