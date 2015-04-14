@@ -36,8 +36,6 @@ Probably build this in to ztv.py and send new_slice_plot_xy[0/1] messages.  But,
 
 want sensible, don't want garish  (some way to link to the panels?  background colors? underlining of titles on tabs?)
 
-## better 'auto' algorithm for min/max determination
-
 ## ability to do masked numpy arrays with different color value for masked positions
 
 ## found: problem when auto-loading fits files that typing into curfile/curdir fields is pain in the butt as cursor keep smoving.  think it's an issue in "on_fitsfile_loaded"???
