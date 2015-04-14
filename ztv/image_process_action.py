@@ -13,6 +13,17 @@ class ImageProcessAction():
         im = np.random.poisson(10, [5,5])
         print(im)
         print(proc_fxn(im))
+        
+        NOTE: we are taking advantage of the nice feature of numpy that makes dealing with 2-d processes
+        on 3-d image stacks much easier:
+            im_stack = np.random.normal(size=[10, 256, 256])
+            dark = np.random.normal(size=[256, 256])
+        the one line:
+            im_stack_processed = im_stack - dark
+        is equivalent to:
+            im_stack_processed = im_stack.copy()
+            for i in np.arange(10):
+                im_stack_processed[i,:,:] = im_stack[i,:,:] - dark
         """
         self.math_function = math_function
         self.x2 = x2
