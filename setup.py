@@ -2,14 +2,14 @@ from setuptools import setup, find_packages  # Always prefer setuptools over dis
 from codecs import open  # To use a consistent encoding
 import os
 
-here = os.path.abspath(os.path.dirname(__file__))
+base_dir = os.path.abspath(os.path.dirname(__file__))
 
 about = {}
 with open(os.path.join(base_dir, "ztv", "__about__.py")) as f:
     exec(f.read(), about)
 
 # Get the long description from the relevant file
-with open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
+with open(os.path.join(base_dir, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
