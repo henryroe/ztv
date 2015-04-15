@@ -153,6 +153,8 @@ Problem:
     
 I think fix will be around the `ztv_api.py` line that launches ztv with: `subprocess.Popen`.
 
+## Make ztv fully python 3 compatible
+
 ## Upon ztv.close() (or cmd-Q or any of the other ways of closing a ztv window) the process doesn't terminate cleanly (v. low priority)
 
 e.g.
