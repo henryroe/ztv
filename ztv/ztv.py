@@ -1006,13 +1006,13 @@ class ZTVFrame(wx.Frame):
                     self.SetTitle(self.base_title + ': ' + self.cur_fitsfile_basename)
                     # TODO: better error handling for if WCS not available or partially available
                     try:
-                        w = wcs.WCS(hdulist[0].header)
+                        w = wcs.WCS(self.cur_fits_hdulist[0].header)
                         # TODO: (urgent) need to check ones/arange in following, do I have this reversed?
                         a = w.all_pix2world(
-                                  np.outer(np.ones(self.display_image.shape[0]), 
-                                           np.arange(self.display_image.shape[1])),
-                                  np.outer(np.arange(self.display_image.shape[0]), 
-                                           np.ones(self.display_image.shape[1])),
+                                  np.outer(np.ones(self.raw_image.shape[-2]), 
+                                           np.arange(self.raw_image.shape[-1])),
+                                  np.outer(np.arange(self.raw_image.shape[-2]), 
+                                           np.ones(self.raw_image.shape[-1])),
                                   0)
                         self.image_radec = ICRS(a[0]*units.degree, a[1]*units.degree)
                     except:  # just ignore radec if anything at all goes wrong.

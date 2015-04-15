@@ -1,12 +1,18 @@
 # URGENT - before next release
 
-## write up README/DESCRIPTION other doc files
+## migrate README.rst to markdown
+
+## add screenshots to README.rst
+
+## update Manual.txt
+
+including migration to *.md
+
+including adding screenshots
+
+including write up example fits faker panel to manual
 
 ## implement & document additional commands to ztv_api
-
-## write up example fits faker panel to manual
-
-## add an example script that pulls the HST 'finger of god' image from the web, scales, and makes pretty
 
 ## clean up version number issues
 

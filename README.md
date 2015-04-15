@@ -55,6 +55,8 @@ Download an iconic FITS image from the web and display it:
     open(local_filename, 'w').write(zip.open(zip_filename).read())
     z.load(local_filename)
     z.set_scaling('Log')
+    z.set_cmap('spectral')
+    z.set_minmax(0, 500)
 
 Add-on Control Panel Example
 ----------------------------
@@ -78,14 +80,16 @@ In graduate school in the late 1990's I learned to use `IDL <http://en.wikipedia
 
 After graduate school I began migrating toward python and away from IDL. I've written about this choice elsewhere, but some of the basic reasons were to avoid IDL licensing issues and being beholden to one company.  (To be fair, I pay every year to keep my IDL license current and it's always been a reasonable price for me. It helps that my license has some obscure history to it that makes the maintenance fees moderate. But, at any time they could raise the prices on me massively. And, I wanted to be using a language that could effectively be on every machine I touch, from my main laptop to an embedded server.)
 
-In python there are already a multitude of possible image viewers. Many of which are great and can do much of what I needed. But, inevitably as I've played with them I've found they each don't scratch my itch in some way. So, I wrote ztv.
+In python there are already a multitude of possible image viewers. Many of which are great and can do much of what I needed. But, inevitably as I've played with them I've found they each don't scratch my itch in some way. I wanted something that worked exactly the way I wanted, with the right (for me) mix of complexity and simplicity.  And, to be able to easily adapt it to a number of situations, including real-time use on a slit-viewing camera, quick-reduction of incoming data, etc.. So, I wrote ztv.
 
-The name "ztv" is an obvious play off of ATV <http://www.physics.uci.edu/~barth/atv/>`_.  And, "z" is my daughter's middle initial.
+The name "ztv" is an obvious play off of ATV <http://www.physics.uci.edu/~barth/atv/>`_.  And, "z" is my daughter's middle initial. 
 
 Other Image Viewers You Should Check Out
 ========================================
 
-`SAOImage DS9 <http://ds9.si.edu/site/Home.html>`_
+- If you're using IDL, check out `ATV <http://www.physics.uci.edu/~barth/atv/>`_ of course!
+- `SAOImage DS9 <http://ds9.si.edu/site/Home.html>`_
+- `Aladin Desktop Sky Atlas <http://aladin.u-strasbg.fr>`_ (not primarily an image viewer, but can open FITS files and overlay catalogs and other images nicely)
 
 (If your favorite isn't on this list, please email hroe@hroe.me to get it added.)
 

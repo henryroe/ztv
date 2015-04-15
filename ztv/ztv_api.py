@@ -47,6 +47,7 @@ class ZTV():
         cmd += 'masterPID=' + str(os.getpid()) +")'"
         self._subproc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
         self.stream_listener = StreamListener(self._subproc.stdout)
+        self.set_clim = self.set_minmax   # make an alias
 
     def close(self):
         """

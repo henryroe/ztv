@@ -8,7 +8,11 @@ matplotlib.use('WXAgg')
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg
 from matplotlib.patches import Circle, Wedge
-from scipy.optimize import curve_fit
+try:
+    from scipy.optimize import curve_fit
+    scipy_install_is_ok = True
+except ImportError, e:
+    scipy_install_is_ok = False
 from .quick_phot import centroid, aperture_phot
 from .ztv_lib import validate_textctrl_str
 import numpy as np
@@ -261,13 +265,17 @@ class PhotPanel(wx.Panel):
             xs = phot['distances'][mask]
             vals = self.ztv_frame.display_image[mask] - phot['sky_per_pixel']
             p0 = [aprad*0.3, vals.max()]
-            popt, pcov = curve_fit(fixed_gauss, xs, vals, p0=p0)
-            xs = np.arange(0, aprad+0.1, 0.1)
-            c = popt[0] / (2. * np.sqrt(2. * np.log(2.)))
-            self.plot_panel.axes.plot(xs, phot['sky_per_pixel'] + 
-                                          popt[1] * np.exp(-((xs)**2) / (2.*c**2)), '-', color=aprad_color)
-            self.fwhm_textctrl.SetValue("{:0.3g}".format(np.abs(popt[0])))
-        
+            if scipy_install_is_ok:
+                popt, pcov = curve_fit(fixed_gauss, xs, vals, p0=p0)
+                xs = np.arange(0, aprad+0.1, 0.1)
+                c = popt[0] / (2. * np.sqrt(2. * np.log(2.)))
+                self.plot_panel.axes.plot(xs, phot['sky_per_pixel'] + 
+                                              popt[1] * np.exp(-((xs)**2) / (2.*c**2)), '-', color=aprad_color)
+                self.fwhm_textctrl.SetValue("{:0.3g}".format(np.abs(popt[0])))
+            else:
+                self.fwhm_textctrl.SetValue("n/a")
+                sys.stderr.write("ztv.phot_panel warning: scipy not installed OK. " + 
+                                 "Gaussfit to PSF radial profile unavailable\n")
             self.star_center_patch = Circle([self.xcentroid, self.ycentroid], 0.125, color=aprad_color)
             self.ztv_frame.primary_image_panel.axes.add_patch(self.star_center_patch)
             self.star_aperture_patch = Circle([self.xcentroid, self.ycentroid], aprad, color=aprad_color, alpha=alpha)

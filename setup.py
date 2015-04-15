@@ -1,33 +1,37 @@
 from setuptools import setup, find_packages  # Always prefer setuptools over distutils
 from codecs import open  # To use a consistent encoding
-from os import path
+import os
 
-here = path.abspath(path.dirname(__file__))
+here = os.path.abspath(os.path.dirname(__file__))
+
+about = {}
+with open(os.path.join(base_dir, "ztv", "__about__.py")) as f:
+    exec(f.read(), about)
 
 # Get the long description from the relevant file
-with open(path.join(here, 'DESCRIPTION.rst'), encoding='utf-8') as f:
+with open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='ztv',
+    name=about["__title__"],
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='0.1.0dev1',
+    version=about["__version__"],
 
-    description='Simple python image viewer, largely intended for astronomical applications',
+    description=about["__summary__"],
     long_description=long_description,
 
     # The project's main homepage.
-    url='https://github.com/henryroe/ztv',
+    url=about["__uri__"],
 
     # Author details
-    author='Henry Roe',
-    author_email='hroe@hroe.me',
+    author=about["__author__"],
+    author_email=about["__email__"],
 
     # Choose your license
-    license='MIT',
+    license=about["__license__"],
 
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[
@@ -39,7 +43,7 @@ setup(
         #     Development Status :: 5 - Production/Stable
         #     Development Status :: 6 - Mature
         #     Development Status :: 7 - Inactive
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
 
         # Indicate who your project is intended for
         'Intended Audience :: Science/Research',
@@ -72,7 +76,13 @@ setup(
     # project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=['stompy', 'numpy>=1.8.1'],
+    # Note: stompy is needed for ActiveMQ integration, but can be safely ignored unless needed
+    # Note: astropy will require numpy, so no need to specify here (had been: 'numpy>=1.8.1')
+    # Note: wx version requirement could probably be even earlier as we're not doing anything bleeding edge.
+    # Note: matplotlib version requirement could probably be even earlier as we're not doing anything bleeding edge.
+    # Note: scipy not required, but highly recommended and some functionality may be lost without it. 
+    #       (at time of writing, v0.1.0, you lost some of the analysis in the phot_panel.py)
+    install_requires=['astropy>=1.0.0', 'wx>=2.9.2.4', 'matplotlib>=1.4.3'],
 
     # List additional groups of dependencies here (e.g. development dependencies).
     # You can install these using the following syntax, for example:
