@@ -127,11 +127,17 @@ class SourcePanel(wx.Panel):
         self.sky_header_button.Disable()
         self.flat_header_button.Disable()
         Publisher().subscribe(self.update_cur_header_button_status, "redraw_image")
-        
-#         TODO: while hidden is the correct default for activemq, this should be handled with an argument
-# TODO: but, following two lines of code fail, because layout is then messed up
-#         self.settings_menu_activemq_item.Check(False)
-#         self.activemq_sizer.ShowItems(False)
+        if not self.ztv_frame.stomp_install_is_ok: # deactivate activeMQ option if stomp not installed OK
+            try:  # wrap in a try, just in case source_panel wasn't loaded.
+                wx.CallAfter(self.settings_menu_activemq_item.Check, False)
+                wx.CallAfter(self.activemq_sizer.ShowItems, False)
+            except:
+                pass
+        # TODO: eventually want to be able to pass a flag parameter for whether to 
+        #       show activemq (and/or fits auto-load) at startup.  
+        # For now, just hide activemq as default.  (user can always unhide with gear-tools menu)
+        wx.CallAfter(self.settings_menu_activemq_item.Check, False)
+        wx.CallAfter(self.activemq_sizer.ShowItems, False)
 
     def init_settings_popup_menu(self):
         menu = wx.Menu()

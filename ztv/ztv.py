@@ -13,7 +13,11 @@ import os.path
 import sys
 import pickle
 import glob
-import stomp
+try:
+    import stomp
+    stomp_install_is_ok = True
+except ImportError, e:
+    stomp_install_is_ok = False
 from astropy.io import fits
 from astropy import wcs
 from astropy.coordinates import ICRS
@@ -657,6 +661,7 @@ class ZTVFrame(wx.Frame):
         self.available_value_modes_on_new_image = ['data-min/max', 'auto', 'constant']
         self.min_value_mode_on_new_image = 'data-min/max'
         self.max_value_mode_on_new_image = 'data-min/max'
+        self.stomp_install_is_ok = stomp_install_is_ok
         Publisher().subscribe(self._add_activemq_instance, "add_activemq_instance")
         self.activemq_instances_info = {}  # will be dict of dicts of, e.g.:
                                            # {'server':'s1.me.com', 'port':61613, 'destination':'my.queue.name'}
@@ -1054,7 +1059,10 @@ class ZTVFrame(wx.Frame):
 
     def launch_activemq_listener_thread(self):
         self.kill_activemq_listener_thread()
-        self.activemq_listener_thread = ActiveMQListenerThread(self, condition=self.activemq_listener_condition)
+        try:
+            self.activemq_listener_thread = ActiveMQListenerThread(self, condition=self.activemq_listener_condition)
+        except ActiveMQNotAvailable:
+            sys.stderr.write("ztv warning: stomp not installed OK, ActiveMQ functionality not available\n")
 
 
 class ActiveMQListener(object):
@@ -1070,9 +1078,13 @@ class ActiveMQListener(object):
         except UnpicklingError:
             sys.stderr.write('received an unhandled message ({})\n'.format(message))
 
+class ActiveMQNotAvailable(Exception): pass
 
 class ActiveMQListenerThread(threading.Thread):
     def __init__(self, ztv_frame, condition):
+        if not stomp_install_is_ok:
+            sys.stderr.write("ztv warning: stomp not installed OK, ActiveMQ functionality not available\n")
+            raise ActiveMQNotAvailable
         threading.Thread.__init__(self)
         self.ztv_frame = ztv_frame
         self.condition = condition
