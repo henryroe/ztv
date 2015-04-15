@@ -139,6 +139,32 @@ class ZTV():
         """
         send_to_stream(self._subproc.stdin, 'invert_cmap')
 
+    def get_available_scalings(self):
+        """
+        Returns available scalings (e.g. linear, log, squared, etc) as a list of strings
+        """
+        send_to_stream(self._subproc.stdin, "get_available_scalings")
+        try:
+            x = self.stream_listener.read_pickled_message(timeout=10.)
+        except StreamListenerTimeOut:
+            raise Error("get_available_scalings did not receive return value from ztv.")
+        else:
+            if x[0] == 'available_scalings':
+                return x[1]
+            else:
+                raise Error("Unrecognized return value from ztv. {}".format(x))
+
+    def set_scaling(self, scaling):
+        """
+        Set the scaling.  (e.g. 'linear', 'log')
+
+        A list of available scalings can be gotten with:   ZTV.get_available_scalings
+
+        The requested scaling must be in the list of available scalings.
+        (independent of case, e.g. 'linear' or 'Linear' are both valid
+        """
+        send_to_stream(self._subproc.stdin, ('set_scaling', scaling))
+
     def reset_minmax(self):
         """
         Reset the min/max to the image's full range

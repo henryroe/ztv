@@ -874,8 +874,9 @@ class ZTVFrame(wx.Frame):
             scaling = msg.data
         else:
             scaling = msg
-        if scaling in self.available_scalings:
-            self.scaling = scaling
+        available_scalings_lowercase = [a.lower() for a in self.available_scalings]
+        if scaling.lower() in available_scalings_lowercase:
+            self.scaling = self.available_scalings[available_scalings_lowercase.index(scaling.lower())]
             wx.CallAfter(Publisher().sendMessage, "scaling-changed", None)
         else:
             sys.stderr.write("unrecognized scaling ({}) requested\n".format(scaling))
@@ -960,7 +961,6 @@ class ZTVFrame(wx.Frame):
         else:
             need_to_reset_zoom_and_center = False
             self.cur_display_frame_num = 0
-              # HEREIAM:  need to figure out how to handle the loading/display of the image correctly now that am moving to 3-d
             old_2d_shape = self.raw_image.shape[-2:]
             new_2d_shape = image.shape[-2:]
             if new_2d_shape != old_2d_shape:
@@ -976,6 +976,7 @@ class ZTVFrame(wx.Frame):
                 self.frame_number_sizer.ShowItems(False)
             else:
                 self.frame_number_sizer.ShowItems(True)
+                self.frame_number_textctrl.SetValue('0')
                 self.total_frame_numbers_text.SetLabel('of {}'.format(self.raw_image.shape[0]))
 
     def load_hdulist_from_fitsfile(self, filename):
@@ -1164,6 +1165,8 @@ class CommandListenerThread(threading.Thread):
                     raise Error("ListenThread only accepts tuples")
                 if x[0] == 'get_available_cmaps':
                     send_to_stream(sys.stdout, ('available_cmaps', self.ztv_frame.available_cmaps))
+                if x[0] == 'get_available_scalings':
+                    send_to_stream(sys.stdout, ('available_scalings', self.ztv_frame.available_scalings))
                 else:
                     wx.CallAfter(Publisher().sendMessage, x[0], *x[1:])
 

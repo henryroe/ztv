@@ -1,1 +1,15 @@
-v0.0.0, 2014-08-05 -- Initial creation
+~~~~~~~~~~~~~~
+ztv Change Log
+~~~~~~~~~~~~~~
+
+------------------
+v0.1.0, 2015-XX-XX
+------------------
+
+- First public release to github and pypi
+
+------------------
+v0.0.0, 2014-08-05
+------------------
+
+- Initial project creation, combining bunch of hroe's code from other places

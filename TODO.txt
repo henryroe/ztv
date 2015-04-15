@@ -1,15 +1,6 @@
 # URGENT - before next release
 
-## some basic implementation of 3-d images, at least reading in from fits files
-
-pause and consider how best to implement
-
-figure out how to deal with image_radec in load_fits_file for 3-d case
-
-
 ## write up README/DESCRIPTION other doc files
-
-## Write up 'motivation' document referring back to atv (and to ds9 etc etc)  (is this in DESCRIPTION.rst or README.rst??)
 
 ## implement & document additional commands to ztv_api
 
@@ -23,9 +14,13 @@ https://packaging.python.org/en/latest/single_source_version.html
 
 ## write up release notes
 
+including updating CHANGES.txt
+
 ## Final to releasing:
 
 ### get appropriate dependencies, so can pip install easily & properly, in "install_requires" in setup.py
+
+- make stompy dependency optional
 
 ### write up pip install documentation
 
@@ -39,6 +34,16 @@ https://packaging.python.org/en/latest/single_source_version.html
 
 
 # For some future release
+
+## load hdulist (if you already read in the fits file)
+
+## for aperture photometry, give ra/dec of center & a scale of arcsec on the radial plot (if ra/dec available)
+
+## figure out how to deal with image_radec in load_fits_file for 3-d case
+
+need some real-world test cases of what we might be dealing with
+
+## need to dig up more examples of multi-d fits files that we might be dealing with feeding in to 3-d
 
 ## in source panel offer option to access N most recent images (I think in source panel, and not overall 3-d image number controller)
 
@@ -166,3 +171,9 @@ e.g.
 This isn't much of an issue, even if relaunching ztv a bunch of times, b/c usually you'd be doing that into the same name & therefore the earlier processes would get cleaned up on their own.
 
 this mean that ZTVFrame.ztvframe_pid as a signaling device isn't working.  the ztvframe_pid is grabbed correctly, but the PID isn't actually fully killed until the overall python session is killed.  (something changes with the process when the window is closed, but it's not actually cleaned up fully/correctly.)  This is an issue both for processes that may be watching (e.g. fits_fake_panel.py), but also that if you launch a ton of ztv sessions from same python session under different names, you are leaving cruft around that may eventually slow things down.
+
+## clean-up/regularize all documentation files, probably all should be formatted with Markdown?
+
+## create some way of saving/restoring settings?
+
+## add some way of producing publication-quality output, esp. producing python scripts to recreate figures?
