@@ -78,11 +78,11 @@ setup(
     # https://packaging.python.org/en/latest/requirements.html
     # Note: stompy is needed for ActiveMQ integration, but can be safely ignored unless needed
     # Note: astropy will require numpy, so no need to specify here (had been: 'numpy>=1.8.1')
-    # Note: wx version requirement could probably be even earlier as we're not doing anything bleeding edge.
+    # Note: wxPython version requirement was not working on install, so dropped version number 'wxPython>=2.9.2.4',
     # Note: matplotlib version requirement could probably be even earlier as we're not doing anything bleeding edge.
     # Note: scipy not required, but highly recommended and some functionality may be lost without it. 
     #       (at time of writing, v0.1.0, you lost some of the analysis in the phot_panel.py)
-    install_requires=['astropy>=1.0.0', 'wx>=2.9.2.4', 'matplotlib>=1.4.3'],
+    install_requires=['astropy>=1.0.0', 'wxPython', 'matplotlib>=1.4.3', 'psutil'],
 
     # List additional groups of dependencies here (e.g. development dependencies).
     # You can install these using the following syntax, for example:

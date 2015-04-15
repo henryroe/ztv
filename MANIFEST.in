@@ -1,4 +1,8 @@
-include DESCRIPTION.rst
+include Manual.txt
+include README.md
+include CHANGES.txt
+include LICENSE.txt
+include TODO.txt
 
 
 # TODO: add appropriate lines to incude sample data files, something like:
