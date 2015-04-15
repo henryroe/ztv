@@ -181,3 +181,15 @@ class ZTV():
             raise Error('Must specify a message queue to follow in destination keyword')
         send_to_stream(self._subproc.stdin, ('add_activemq_instance', (server, port, destination)))
 
+    def set_frame_number(self, n, relative=False):
+        """
+        If 3-d image is loaded set the frame number to be displayed.
+        Default (relative=False) is to set to frame number n (automatically clipped to 0->size of 3-d stack)
+        Negative n will count back from end of image stack, e.g. -1 is last, -2 is second to last.
+        Optionally (relative=True) will add n to current frame number (-1 go back one, 1 advance one)
+        """
+        if relative:
+            flag = 'relative'
+        else:
+            flag = 'absolute'
+        send_to_stream(self._subproc.stdin, ('set_cur_display_frame_num', (n, flag)))

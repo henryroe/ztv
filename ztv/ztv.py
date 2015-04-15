@@ -39,7 +39,7 @@ from .plot_panel import PlotPanel
 from .phot_panel import PhotPanel
 from .stats_panel import StatsPanel
 from .color_panel import ColorPanel
-from .ztv_lib import send_to_stream, StreamListener, StreamListenerTimeOut
+from .ztv_lib import send_to_stream, StreamListener, StreamListenerTimeOut, set_textctrl_background_color, validate_textctrl_str
 
 import pdb
 
@@ -648,6 +648,7 @@ class ZTVFrame(wx.Frame):
         Publisher().subscribe(self.set_norm, "scaling-changed")
         Publisher().subscribe(self.recalc_proc_image, "image_process_functions_to_apply-changed")
         Publisher().subscribe(self.recalc_display_image, "cur_display_frame_num-changed")
+        Publisher().subscribe(self.set_cur_display_frame_num, "set_cur_display_frame_num")
         self.scaling = 'Linear'
         self.available_scalings = ['Linear', 'Asinh', 'Log', 'PowerDist', 'Sinh', 'Sqrt', 'Squared']
         # scalings that require inputs & need additional work to implement:  
@@ -679,33 +680,36 @@ class ZTVFrame(wx.Frame):
         self.frame_number_sizer = wx.BoxSizer(wx.HORIZONTAL)
         
         self.frame_number_fullleft_button = wx.Button(self, -1, unichr(0x21e4), style=wx.BU_EXACTFIT)
-#         self.Bind(wx.EVT_BUTTON, self.on_frame_number_fullleft_button, self.frame_number_fullleft_button)
+        self.Bind(wx.EVT_BUTTON, lambda x: self.set_cur_display_frame_num(0), self.frame_number_fullleft_button)
         self.frame_number_sizer.Add(self.frame_number_fullleft_button, 0, wx.ALIGN_CENTER_VERTICAL)
 
         self.frame_number_left_button = wx.Button(self, -1, unichr(0x2190), style=wx.BU_EXACTFIT)
-#         self.Bind(wx.EVT_BUTTON, self.on_frame_number_left_button, self.frame_number_left_button)
+        self.Bind(wx.EVT_BUTTON, lambda x: self.set_cur_display_frame_num(-1, True), self.frame_number_left_button)
         self.frame_number_sizer.Add(self.frame_number_left_button, 0, wx.ALIGN_CENTER_VERTICAL)
 
-  # HEREIAM:  incorporating frame number controls....
         textentry_font = wx.Font(14, wx.FONTFAMILY_MODERN, wx.NORMAL, wx.FONTWEIGHT_LIGHT, False)
         self.frame_number_textctrl = wx.TextCtrl(self, wx.ID_ANY, '0', wx.DefaultPosition, wx.Size(40, 21),
                                        wx.TE_PROCESS_ENTER|wx.TE_CENTRE)
         self.frame_number_textctrl.SetFont(textentry_font)
         self.frame_number_sizer.Add(self.frame_number_textctrl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-#         self.frame_number_textctrl.Bind(wx.EVT_TEXT, self.frame_number_textctrl_changed)
-#         self.frame_number_textctrl.Bind(wx.EVT_TEXT_ENTER, self.frame_number_textctrl_entered)
+        self.frame_number_textctrl.Bind(wx.EVT_TEXT, self.frame_number_textctrl_changed)
+        self.frame_number_textctrl.Bind(wx.EVT_TEXT_ENTER, self.frame_number_textctrl_entered)
 
         self.frame_number_right_button = wx.Button(self, -1, unichr(0x2192), style=wx.BU_EXACTFIT)
-#         self.Bind(wx.EVT_BUTTON, self.on_frame_number_right_button, self.frame_number_right_button)
+        self.Bind(wx.EVT_BUTTON, lambda x: self.set_cur_display_frame_num(1, True), self.frame_number_right_button)
         self.frame_number_sizer.Add(self.frame_number_right_button, 0, wx.ALIGN_CENTER_VERTICAL)
 
         self.frame_number_fullright_button = wx.Button(self, -1, unichr(0x21e5), style=wx.BU_EXACTFIT)
-#         self.Bind(wx.EVT_BUTTON, self.on_frame_number_fullright_button, self.frame_number_fullright_button)
+        self.Bind(wx.EVT_BUTTON, lambda x: self.set_cur_display_frame_num(-1), self.frame_number_fullright_button)
         self.frame_number_sizer.Add(self.frame_number_fullright_button, 0, wx.ALIGN_CENTER_VERTICAL)
 
-          # HEREIAM
+        self.total_frame_numbers_text = wx.StaticText(self, wx.ID_ANY, u"of 9999", wx.DefaultPosition, 
+                                                      wx.DefaultSize, 0 )
+        self.total_frame_numbers_text.Wrap( -1 )
+        self.frame_number_sizer.Add(self.total_frame_numbers_text, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
         self.controls_images_sizer.AddSpacer((0, 0), 1, wx.EXPAND, 0)
-        self.controls_images_sizer.Add(self.frame_number_sizer, 0, wx.ALIGN_RIGHT|wx.ALIGN_BOTTOM)
+        self.controls_images_sizer.Add(self.frame_number_sizer, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_BOTTOM, 5)
         
         self.controls_sizer.Add(self.controls_images_sizer, 0, wx.EXPAND, border=5)
         self.controls_notebook_sizer = wx.BoxSizer(wx.VERTICAL)
@@ -744,7 +748,7 @@ class ZTVFrame(wx.Frame):
             self.accelerator_table.append((wx.ACCEL_CMD|wx.ACCEL_ALT, ord(str(n)), new_id))
         self.SetAcceleratorTable(wx.AcceleratorTable(self.accelerator_table))
         self.Show()
-        
+                
     def create_on_cmd_alt_number(self, n):
         def on_cmd_alt_number(evt):
             try:
@@ -876,12 +880,42 @@ class ZTVFrame(wx.Frame):
         else:
             sys.stderr.write("unrecognized scaling ({}) requested\n".format(scaling))
 
-    def set_cur_display_frame_num(self, msg):
-        if isinstance(msg, Message):
-            n = msg.data
+    def frame_number_textctrl_changed(self, evt):
+        validate_textctrl_str(self.frame_number_textctrl, int, str(self.cur_display_frame_num))
+        
+    def frame_number_textctrl_entered(self, evt):
+        if validate_textctrl_str(self.frame_number_textctrl, int, str(self.cur_display_frame_num)):
+            self.set_cur_display_frame_num(int(self.frame_number_textctrl.GetValue()))
+            self.frame_number_textctrl.SetSelection(-1, -1)
+        
+    def set_cur_display_frame_num(self, n, relative=False):
+        """
+        sets self.cur_display_frame_num to n  (with -1 meaning last, -2 second to last, etc)
+        if relative=True, then increments by n.
+        Will automatically bound to existing number of frames
+        
+        To ensure proper error checking & notifications, *all* changes to self.cur_display_frame_num
+        should come through this method
+        """
+        if isinstance(n, Message):
+            n, flag = n.data
+            if flag == 'relative':
+                relative = True
+            elif flag == 'absolute':
+                relative = False
+        if self.proc_image.ndim == 2:
+            cur_total_frames = 1
         else:
-            n = msg
+            cur_total_frames = self.proc_image.shape[0]
+        if relative:
+            n = self.cur_display_frame_num + n
+        else:
+            if n < 0:
+                n = cur_total_frames + n
+        n = min(max(0, n), cur_total_frames - 1)
         self.cur_display_frame_num = n
+        self.frame_number_textctrl.SetValue("{}".format(n))
+        set_textctrl_background_color(self.frame_number_textctrl, 'ok')
         wx.CallAfter(Publisher().sendMessage, "cur_display_frame_num-changed", None)
 
     def recalc_proc_image(self, msg=None):
@@ -938,6 +972,11 @@ class ZTVFrame(wx.Frame):
             if need_to_reset_zoom_and_center:
                 self.primary_image_panel.reset_zoom_and_center()
             self.SetTitle(self.base_title)
+            if self.raw_image.ndim == 2:
+                self.frame_number_sizer.ShowItems(False)
+            else:
+                self.frame_number_sizer.ShowItems(True)
+                self.total_frame_numbers_text.SetLabel('of {}'.format(self.raw_image.shape[0]))
 
     def load_hdulist_from_fitsfile(self, filename):
         """
