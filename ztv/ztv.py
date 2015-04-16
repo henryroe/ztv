@@ -212,30 +212,30 @@ class PrimaryImagePanel(wx.Panel):
 
     def set_cursor_to_none_mode(self, event):
         self.cursor_mode = 'None'
-        self.ztv_frame.controls_notebook.highlight_page(None)
+        self.ztv_frame.controls_notebook.clear_highlights()
 
     def set_cursor_to_zoom_mode(self, event):
         self.cursor_mode = 'Zoom'
-        self.ztv_frame.controls_notebook.highlight_page(None)
+        self.ztv_frame.controls_notebook.clear_highlights()
 
     def set_cursor_to_pan_mode(self, event):
         self.cursor_mode = 'Pan'
-        self.ztv_frame.controls_notebook.highlight_page(None)
+        self.ztv_frame.controls_notebook.clear_highlights()
 
     def set_cursor_to_stats_box_mode(self, event):
         self.cursor_mode = 'Stats box'
-        self.ztv_frame.controls_notebook.SetSelection(self.ztv_frame.controls_notebook.panel_name_to_id['Stats'])
-        self.ztv_frame.controls_notebook.highlight_page('Stats')
+        self.ztv_frame.stats_panel.select_panel()
+        self.ztv_frame.stats_panel.highlight_panel()
         
     def set_cursor_to_plot_mode(self, event):
         self.cursor_mode = 'Slice plot'
-        self.ztv_frame.controls_notebook.SetSelection(self.ztv_frame.controls_notebook.panel_name_to_id['Plot'])
-        self.ztv_frame.controls_notebook.highlight_page('Plot')
+        self.ztv_frame.plot_panel.select_panel()
+        self.ztv_frame.plot_panel.highlight_panel()
 
     def set_cursor_to_phot_mode(self, event):
         self.cursor_mode = 'Phot'
-        self.ztv_frame.controls_notebook.SetSelection(self.ztv_frame.controls_notebook.panel_name_to_id['Phot'])
-        self.ztv_frame.controls_notebook.highlight_page('Phot')
+        self.ztv_frame.phot_panel.select_panel()
+        self.ztv_frame.phot_panel.highlight_panel()
 
     def on_key_press(self, event):
         # TODO: figure out why keypresses are only recognized after a click in the matplotlib frame.
@@ -327,12 +327,10 @@ class PrimaryImagePanel(wx.Panel):
                 self.stats_start_timestamp = event.guiEvent.GetTimestamp()  # millisec
                 self.update_stats_box(event.xdata, event.ydata, event.xdata, event.ydata)
             elif self.cursor_mode == 'Phot':
-                self.ztv_frame.controls_notebook.SetSelection(           
-                                          self.ztv_frame.controls_notebook.panel_name_to_id['Phot'])
+                self.ztv_frame.phot_panel.select_panel()
                 wx.CallAfter(Publisher().sendMessage, "new_phot_xy", (event.xdata, event.ydata))
             elif self.cursor_mode == 'Slice plot':
-                self.ztv_frame.controls_notebook.SetSelection(
-                                          self.ztv_frame.controls_notebook.panel_name_to_id['Plot'])
+                self.ztv_frame.plot_panel.select_panel()
                 wx.CallAfter(Publisher().sendMessage, "new_slice_plot_xy0", (event.xdata, event.ydata))
 
     def on_motion(self, event):
@@ -582,40 +580,34 @@ class ControlsNotebook(wx.Notebook):
     # see "Book" Controls -> Notebook example in wxpython demo
     def __init__(self, parent):
         wx.Notebook.__init__(self, parent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0)  
+        self.highlight_char = unichr(0x2022)
         self.ztv_frame = self.GetTopLevelParent()
-        # NOTE: Warning: this indexing scheme for tracking pages is fragile.  Inserting on the fly pages, add pages, delete pages, etc will screw it up
-        self.cur_new_panel_index = 0  # will increment and keep track of ImageId numbers in self.panel_name_to_id
-        self.panel_name_to_id = {}
-        self.panel_id_to_name = {}
-        self.panels_by_id = {}
+        self.ztv_frame.control_panels = []  # list of currently loaded/visible control panels, in order of display
         for cur_title, cur_panel in self.ztv_frame.control_panels_to_load:
             self.AddPanelAndStoreID(cur_panel(self), cur_title)
         
     def AddPanelAndStoreID(self, panel, text, **kwargs):
-        self.panel_name_to_id[text] = self.cur_new_panel_index
-        self.panel_id_to_name[self.cur_new_panel_index] = text
-        self.panels_by_id[self.cur_new_panel_index] = panel
-          # HEREIAM
-#         setattr(self.ztv_frame, text.lower() + '_panel', panel)
-        self.cur_new_panel_index += 1
-        self.AddPage(panel, text, imageId=self.panel_name_to_id[text])
-        
-    def highlight_page(self, panel_name=None):
-        highlight_char = unichr(0x2022)
-        for cur_id in self.panels_by_id:
-            if self.GetPageText(cur_id).startswith(highlight_char):
+        setattr(panel, 'ztv_page_id', len(self.ztv_frame.control_panels))
+        setattr(panel, 'ztv_display_name', text)
+        setattr(panel, 'ztv_ref_name', text.lower() + '_panel')
+        setattr(panel, 'highlight_panel', lambda : self._highlight_page(panel))
+        setattr(panel, 'select_panel', lambda : self.SetSelection(panel.ztv_page_id))
+        setattr(self.ztv_frame, text.lower() + '_panel', panel)
+        self.AddPage(panel, text, imageId=len(self.ztv_frame.control_panels))
+        self.ztv_frame.control_panels.append(panel)
+    
+    def clear_highlights(self):
+        for cur_id in range(len(self.ztv_frame.control_panels)):
+            if self.GetPageText(cur_id).startswith(self.highlight_char):
                 self.SetPageText(cur_id, self.GetPageText(cur_id)[1:])
-        if panel_name is not None:
-            new_name = highlight_char + self.GetPageText(self.panel_name_to_id[panel_name])
-            self.SetPageText(self.panel_name_to_id[panel_name], new_name)
-            
-    def get_panel_by_name(self, panel_name):
-        if panel_name in self.panel_name_to_id:
-            panel_id = self.panel_name_to_id[panel_name]
-            return self.panels_by_id[panel_id]
-        else:
-            return None
 
+    def _highlight_page(self, panel=None):
+        self.clear_highlights()
+        if panel is not None:
+            new_name = self.highlight_char + self.GetPageText(panel.ztv_page_id)
+            self.SetPageText(panel.ztv_page_id, new_name)
+
+            
 class ZTVFrame(wx.Frame):
     # TODO: create __init__ input parameters for essentially every adjustable parameter
     def __init__(self, title=None, launch_listen_thread=False, control_panels_to_load=None):
@@ -787,12 +779,10 @@ class ZTVFrame(wx.Frame):
         wx.CallAfter(Publisher().sendMessage, "activemq_instances_info-changed", None)
         
     def on_cmd_left_arrow(self, evt):
-        self.controls_notebook.SetSelection((self.controls_notebook.GetSelection() - 1) % 
-                                            (max(self.controls_notebook.panel_id_to_name) + 1))
+        self.controls_notebook.SetSelection((self.controls_notebook.GetSelection() - 1) % len(self.control_panels))
 
     def on_cmd_right_arrow(self, evt):
-        self.controls_notebook.SetSelection((self.controls_notebook.GetSelection() + 1) % 
-                                            (max(self.controls_notebook.panel_id_to_name) + 1))
+        self.controls_notebook.SetSelection((self.controls_notebook.GetSelection() + 1) % len(self.control_panels))
 
     def get_cmap_to_display(self):
         if self.is_cmap_inverted:
@@ -1189,7 +1179,6 @@ class CommandListenerThread(threading.Thread):
             except StreamListenerTimeOut:
                 pass
             else:
-                source_panel = self.ztv_frame.controls_notebook.get_panel_by_name('Source')
                 if not isinstance(x, tuple):
                     raise Error("ListenThread only accepts tuples")
                 wx.GetApp().ProcessIdle() # give time for any parameter changes to take effect
@@ -1204,43 +1193,43 @@ class CommandListenerThread(threading.Thread):
                                  (x[0][4:], (self.ztv_frame.primary_image_panel.center.x,
                                              self.ztv_frame.primary_image_panel.center.y)))
                 elif x[0] == 'set_sky_subtraction_status':
-                    if source_panel is not None:
+                    if hasattr(self.ztv_frame, 'source_panel'):
                         if x[1]:
-                            source_panel.load_sky_subtraction_to_process_stack()
+                            self.ztv_frame.source_panel.load_sky_subtraction_to_process_stack()
                         else:
-                            source_panel.unload_sky_subtraction_from_process_stack()
+                            self.ztv_frame.source_panel.unload_sky_subtraction_from_process_stack()
                 elif x[0] == 'set_sky_subtraction_filename':
-                    if source_panel is not None:
-                        source_panel.load_sky_frame(x[1])
+                    if hasattr(self.ztv_frame, 'source_panel'):
+                        self.ztv_frame.source_panel.load_sky_frame(x[1])
                 elif x[0] == 'get_sky_subtraction_status_and_filename':
-                    if source_panel is not None:
+                    if hasattr(self.ztv_frame, 'source_panel'):
                         sky_subtraction_loaded = False
                         if 'sky_subtraction' in [a[0] for a in self.ztv_frame.image_process_functions_to_apply]:
                             sky_subtraction_loaded = True
                         wx.CallAfter(send_to_stream, sys.stdout, 
                                      (x[0][4:], 
                                       (sky_subtraction_loaded, 
-                                       source_panel.skyfile_file_picker.current_textctrl_GetValue())))
+                                       self.ztv_frame.source_panel.skyfile_file_picker.current_textctrl_GetValue())))
                     else:
                         send_to_stream(sys.stdout, (x[0][4:], 'source_panel not available'))
                 elif x[0] == 'set_flat_division_status':
-                    if source_panel is not None:
+                    if hasattr(self.ztv_frame, 'source_panel'):
                         if x[1]:
-                            source_panel.load_flat_division_to_process_stack()
+                            self.ztv_frame.source_panel.load_flat_division_to_process_stack()
                         else:
-                            source_panel.unload_flat_division_from_process_stack()
+                            self.ztv_frame.source_panel.unload_flat_division_from_process_stack()
                 elif x[0] == 'set_flat_division_filename':
-                    if source_panel is not None:
-                        source_panel.load_flat_frame(x[1])
+                    if hasattr(self.ztv_frame, 'source_panel'):
+                        self.ztv_frame.source_panel.load_flat_frame(x[1])
                 elif x[0] == 'get_flat_division_status_and_filename':
-                    if source_panel is not None:
+                    if hasattr(self.ztv_frame, 'source_panel'):
                         flat_division_loaded = False
                         if 'flat_division' in [a[0] for a in self.ztv_frame.image_process_functions_to_apply]:
                             flat_division_loaded = True
                         wx.CallAfter(send_to_stream, sys.stdout, 
                                      (x[0][4:], 
                                       (flat_division_loaded, 
-                                       source_panel.flatfile_file_picker.current_textctrl_GetValue())))
+                                       self.ztv_frame.source_panel.flatfile_file_picker.current_textctrl_GetValue())))
                     else:
                         send_to_stream(sys.stdout, (x[0][4:], 'source_panel not available'))
                         

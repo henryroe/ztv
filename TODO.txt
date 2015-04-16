@@ -2,8 +2,6 @@
 
 ## review for critical additional commands to ztv_api and implement
 
-- use setattr in setting up control panels to be able to access panels
-- search for anywhere that can be simplified by having setattr control_panels 
 - move all autoload functionality to source_panel
 - clean up autoload mode chagnes to be just with publish/subscribe signals - may need to think abotu some better programmatic way of signaling to sub-objects of ztv_frame... (in same way as did "get_..." )
 
