@@ -59,10 +59,12 @@ class ZTV():
         send_to_stream(self._subproc.stdin, "kill_ztv")
         # self._subproc.terminate()   # TODO: neither .terminate() nor .kill() seem to close out the subprocess, something must be holding it up.
 
-    def _request_return_value_from_ztv(self, request_message, expected_return_message_title, timeout=10.):
+    def _request_return_value_from_ztv(self, request_message, expected_return_message_title=None, timeout=10.):
         """
         routine to request info from ztv by sending message and receiving response
         """
+        if expected_return_message_title is None and request_message.startswith('get_'):
+            expected_return_message_title = request_message[4:]
         send_to_stream(self._subproc.stdin, request_message)
         try:
             x = self.stream_listener.read_pickled_message(timeout=timeout)
@@ -133,63 +135,76 @@ class ZTV():
         """
         Set the colormap.
 
-        A list of available colormaps can be gotten with:   ZTV.get_available_cmaps
+        A list of available colormaps can be gotten with:   ZTV.cmaps_list
 
         The requested colormap must be in the list of available colormaps, or, it's reverse:
             e.g. 'gray' is in the list, but one can request either 'gray' or 'gray_r'
                  'Blues_r' is in the list, but one can request either 'Blues' or 'Blues_r'
+                 matching the input to the available cmaps is done independent of lower/upper case
+                 cmap_inverted will be set as necessary to comply with the request.
+                 This means that the returned cmap name may not match the input.
                  
-        Default (cmap=None) returns the available color maps as a list of strings
+        returns the current (new) colormap
         """
-        if cmap is not None:
+        if isinstance(cmap, str):
             send_to_stream(self._subproc.stdin, ('set_cmap', cmap))
-            return self._request_return_value_from_ztv('get_current_cmap', 'current_cmap')
-        else:
-            return self._request_return_value_from_ztv('get_available_cmaps', 'available_cmaps')
+        return self._request_return_value_from_ztv('get_cmap')
+        
+    def cmaps_list(self):
+        """
+        returns the available color maps as a list of strings
+        """
+        return self._request_return_value_from_ztv('get_available_cmaps')
 
-    def invert_cmap(self):
+    def invert_cmap(self, state=None):
         """
-        Invert the current colormap
+        state:  True -> set invert=True
+                False -> set invert=False
+                None -> do nothing
+        Returns the current inversion state
         """
-        send_to_stream(self._subproc.stdin, 'invert_cmap')
+        if state is not None:
+            send_to_stream(self._subproc.stdin, ('set_cmap_inverted', state))
+        return self._request_return_value_from_ztv('get_is_cmap_inverted')
 
     def scaling(self, scaling=None):
         """
         Set the scaling.  (e.g. 'linear', 'log')
 
-        A list of available scalings can be gotten with:   ZTV.get_available_scalings
+        A list of available scalings can be gotten with:   ZTV.scalings_list
 
         The requested scaling must be in the list of available scalings.
         (independent of case, e.g. 'linear' or 'Linear' are both valid
         
-        Default (scaling=None) returns the available scalings (e.g. 'linear', 'log') as a list of strings
+        returns the current (new) scaling
         """
-        if scaling is not None:
+        if isinstance(scaling, str):
             send_to_stream(self._subproc.stdin, ('set_scaling', scaling))
-            # TODO: consider adding:  return current scaling
-        else:
-            send_to_stream(self._subproc.stdin, "get_available_scalings")
-            try:
-                x = self.stream_listener.read_pickled_message(timeout=10.)
-            except StreamListenerTimeOut:
-                raise Error("get_available_scalings did not receive return value from ztv.")
-            else:
-                if x[0] == 'available_scalings':
-                    return x[1]
-                else:
-                    raise Error("Unrecognized return value from ztv. {}".format(x))
+        return self._request_return_value_from_ztv('get_scaling')
+
+    def scalings_list(self):
+        """
+        returns the available scalings as a list of strings
+        """
+        return self._request_return_value_from_ztv('get_available_scalings')
 
     def set_minmax_to_full_range(self):
         """
         Reset the min/max to the image's full range
+        
+        returns current (new) min/max range
         """
         send_to_stream(self._subproc.stdin, 'set_clim_to_minmax')
+        return self._request_return_value_from_ztv('get_clim')
 
     def set_minmax_to_auto(self):
         """
         Set the min/max to the automatic setting
+        
+        returns current (new) min/max range
         """
         send_to_stream(self._subproc.stdin, 'set_clim_to_auto')
+        return self._request_return_value_from_ztv('get_clim')
 
     def minmax(self, minval=None, maxval=None):
         """
@@ -197,32 +212,44 @@ class ZTV():
         If min > max, then will invert the colormap.
         If minval=None (or maxval=None) then that limit is not changed.
 
-        See ZTV.reset_minmax() for resetting the min/max to the image's full range
+        See ZTV.set_minmax_to_full_range() for resetting the min/max to the image's full range
+        
+        returns current (new) min/max range
         """
-        send_to_stream(self._subproc.stdin, ('set_clim', (minval, maxval)))
-        # TODO: return current minmax
+        if minval is not None and maxval is not None:
+            send_to_stream(self._subproc.stdin, ('set_clim', (minval, maxval)))
+        return self._request_return_value_from_ztv('get_clim')
 
     def reset_zoom_and_center(self):
         """
-        TODO: write docstring
+        Reset pan to center of image
+        Reset zoom to image just fitting in primary display frame
         """
         send_to_stream(self._subproc.stdin, 'reset_zoom_and_center')
-
+  
     def zoom(self, zoom=None):
         """
-        TODO: write docstring
+        Set zoom factor
+        
+        returns current zoom factor
         """
         if zoom is not None:
             send_to_stream(self._subproc.stdin, ('set_zoom_factor', zoom))
-        # TODO: return current zoom    
+        return self._request_return_value_from_ztv('get_zoom_factor')
 
     def xy_center(self, *args):
-        if len(args) == 1:
-            x,y = args[0]
-        else:
-            x,y = args[0], args[1]
-        send_to_stream(self._subproc.stdin, ('set_xy_center', (x, y)))
-        # TODO: return current xy center
+        """
+        pan the image to place x,y at the center of the primary image frame
+        
+        returns the current (new) x/y center of the primary image frame
+        """
+        if len(args) > 0:
+            if len(args) == 1:
+                x,y = args[0]
+            else:
+                x,y = args[0], args[1]
+            send_to_stream(self._subproc.stdin, ('set_xy_center', (x, y)))
+        return self._request_return_value_from_ztv('get_xy_center')
 
     def add_activemq(self, server=None, port=61613, destination=None):
         """
@@ -240,6 +267,8 @@ class ZTV():
         Default (relative=False) is to set to frame number n (automatically clipped to 0->size of 3-d stack)
         Negative n will count back from end of image stack, e.g. -1 is last, -2 is second to last.
         Optionally (relative=True) will add n to current frame number (-1 go back one, 1 advance one)
+        
+        returns current (new) frame number
         """
         if n is not None:
             if relative:
@@ -247,34 +276,52 @@ class ZTV():
             else:
                 flag = 'absolute'
             send_to_stream(self._subproc.stdin, ('set_cur_display_frame_num', (n, flag)))
-        # TODO: return current frame number
+        return self._request_return_value_from_ztv('get_cur_display_frame_num')
         
     def sky_frame(self, filename=None):
         """
         Set sky frame to filename and turn on sky subtraction
         To turn on sky subtraction with already loaded filename pattern, set filename=True
-        To turn off sky subtraction, set filename=None
-        returns current sky frame filename
+        To turn off sky subtraction, set filename=False
+        (filename=None will do nothing, just return current status)
+        
+        returns tuple of current sky subtraction status (True/False) and current sky frame filename
         """
-        pass # TODO
+        if filename is True or filename is False:
+            send_to_stream(self._subproc.stdin, ('set_sky_subtraction_status', filename))
+        elif filename is not None:
+            send_to_stream(self._subproc.stdin, ('set_sky_subtraction_filename', filename))
+        return self._request_return_value_from_ztv('get_sky_subtraction_status_and_filename')
         
     def flat_frame(self, filename=None):
         """
         Set flat frame to filename and turn on flat field division
         To turn on flat field division with already loaded filename pattern, set filename=True
-        To turn off flat field division, set filename=None
+        To turn off flat field division, set filename=False
+        (filename=None will do nothing, just return current status)
+        
         returns current flat frame filename
         """
-        pass # TODO
+        if filename is True or filename is False:
+            send_to_stream(self._subproc.stdin, ('set_flat_division_status', filename))
+        elif filename is not None:
+            send_to_stream(self._subproc.stdin, ('set_flat_division_filename', filename))
+        return self._request_return_value_from_ztv('get_flat_division_status_and_filename')
         
     def autoload_filename_pattern(self, filename=None):
         """
         Set filename pattern for autoload to filename and turn on auto-load
         To turn on auto-loading with already loaded filename pattern, set filename=True
-        To turn off auto-loading, set filename=None
+        To turn off auto-loading, set filename=False
+        (filename=None will do nothing, just return current status)
+
         returns current auto-load filename pattern
         """
-        pass # TODO
+        if filename is True or filename is False:
+            send_to_stream(self._subproc.stdin, ('set_autoload_filename_pattern_status', filename))
+        elif filename is not None:
+            send_to_stream(self._subproc.stdin, ('set_autoload_filename_pattern', filename))
+        return self._request_return_value_from_ztv('get_autoload_status_and_filename_pattern')
 
     def autoload_pause_seconds(self, seconds=None):
         """

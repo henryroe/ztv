@@ -327,10 +327,12 @@ class PrimaryImagePanel(wx.Panel):
                 self.stats_start_timestamp = event.guiEvent.GetTimestamp()  # millisec
                 self.update_stats_box(event.xdata, event.ydata, event.xdata, event.ydata)
             elif self.cursor_mode == 'Phot':
-                self.ztv_frame.controls_notebook.SetSelection(self.ztv_frame.controls_notebook.panel_name_to_id['Phot'])
+                self.ztv_frame.controls_notebook.SetSelection(           
+                                          self.ztv_frame.controls_notebook.panel_name_to_id['Phot'])
                 wx.CallAfter(Publisher().sendMessage, "new_phot_xy", (event.xdata, event.ydata))
             elif self.cursor_mode == 'Slice plot':
-                self.ztv_frame.controls_notebook.SetSelection(self.ztv_frame.controls_notebook.panel_name_to_id['Plot'])
+                self.ztv_frame.controls_notebook.SetSelection(
+                                          self.ztv_frame.controls_notebook.panel_name_to_id['Plot'])
                 wx.CallAfter(Publisher().sendMessage, "new_slice_plot_xy0", (event.xdata, event.ydata))
 
     def on_motion(self, event):
@@ -593,6 +595,8 @@ class ControlsNotebook(wx.Notebook):
         self.panel_name_to_id[text] = self.cur_new_panel_index
         self.panel_id_to_name[self.cur_new_panel_index] = text
         self.panels_by_id[self.cur_new_panel_index] = panel
+          # HEREIAM
+#         setattr(self.ztv_frame, text.lower() + '_panel', panel)
         self.cur_new_panel_index += 1
         self.AddPage(panel, text, imageId=self.panel_name_to_id[text])
         
@@ -604,6 +608,13 @@ class ControlsNotebook(wx.Notebook):
         if panel_name is not None:
             new_name = highlight_char + self.GetPageText(self.panel_name_to_id[panel_name])
             self.SetPageText(self.panel_name_to_id[panel_name], new_name)
+            
+    def get_panel_by_name(self, panel_name):
+        if panel_name in self.panel_name_to_id:
+            panel_id = self.panel_name_to_id[panel_name]
+            return self.panels_by_id[panel_id]
+        else:
+            return None
 
 class ZTVFrame(wx.Frame):
     # TODO: create __init__ input parameters for essentially every adjustable parameter
@@ -625,8 +636,8 @@ class ZTVFrame(wx.Frame):
         Publisher().subscribe(self.load_default_image, "load_default_image")
         self.cur_fitsfile_basename = ''
         self.cur_fitsfile_path = ''
+  # HEREIAM need to migrate autolaod functionality to source panel
         self.autoload_mode = None # other options are "file-match" and "activemq-stream"
-        # TODO:  implement autoloading based on self.autoload_mode
         self.autoload_pausetime_choices = [0.1, 0.5, 1, 2, 5, 10]
         # NOTE: Mac OS X truncates file modification times to integer seconds, so ZTV cannot distinguish a newer file
         #       unless it appears in the next integer second from the prior file.  The <1 sec pausetimes may still be
@@ -829,7 +840,7 @@ class ZTVFrame(wx.Frame):
         if self.cmap != old_cmap:
             wx.CallAfter(Publisher().sendMessage, "cmap-changed", None)
             wx.CallAfter(Publisher().sendMessage, "redraw_image", None)
-
+            
     def set_clim(self, msg):
         if isinstance(msg, Message):
             clim = msg.data
@@ -1178,14 +1189,78 @@ class CommandListenerThread(threading.Thread):
             except StreamListenerTimeOut:
                 pass
             else:
+                source_panel = self.ztv_frame.controls_notebook.get_panel_by_name('Source')
                 if not isinstance(x, tuple):
                     raise Error("ListenThread only accepts tuples")
-                if x[0] == 'get_available_cmaps':
-                    send_to_stream(sys.stdout, ('available_cmaps', self.ztv_frame.available_cmaps))
-                elif x[0] == 'get_available_scalings':
-                    send_to_stream(sys.stdout, ('available_scalings', self.ztv_frame.available_scalings))
-                elif x[0] == 'get_current_cmap':
-                    send_to_stream(sys.stdout, ('current_cmap', self.ztv_frame.cmap))
+                wx.GetApp().ProcessIdle() # give time for any parameter changes to take effect
+                if (x[0].startswith('get_') and 
+                    hasattr(self.ztv_frame, x[0][4:]) and
+                    not callable(getattr(self.ztv_frame, x[0][4:]))):
+                    # catch the easiest cases where we just want some parameter out of ztv_frame, e.g.:
+                    # ztv.frame_cmap is returned by the request message "get_cmap"
+                    wx.CallAfter(send_to_stream, sys.stdout, (x[0][4:], getattr(self.ztv_frame, x[0][4:])))
+                elif x[0] == 'get_xy_center':
+                    wx.CallAfter(send_to_stream, sys.stdout, 
+                                 (x[0][4:], (self.ztv_frame.primary_image_panel.center.x,
+                                             self.ztv_frame.primary_image_panel.center.y)))
+                elif x[0] == 'set_sky_subtraction_status':
+                    if source_panel is not None:
+                        if x[1]:
+                            source_panel.load_sky_subtraction_to_process_stack()
+                        else:
+                            source_panel.unload_sky_subtraction_from_process_stack()
+                elif x[0] == 'set_sky_subtraction_filename':
+                    if source_panel is not None:
+                        source_panel.load_sky_frame(x[1])
+                elif x[0] == 'get_sky_subtraction_status_and_filename':
+                    if source_panel is not None:
+                        sky_subtraction_loaded = False
+                        if 'sky_subtraction' in [a[0] for a in self.ztv_frame.image_process_functions_to_apply]:
+                            sky_subtraction_loaded = True
+                        wx.CallAfter(send_to_stream, sys.stdout, 
+                                     (x[0][4:], 
+                                      (sky_subtraction_loaded, 
+                                       source_panel.skyfile_file_picker.current_textctrl_GetValue())))
+                    else:
+                        send_to_stream(sys.stdout, (x[0][4:], 'source_panel not available'))
+                elif x[0] == 'set_flat_division_status':
+                    if source_panel is not None:
+                        if x[1]:
+                            source_panel.load_flat_division_to_process_stack()
+                        else:
+                            source_panel.unload_flat_division_from_process_stack()
+                elif x[0] == 'set_flat_division_filename':
+                    if source_panel is not None:
+                        source_panel.load_flat_frame(x[1])
+                elif x[0] == 'get_flat_division_status_and_filename':
+                    if source_panel is not None:
+                        flat_division_loaded = False
+                        if 'flat_division' in [a[0] for a in self.ztv_frame.image_process_functions_to_apply]:
+                            flat_division_loaded = True
+                        wx.CallAfter(send_to_stream, sys.stdout, 
+                                     (x[0][4:], 
+                                      (flat_division_loaded, 
+                                       source_panel.flatfile_file_picker.current_textctrl_GetValue())))
+                    else:
+                        send_to_stream(sys.stdout, (x[0][4:], 'source_panel not available'))
+                        
+  # HEREIAM:  NEED TO CLEANUP how autoload-mode is activated/deactivated...use publish/subscribe...
+                        
+                elif x[0] == 'set_autoload_filename_pattern_status':
+                    if x[1]:
+                        self.ztv_frame.launch_autoload_filematch_thread()
+                        self.ztv_frame.autoload_mode = 'file-match'
+                    else:
+                        self.ztv_frame.kill_autoload_filematch_thread()
+                        self.ztv_frame.autoload_mode = None
+                elif x[0] == 'set_autoload_filename_pattern':
+                    if source_panel is not None:
+                        source_panel.autoload_curfile_file_picker_on_load(x[1])
+                elif x[0] == 'get_autoload_status_and_filename_pattern':
+                    wx.CallAfter(send_to_stream, sys.stdout, 
+                                 (x[0][4:], 
+                                  (self.ztv_frame.autoload_mode == 'file-match',
+                                   self.ztv_frame.autoload_match_string)))
                 else:
                     wx.CallAfter(Publisher().sendMessage, x[0], *x[1:])
 

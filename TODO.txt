@@ -2,6 +2,11 @@
 
 ## review for critical additional commands to ztv_api and implement
 
+- use setattr in setting up control panels to be able to access panels
+- search for anywhere that can be simplified by having setattr control_panels 
+- move all autoload functionality to source_panel
+- clean up autoload mode chagnes to be just with publish/subscribe signals - may need to think abotu some better programmatic way of signaling to sub-objects of ztv_frame... (in same way as did "get_..." )
+
 ## migrate README.rst to markdown
 
 ## add screenshots to README.rst
@@ -38,6 +43,10 @@ test basic pip install to minimal package (& maybe prepped with matplotlib/wxpyt
 
 
 # For some future release
+
+## clean up how auto-load mode is turned on/off, e.g. in CommandListenerThread is messy
+
+## ztv_api needs way to get back current filename (can load via load, but to get current status, in same way as can for sky/flat)
 
 ## implement & document additional commands to ztv_api
 
