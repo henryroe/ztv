@@ -1,15 +1,20 @@
 from __future__ import absolute_import
 import subprocess
 import os
-import os.path
 import pickle
 import numpy as np
 from .ztv_lib import send_to_stream, StreamListener, StreamListenerTimeOut
 import importlib
+from codecs import open  # To use a consistent encoding
 
 class Error(Exception):
     pass
 
+base_dir = os.path.abspath(os.path.dirname(__file__))
+
+about = {}
+with open(os.path.join(base_dir, "ztv", "__about__.py")) as f:
+    exec(f.read(), about)
 
 # TODO:  add methods to ZTV() for everything conceivable....
 
@@ -32,6 +37,7 @@ class ZTV():
         z.set_minmax(0.3 * (2**16), 0.7 * (2**16))
     """
     def __init__(self, title=None, control_panels_module_path=None):
+        self.__version__ = about["__version__"]
         # TODO: add generic passthrough of commands, e.g. load fits file? or way to execute sequence of commands from arguments after launch?
         if control_panels_module_path is None:
             cmd = "python -c 'from ztv.ztv import ZTVMain ; ZTVMain(launch_listen_thread=True,"
