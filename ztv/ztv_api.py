@@ -13,7 +13,7 @@ class Error(Exception):
 base_dir = os.path.abspath(os.path.dirname(__file__))
 
 about = {}
-with open(os.path.join(base_dir, "ztv", "__about__.py")) as f:
+with open(os.path.join(base_dir, "__about__.py")) as f:
     exec(f.read(), about)
 
 # TODO:  add methods to ZTV() for everything conceivable....

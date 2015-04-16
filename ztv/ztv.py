@@ -9,7 +9,6 @@ import warnings
 import psutil
 import time
 import os
-import os.path
 import sys
 import pickle
 import glob
@@ -47,6 +46,10 @@ from .ztv_lib import send_to_stream, StreamListener, StreamListenerTimeOut, set_
 
 import pdb
 
+base_dir = os.path.abspath(os.path.dirname(__file__))
+about = {}
+with open(os.path.join(base_dir, "__about__.py")) as f:
+    exec(f.read(), about)
 
 class Error(Exception):
     pass
@@ -605,6 +608,7 @@ class ControlsNotebook(wx.Notebook):
 class ZTVFrame(wx.Frame):
     # TODO: create __init__ input parameters for essentially every adjustable parameter
     def __init__(self, title=None, launch_listen_thread=False, control_panels_to_load=None):
+        self.__version__ = version=about["__version__"]
         self.ztv_frame_pid = os.getpid()  # some add-on control panels will want this to pass to subprocs for knowing when to kill themselves, but NOTE: currently (as of 2015-04-13) on OS X is not working right as process doesn't die fully until uber-python session is killed.
         if title is None:
             self.base_title = 'ztv'
@@ -1185,6 +1189,7 @@ class CommandListenerThread(threading.Thread):
 
 class ZTVMain():
     def __init__(self, title=None, masterPID=-1, launch_listen_thread=False, control_panels_to_load=None):
+        self.__version__ = version=about["__version__"]
         WatchMasterPIDThread(masterPID)
         app = wx.App(False)
         self.frame = ZTVFrame(title=title, launch_listen_thread=launch_listen_thread,
