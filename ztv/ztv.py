@@ -814,14 +814,15 @@ class ZTVFrame(wx.Frame):
         else:
             new_cmap = msg
         old_cmap = self.cmap
-        if new_cmap in self.available_cmaps:
-            self.cmap = new_cmap
+        lower_available_cmaps = [a.lower() for a in self.available_cmaps]
+        if new_cmap.lower() in lower_available_cmaps:
+            self.cmap = self.available_cmaps[lower_available_cmaps.index(new_cmap.lower())]
             self.set_cmap_inverted(False)
-        elif new_cmap.replace('_r', '') in self.available_cmaps:
-            self.cmap = new_cmap.replace('_r', '')
+        elif new_cmap.replace('_r', '').lower() in lower_available_cmaps:
+            self.cmap = self.available_cmaps[lower_available_cmaps.index(new_cmap.lower().replace('_r', ''))]
             self.set_cmap_inverted(True)
-        elif (new_cmap + '_r') in self.available_cmaps:
-            self.cmap = new_cmap + '_r'
+        elif (new_cmap.lower() + '_r') in lower_available_cmaps:
+            self.cmap = self.available_cmaps[lower_available_cmaps.index(new_cmap.lower() + '_r')]
             self.set_cmap_inverted(True)
         else:
             sys.stderr.write("unrecognized cmap ({}) requested\n".format(new_cmap))
@@ -1181,8 +1182,10 @@ class CommandListenerThread(threading.Thread):
                     raise Error("ListenThread only accepts tuples")
                 if x[0] == 'get_available_cmaps':
                     send_to_stream(sys.stdout, ('available_cmaps', self.ztv_frame.available_cmaps))
-                if x[0] == 'get_available_scalings':
+                elif x[0] == 'get_available_scalings':
                     send_to_stream(sys.stdout, ('available_scalings', self.ztv_frame.available_scalings))
+                elif x[0] == 'get_current_cmap':
+                    send_to_stream(sys.stdout, ('current_cmap', self.ztv_frame.cmap))
                 else:
                     wx.CallAfter(Publisher().sendMessage, x[0], *x[1:])
 

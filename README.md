@@ -32,17 +32,17 @@ To load an image in a numpy array:
     
 To manipulate display parameters:
 
-    z.set_cmap('gnuplot')
-    z.set_minmax(0.3, 1)
-    z.set_xy_center(30,30)
-    z.set_zoom(10.)
+    z.cmap('gnuplot')
+    z.minmax(0.3, 1)
+    z.xy_center(30,30)
+    z.zoom(10.)
     
 To step through images in stack:
     for i in range(10):
-        z.set_frame_number(1, relative=True)
+        z.frame_number(1, relative=True)
     
 To go back to first image:
-    z.set_frame_number(0)
+    z.frame_number(0)
 
 Download an iconic FITS image from the web and display it:
     from urllib import urlopen
@@ -54,9 +54,9 @@ Download an iconic FITS image from the web and display it:
     zip_filename = zip.filelist[0].filename
     open(local_filename, 'w').write(zip.open(zip_filename).read())
     z.load(local_filename)
-    z.set_scaling('Log')
-    z.set_cmap('spectral')
-    z.set_minmax(0, 500)
+    z.scaling('Log')
+    z.cmap('spectral')
+    z.minmax(0, 500)
 
 Add-on Control Panel Example
 ----------------------------

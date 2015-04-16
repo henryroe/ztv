@@ -16,8 +16,6 @@ about = {}
 with open(os.path.join(base_dir, "__about__.py")) as f:
     exec(f.read(), about)
 
-# TODO:  add methods to ZTV() for everything conceivable....
-
 
 class ZTV():
     """
@@ -33,12 +31,11 @@ class ZTV():
         from ztv import ZTV
         z = ZTV(title="My custom ZTV title")
         z.load(np.random.randint(2**16, size=[256, 256]))
-        z.set_cmap('jet')
-        z.set_minmax(0.3 * (2**16), 0.7 * (2**16))
+        z.cmap('jet')
+        z.minmax(0.3 * (2**16), 0.7 * (2**16))
     """
     def __init__(self, title=None, control_panels_module_path=None):
         self.__version__ = about["__version__"]
-        # TODO: add generic passthrough of commands, e.g. load fits file? or way to execute sequence of commands from arguments after launch?
         if control_panels_module_path is None:
             cmd = "python -c 'from ztv.ztv import ZTVMain ; ZTVMain(launch_listen_thread=True,"
         else:
@@ -53,7 +50,7 @@ class ZTV():
         cmd += 'masterPID=' + str(os.getpid()) +")'"
         self._subproc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
         self.stream_listener = StreamListener(self._subproc.stdout)
-        self.set_clim = self.set_minmax   # make an alias
+        self.clim = self.minmax   # make an alias
 
     def close(self):
         """
@@ -61,6 +58,22 @@ class ZTV():
         """
         send_to_stream(self._subproc.stdin, "kill_ztv")
         # self._subproc.terminate()   # TODO: neither .terminate() nor .kill() seem to close out the subprocess, something must be holding it up.
+
+    def _request_return_value_from_ztv(self, request_message, expected_return_message_title, timeout=10.):
+        """
+        routine to request info from ztv by sending message and receiving response
+        """
+        send_to_stream(self._subproc.stdin, request_message)
+        try:
+            x = self.stream_listener.read_pickled_message(timeout=timeout)
+        except StreamListenerTimeOut:
+            raise Error("did not receive return value from ztv in response to request: {}".format(request_message))
+        else:
+            if x[0] == expected_return_message_title:
+                return x[1]
+            else:
+                raise Error("Unrecognized return value from ztv ({}) " +
+                            "in response to request: {}".format(x, request_message))
 
     def _load_numpy_array(self, image):
         """
@@ -72,6 +85,9 @@ class ZTV():
             raise Error('Tried to send type {} instead of a numpy array'.format(type(image)))
 
     def _validate_fits_filename(self, filename):
+        """
+        check that input filename ends with .fits or .fits.gz (any combo of upper/lower case)
+        """
         if isinstance(filename, str):
             if filename.lower().endswith('.fits') or filename.lower().endswith('.fits.gz'):
                 if os.path.isfile(filename):
@@ -98,7 +114,7 @@ class ZTV():
         Load a new image, accepts:
             - numpy array
             - fits filename (e.g. *.fits, *.fits.gz, *.FITS, etc
-            TODO: add other input formats, such as fits file
+            TODO: add other input formats, such as hdulist of already read-in fits file
         """
         if isinstance(input, np.ndarray):
             self._load_numpy_array(input)
@@ -113,22 +129,7 @@ class ZTV():
         """
         send_to_stream(self._subproc.stdin, "load_default_image")
 
-    def get_available_cmaps(self):
-        """
-        Returns available color maps as a list of strings
-        """
-        send_to_stream(self._subproc.stdin, "get_available_cmaps")
-        try:
-            x = self.stream_listener.read_pickled_message(timeout=10.)
-        except StreamListenerTimeOut:
-            raise Error("get_available_cmaps did not receive return value from ztv.")
-        else:
-            if x[0] == 'available_cmaps':
-                return x[1]
-            else:
-                raise Error("Unrecognized return value from ztv. {}".format(x))
-
-    def set_cmap(self, cmap):
+    def cmap(self, cmap=None):
         """
         Set the colormap.
 
@@ -137,8 +138,14 @@ class ZTV():
         The requested colormap must be in the list of available colormaps, or, it's reverse:
             e.g. 'gray' is in the list, but one can request either 'gray' or 'gray_r'
                  'Blues_r' is in the list, but one can request either 'Blues' or 'Blues_r'
+                 
+        Default (cmap=None) returns the available color maps as a list of strings
         """
-        send_to_stream(self._subproc.stdin, ('set_cmap', cmap))
+        if cmap is not None:
+            send_to_stream(self._subproc.stdin, ('set_cmap', cmap))
+            return self._request_return_value_from_ztv('get_current_cmap', 'current_cmap')
+        else:
+            return self._request_return_value_from_ztv('get_available_cmaps', 'available_cmaps')
 
     def invert_cmap(self):
         """
@@ -146,22 +153,7 @@ class ZTV():
         """
         send_to_stream(self._subproc.stdin, 'invert_cmap')
 
-    def get_available_scalings(self):
-        """
-        Returns available scalings (e.g. linear, log, squared, etc) as a list of strings
-        """
-        send_to_stream(self._subproc.stdin, "get_available_scalings")
-        try:
-            x = self.stream_listener.read_pickled_message(timeout=10.)
-        except StreamListenerTimeOut:
-            raise Error("get_available_scalings did not receive return value from ztv.")
-        else:
-            if x[0] == 'available_scalings':
-                return x[1]
-            else:
-                raise Error("Unrecognized return value from ztv. {}".format(x))
-
-    def set_scaling(self, scaling):
+    def scaling(self, scaling=None):
         """
         Set the scaling.  (e.g. 'linear', 'log')
 
@@ -169,22 +161,37 @@ class ZTV():
 
         The requested scaling must be in the list of available scalings.
         (independent of case, e.g. 'linear' or 'Linear' are both valid
+        
+        Default (scaling=None) returns the available scalings (e.g. 'linear', 'log') as a list of strings
         """
-        send_to_stream(self._subproc.stdin, ('set_scaling', scaling))
+        if scaling is not None:
+            send_to_stream(self._subproc.stdin, ('set_scaling', scaling))
+            # TODO: consider adding:  return current scaling
+        else:
+            send_to_stream(self._subproc.stdin, "get_available_scalings")
+            try:
+                x = self.stream_listener.read_pickled_message(timeout=10.)
+            except StreamListenerTimeOut:
+                raise Error("get_available_scalings did not receive return value from ztv.")
+            else:
+                if x[0] == 'available_scalings':
+                    return x[1]
+                else:
+                    raise Error("Unrecognized return value from ztv. {}".format(x))
 
-    def reset_minmax(self):
+    def set_minmax_to_full_range(self):
         """
         Reset the min/max to the image's full range
         """
         send_to_stream(self._subproc.stdin, 'set_clim_to_minmax')
 
-    def auto_minmax(self):
+    def set_minmax_to_auto(self):
         """
         Set the min/max to the automatic setting
         """
         send_to_stream(self._subproc.stdin, 'set_clim_to_auto')
 
-    def set_minmax(self, minval=None, maxval=None):
+    def minmax(self, minval=None, maxval=None):
         """
         Set min/max clipping of values in image display.
         If min > max, then will invert the colormap.
@@ -193,36 +200,116 @@ class ZTV():
         See ZTV.reset_minmax() for resetting the min/max to the image's full range
         """
         send_to_stream(self._subproc.stdin, ('set_clim', (minval, maxval)))
+        # TODO: return current minmax
 
     def reset_zoom_and_center(self):
+        """
+        TODO: write docstring
+        """
         send_to_stream(self._subproc.stdin, 'reset_zoom_and_center')
 
-    def set_zoom(self, zoom):
-        send_to_stream(self._subproc.stdin, ('set_zoom_factor', zoom))
+    def zoom(self, zoom=None):
+        """
+        TODO: write docstring
+        """
+        if zoom is not None:
+            send_to_stream(self._subproc.stdin, ('set_zoom_factor', zoom))
+        # TODO: return current zoom    
 
-    def set_xy_center(self, *args):
+    def xy_center(self, *args):
         if len(args) == 1:
             x,y = args[0]
         else:
             x,y = args[0], args[1]
         send_to_stream(self._subproc.stdin, ('set_xy_center', (x, y)))
+        # TODO: return current xy center
 
     def add_activemq(self, server=None, port=61613, destination=None):
+        """
+        TODO: write docstring
+        """
         if server is None:
             raise Error('Must specify a server address in server keyword, e.g.  "myserver.mywebsite.com"')
         if destination is None:
             raise Error('Must specify a message queue to follow in destination keyword')
         send_to_stream(self._subproc.stdin, ('add_activemq_instance', (server, port, destination)))
 
-    def set_frame_number(self, n, relative=False):
+    def frame_number(self, n=None, relative=False):
         """
         If 3-d image is loaded set the frame number to be displayed.
         Default (relative=False) is to set to frame number n (automatically clipped to 0->size of 3-d stack)
         Negative n will count back from end of image stack, e.g. -1 is last, -2 is second to last.
         Optionally (relative=True) will add n to current frame number (-1 go back one, 1 advance one)
         """
-        if relative:
-            flag = 'relative'
-        else:
-            flag = 'absolute'
-        send_to_stream(self._subproc.stdin, ('set_cur_display_frame_num', (n, flag)))
+        if n is not None:
+            if relative:
+                flag = 'relative'
+            else:
+                flag = 'absolute'
+            send_to_stream(self._subproc.stdin, ('set_cur_display_frame_num', (n, flag)))
+        # TODO: return current frame number
+        
+    def sky_frame(self, filename=None):
+        """
+        Set sky frame to filename and turn on sky subtraction
+        To turn on sky subtraction with already loaded filename pattern, set filename=True
+        To turn off sky subtraction, set filename=None
+        returns current sky frame filename
+        """
+        pass # TODO
+        
+    def flat_frame(self, filename=None):
+        """
+        Set flat frame to filename and turn on flat field division
+        To turn on flat field division with already loaded filename pattern, set filename=True
+        To turn off flat field division, set filename=None
+        returns current flat frame filename
+        """
+        pass # TODO
+        
+    def autoload_filename_pattern(self, filename=None):
+        """
+        Set filename pattern for autoload to filename and turn on auto-load
+        To turn on auto-loading with already loaded filename pattern, set filename=True
+        To turn off auto-loading, set filename=None
+        returns current auto-load filename pattern
+        """
+        pass # TODO
+
+    def autoload_pause_seconds(self, seconds=None):
+        """
+        Set pause time in seconds (will adjust to nearest available value)
+        returns current autoload pause time
+        """
+        pass # TODO
+
+    def slice_plot(self, *args):
+        """
+        TODO: write documentation
+        """
+        pass # TODO
+        
+    def stats_box(self, *args):
+        """
+        TODO: write documentation
+        """
+        pass # TODO
+
+    def aperture_phot(self, x=None, y=None, radius=None, inner_sky_radius=None, outer_sky_radius=None,
+                      xcenter=None, ycenter=None, clear_overplot=False):
+        """
+        Send updated parameters to the Aperture Photometry control panel.
+        Any unmodified arguments will be left unmodified in ztv. 
+        (e.g. can change just x/y without respecifying radius, or change radius without respecifying x/y)
+        x,y:  coordinates, will be used as starting point to centroid on (as if user had clicked at that x/y)
+        radius:  Object radius
+        inner_sky_radius,outer_sky_radius:  defines the sky annulus
+        xcenter,ycenter:  If present, these over-ride x/y. Coordinates will not be re-centroided and 
+                          xcenter/ycenter will be used as the center of the photometry radii.
+        clear_overplot: If True, then clear the over plotted apertures from the primary display frame. 
+                        (equivalent to clicking clear in GUI)
+                        
+        returns a dict with output photometry
+        TODO: show what dict contains
+        """  
+        
