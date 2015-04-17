@@ -328,13 +328,22 @@ class ZTV():
         Set pause time in seconds (will adjust to nearest available value)
         returns current autoload pause time
         """
-        pass # TODO
+        if seconds is not None:
+            send_to_stream(self._subproc.stdin, ('set_autoload_pausetime', seconds))
+        return self._request_return_value_from_ztv('get_autoload_pausetime')
 
-    def slice_plot(self, *args):
+    def slice_plot(self, pts=None, show_overplot=True):
         """
-        TODO: write documentation
+        pts: of form [[x0, y0], [x1, y1]]
+        show_overplot:  If True, then show the over-plotted line
+                        If False, then hide the line, although plot panel itself will continue to update
+        Returns current (new) pts
         """
-        pass # TODO
+        if pts is not None:
+            send_to_stream(self._subproc.stdin, ('set_new_slice_plot_xy0', pts[0]))
+            send_to_stream(self._subproc.stdin, ('set_new_slice_plot_xy1', pts[1]))
+        # TODO: implement clear_overplot
+        return self._request_return_value_from_ztv('get_slice_plot_coords')
         
     def stats_box(self, *args):
         """
@@ -343,7 +352,7 @@ class ZTV():
         pass # TODO
 
     def aperture_phot(self, x=None, y=None, radius=None, inner_sky_radius=None, outer_sky_radius=None,
-                      xcenter=None, ycenter=None, clear_overplot=False):
+                      xcenter=None, ycenter=None, show_overplot=False):
         """
         Send updated parameters to the Aperture Photometry control panel.
         Any unmodified arguments will be left unmodified in ztv. 
@@ -353,8 +362,8 @@ class ZTV():
         inner_sky_radius,outer_sky_radius:  defines the sky annulus
         xcenter,ycenter:  If present, these over-ride x/y. Coordinates will not be re-centroided and 
                           xcenter/ycenter will be used as the center of the photometry radii.
-        clear_overplot: If True, then clear the over plotted apertures from the primary display frame. 
-                        (equivalent to clicking clear in GUI)
+        show_overplot:  If True, then show the over-plotted apertures on the display
+                        If False, then hide the apertures, although phot panel itself will continue to update
                         
         returns a dict with output photometry
         TODO: show what dict contains

@@ -327,6 +327,7 @@ class PrimaryImagePanel(wx.Panel):
             elif self.cursor_mode == 'Slice plot':
                 self.ztv_frame.plot_panel.select_panel()
                 wx.CallAfter(Publisher().sendMessage, "new_slice_plot_xy0", (event.xdata, event.ydata))
+                wx.CallAfter(Publisher().sendMessage, "new_slice_plot_xy1", (event.xdata, event.ydata))
 
     def on_motion(self, event):
         # TODO: clean up in stats_box stuff whether ranges are pythonic or inclusive.  Might be that is pythonic behind scenes, but inclusive in some of the display of info?  There are trickinesses to getting this right, as sometimes need to flip x0/x1 and y0/y1 when range is negative
@@ -1075,6 +1076,7 @@ class CommandListenerThread(threading.Thread):
                     wx.CallAfter(send_to_stream, sys.stdout, 
                                  (x[0][4:], (self.ztv_frame.primary_image_panel.center.x,
                                              self.ztv_frame.primary_image_panel.center.y)))
+                # TODO: the following N elif statements accessing/controlling source_panel elements is ripe for some sort of sensible refactoring
                 elif x[0] == 'set_sky_subtraction_status':
                     if hasattr(self.ztv_frame, 'source_panel'):
                         if x[1]:
@@ -1116,7 +1118,7 @@ class CommandListenerThread(threading.Thread):
                     else:
                         send_to_stream(sys.stdout, (x[0][4:], 'source_panel not available'))
                 elif x[0] == 'set_autoload_filename_pattern_status':
-                    if hasattr(self.ztv_frame, source_panel):
+                    if hasattr(self.ztv_frame, 'source_panel'):
                         if x[1]:
                             self.ztv_frame.source_panel.launch_autoload_filematch_thread()
                             self.ztv_frame.source_panel.autoload_mode = 'file-match'
@@ -1124,16 +1126,43 @@ class CommandListenerThread(threading.Thread):
                             self.ztv_frame.source_panel.kill_autoload_filematch_thread()
                             self.ztv_frame.source_panel.autoload_mode = None
                 elif x[0] == 'set_autoload_filename_pattern':
-                    if hasattr(self.ztv_frame, source_panel):
+                    if hasattr(self.ztv_frame, 'source_panel'):
                         self.ztv_frame.source_panel.autoload_curfile_file_picker_on_load(x[1])
                 elif x[0] == 'get_autoload_status_and_filename_pattern':
-                    if hasattr(self.ztv_frame, source_panel):
+                    if hasattr(self.ztv_frame, 'source_panel'):
                         wx.CallAfter(send_to_stream, sys.stdout, 
                                      (x[0][4:], 
                                       (self.ztv_frame.source_panel.autoload_mode == 'file-match',
                                        self.ztv_frame.source_panel.autoload_match_string)))
                     else:
                         send_to_stream(sys.stdout, (x[0][4:], 'source_panel not available'))
+                elif x[0] == 'set_autoload_pausetime':
+                    if hasattr(self.ztv_frame, 'source_panel'):
+                        i = np.abs(np.array(self.ztv_frame.source_panel.autoload_pausetime_choices) - 
+                                   float(x[1])).argmin()
+                        self.ztv_frame.source_panel.autoload_pausetime = self.ztv_frame.source_panel.autoload_pausetime_choices[i]
+                        self.ztv_frame.source_panel.autoload_pausetime_choice.SetSelection(i)
+                elif x[0] == 'get_autoload_pausetime':
+                    if hasattr(self.ztv_frame, 'source_panel'):
+                        wx.CallAfter(send_to_stream, sys.stdout, 
+                                     (x[0][4:], self.ztv_frame.source_panel.autoload_pausetime))
+                    else:
+                        send_to_stream(sys.stdout, (x[0][4:], 'source_panel not available'))
+                elif x[0] == 'set_new_slice_plot_xy0':
+                    if hasattr(self.ztv_frame, 'plot_panel'):
+                        wx.CallAfter(Publisher().sendMessage, 'new_slice_plot_xy0', *x[1:])
+                elif x[0] == 'set_new_slice_plot_xy1':
+                    if hasattr(self.ztv_frame, 'plot_panel'):
+                        wx.CallAfter(Publisher().sendMessage, 'new_slice_plot_xy1', *x[1:])
+                elif x[0] == 'get_slice_plot_coords':
+                    if hasattr(self.ztv_frame, 'plot_panel'):
+                        wx.CallAfter(send_to_stream, sys.stdout, 
+                                     (x[0][4:], [[self.ztv_frame.plot_panel.start_pt.x, 
+                                                  self.ztv_frame.plot_panel.start_pt.y], 
+                                                 [self.ztv_frame.plot_panel.end_pt.x, 
+                                                  self.ztv_frame.plot_panel.end_pt.y]]))
+                    else:
+                        send_to_stream(sys.stdout, (x[0][4:], 'plot_panel not available'))
                 else:
                     wx.CallAfter(Publisher().sendMessage, x[0], *x[1:])
 

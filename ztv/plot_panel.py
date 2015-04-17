@@ -63,7 +63,6 @@ class PlotPanel(wx.Panel):
         else:
             x,y = msg
         self.start_pt.x, self.start_pt.y = x, y
-        self.end_pt.x, self.end_pt.y = x, y
         self.redraw_on_image()
         self.redraw()
 

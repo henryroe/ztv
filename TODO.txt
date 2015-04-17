@@ -1,5 +1,14 @@
 # URGENT - before next release
 
+## right above ZTVMain()
+
+                elif x[0] == 'get_slice_plot_coords':
+isn't pausing to let coords update.  what was that "wait for " routine I found earlier Thursday???
+
+Also, set_new_slice plot needs to somehow turn on/off plot line 
+
+## Clear buttons on stats/plot/phot should be changed to a hide/show button that updates as needed
+
 ## review for critical additional commands to ztv_api and implement
 
 - move all autoload functionality to source_panel
