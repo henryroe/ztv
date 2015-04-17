@@ -341,6 +341,7 @@ class ZTV():
         """
         if pts is not None:
             send_to_stream(self._subproc.stdin, ('set_new_slice_plot_xy0', pts[0]))
+            self._request_return_value_from_ztv('get_slice_plot_coords')  # dummy call to give time to update so that return is correct.
             send_to_stream(self._subproc.stdin, ('set_new_slice_plot_xy1', pts[1]))
         # TODO: implement clear_overplot
         return self._request_return_value_from_ztv('get_slice_plot_coords')
