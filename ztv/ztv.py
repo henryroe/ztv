@@ -89,7 +89,6 @@ class PrimaryImagePanel(wx.Panel):
         self.center = wx.RealPoint()
         self.zoom_factor = 2.0
         self.zoom_rect = None
-        self.stats_rect = None
         self.eventID_to_cmap = {wx.NewId(): x for x in self.ztv_frame.available_cmaps}
         self.cmap_to_eventID = {self.eventID_to_cmap[x]: x for x in self.eventID_to_cmap}
         self.eventID_to_scaling = {wx.NewId(): x for x in self.ztv_frame.available_scalings}
@@ -275,32 +274,7 @@ class PrimaryImagePanel(wx.Panel):
     def on_change_scaling_event(self, event):
         wx.CallAfter(Publisher().sendMessage, "set_scaling", self.eventID_to_scaling[event.GetId()])
 
-    def update_stats_box(self, x0, y0, x1, y1):
-        if x0 is None:
-            x0 = self.stats_rect.get_x()
-        if y0 is None:
-            y0 = self.stats_rect.get_y()
-        if x1 is None:
-            x1 = self.stats_rect.get_x() + self.stats_rect.get_width()
-        if y1 is None:
-            y1 = self.stats_rect.get_y() + self.stats_rect.get_height()
-        x0 = min(max(0, x0), self.ztv_frame.display_image.shape[1])
-        y0 = min(max(0, y0), self.ztv_frame.display_image.shape[0])
-        x1 = min(max(0, x1), self.ztv_frame.display_image.shape[1])
-        y1 = min(max(0, y1), self.ztv_frame.display_image.shape[0])
-        if self.stats_rect is None:
-            self.stats_rect = Rectangle((x0, y0), x1 - x0, y1 - y0, color='orange', fill=False, zorder=100)
-            self.axes.add_patch(self.stats_rect)
-        self.stats_rect.set_bounds(x0, y0, x1 - x0, y1 - y0)
-        self.figure.canvas.draw()
-        wx.CallAfter(Publisher().sendMessage, "stats_rect_updated", None)
-
-    def clear_stats_box(self):
-        if self.stats_rect is not None:
-            self.axes.patches.remove(self.stats_rect)
-            self.stats_rect = None
-            self.figure.canvas.draw()
-            wx.CallAfter(Publisher().sendMessage, "stats_rect_updated", None)
+    # TODO: would like to figure out way to refactor on the control_panel related cursors to get the code out of here and over into the individual panels.
 
     def on_button_press(self, event):
         if event.button == 1:  # left button
@@ -320,7 +294,8 @@ class PrimaryImagePanel(wx.Panel):
                 self.set_and_get_xy_limits()
             elif self.cursor_mode == 'Stats box':
                 self.stats_start_timestamp = event.guiEvent.GetTimestamp()  # millisec
-                self.update_stats_box(event.xdata, event.ydata, event.xdata, event.ydata)
+                self.ztv_frame.stats_panel.update_stats_box(event.xdata, event.ydata, event.xdata, event.ydata)
+                self.ztv_frame.stats_panel.redraw_overplot_on_image()
             elif self.cursor_mode == 'Phot':
                 self.ztv_frame.phot_panel.select_panel()
                 wx.CallAfter(Publisher().sendMessage, "new_phot_xy", (event.xdata, event.ydata))
@@ -330,7 +305,6 @@ class PrimaryImagePanel(wx.Panel):
                 wx.CallAfter(Publisher().sendMessage, "new_slice_plot_xy1", (event.xdata, event.ydata))
 
     def on_motion(self, event):
-        # TODO: clean up in stats_box stuff whether ranges are pythonic or inclusive.  Might be that is pythonic behind scenes, but inclusive in some of the display of info?  There are trickinesses to getting this right, as sometimes need to flip x0/x1 and y0/y1 when range is negative
         if event.xdata is None or event.ydata is None:
             return
         x = int(np.round(event.xdata))
@@ -341,8 +315,10 @@ class PrimaryImagePanel(wx.Panel):
                 self.zoom_rect.set_bounds(x0, y0, event.xdata - x0, event.ydata - y0)
                 self.figure.canvas.draw()
             elif self.cursor_mode == 'Stats box':
-                x0,y0 = self.stats_rect.get_x(),self.stats_rect.get_y()
-                self.update_stats_box(x0, y0, event.xdata, event.ydata)
+                x0,y0 = self.ztv_frame.stats_panel.stats_rect.get_x(),self.ztv_frame.stats_panel.stats_rect.get_y()
+                self.ztv_frame.stats_panel.update_stats_box(x0, y0, event.xdata, event.ydata)
+                self.ztv_frame.stats_panel.redraw_overplot_on_image()
+                self.ztv_frame.stats_panel.update_stats()
             elif self.cursor_mode == 'Slice plot':
                 wx.CallAfter(Publisher().sendMessage, "new_slice_plot_xy1", (event.xdata, event.ydata))
         if ((x >= 0) and (x < self.ztv_frame.display_image.shape[1]) and
@@ -382,7 +358,8 @@ class PrimaryImagePanel(wx.Panel):
                 self.zoom_rect = None
                 self.figure.canvas.draw()
             elif self.cursor_mode == 'Stats box':
-                wx.CallAfter(Publisher().sendMessage, "stats_rect_updated", None)
+                self.ztv_frame.stats_panel.redraw_overplot_on_image()
+                self.ztv_frame.stats_panel.update_stats()
             elif self.cursor_mode == 'Slice plot':
                 wx.CallAfter(Publisher().sendMessage, "new_slice_plot_xy1", (event.xdata, event.ydata))
 
@@ -1169,6 +1146,21 @@ class CommandListenerThread(threading.Thread):
                 elif x[0] == 'show_plot_panel_overplot':
                     if hasattr(self.ztv_frame, 'plot_panel'):
                         wx.CallAfter(self.ztv_frame.plot_panel.redraw_overplot_on_image)
+                elif x[0] == 'set_new_stats_box':
+                    if hasattr(self.ztv_frame, 'stats_panel'):
+                        wx.CallAfter(self.ztv_frame.stats_panel.update_stats_box, *(np.array(x[1]).ravel()))
+                elif x[0] == 'hide_stats_panel_overplot':
+                    if hasattr(self.ztv_frame, 'stats_panel'):
+                        wx.CallAfter(self.ztv_frame.stats_panel.remove_overplot_on_image)
+                elif x[0] == 'show_stats_panel_overplot':
+                    if hasattr(self.ztv_frame, 'stats_panel'):
+                        wx.CallAfter(self.ztv_frame.stats_panel.redraw_overplot_on_image)
+                elif x[0] == 'get_stats_box_coords':
+                    if hasattr(self.ztv_frame, 'stats_panel'):
+                        x0,y0,x1,y1 = self.ztv_frame.stats_panel.get_x0y0x1y1_from_stats_rect()
+                        wx.CallAfter(send_to_stream, sys.stdout, (x[0][4:], [[x0,y0], [x1, y1]]))
+                    else:
+                        send_to_stream(sys.stdout, (x[0][4:], 'plot_panel not available'))
                 else:
                     wx.CallAfter(Publisher().sendMessage, x[0], *x[1:])
 

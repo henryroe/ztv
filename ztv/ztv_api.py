@@ -349,11 +349,22 @@ class ZTV():
             send_to_stream(self._subproc.stdin, 'hide_plot_panel_overplot')
         return self._request_return_value_from_ztv('get_slice_plot_coords')
         
-    def stats_box(self, *args):
+    def stats_box(self, box=None, show_overplot=True):
         """
-        TODO: write documentation
+        box: of form [x0, y0, x1, y1]
+        show_overplot:  If True, then show the over-plotted box
+                        If False, then hide the box, although stats panel itself will continue to update
+        Returns current (new) box
         """
-        pass # TODO
+        if box is not None:
+            send_to_stream(self._subproc.stdin, ('set_new_stats_box', box))
+            self._request_return_value_from_ztv('get_stats_box_coords')  # dummy call to give time to update so that return is correct.
+            send_to_stream(self._subproc.stdin, ('set_new_stats_box_xy1', box[1]))
+        if show_overplot:
+            send_to_stream(self._subproc.stdin, 'show_stats_panel_overplot')
+        else:
+            send_to_stream(self._subproc.stdin, 'hide_stats_panel_overplot')
+        return self._request_return_value_from_ztv('get_stats_box_coords')
 
     def aperture_phot(self, x=None, y=None, radius=None, inner_sky_radius=None, outer_sky_radius=None,
                       xcenter=None, ycenter=None, show_overplot=False):

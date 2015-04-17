@@ -82,12 +82,14 @@ class PlotPanel(wx.Panel):
         self.primary_image_patch = PathPatch(path, color='orange', lw=1)
         self.ztv_frame.primary_image_panel.axes.add_patch(self.primary_image_patch)
         self.ztv_frame.primary_image_panel.figure.canvas.draw()
+        self.hideshow_button.SetLabel(u"Hide")        
 
     def remove_overplot_on_image(self):
         if self.primary_image_patch is not None:
             self.ztv_frame.primary_image_panel.axes.patches.remove(self.primary_image_patch)
         self.ztv_frame.primary_image_panel.figure.canvas.draw()
         self.primary_image_patch = None
+        self.hideshow_button.SetLabel(u"Show")
 
     def on_hideshow_button(self, event):
         if self.hideshow_button.GetLabel() == 'Hide':
