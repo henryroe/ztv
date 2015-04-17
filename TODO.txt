@@ -1,13 +1,16 @@
 # URGENT - before next release
 
-## right above ZTVMain()
-
-                elif x[0] == 'get_slice_plot_coords':
-isn't pausing to let coords update.  what was that "wait for " routine I found earlier Thursday???
+## Clear buttons on stats/plot/phot should be changed to a hide/show button that updates as needed
 
 Also, set_new_slice plot needs to somehow turn on/off plot line 
 
-## Clear buttons on stats/plot/phot should be changed to a hide/show button that updates as needed
+## refactor ztv_api to get rid of the number of send_to_stream(self._subproc.stdin....
+
+## add z.methods to fits faker example that starts/stops faker
+
+
+
+
 
 ## review for critical additional commands to ztv_api and implement
 

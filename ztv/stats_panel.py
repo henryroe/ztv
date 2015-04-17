@@ -177,9 +177,9 @@ class StatsPanel(wx.Panel):
         self.maxpos_textctrl.SetFont(textentry_font)
         values_sizer.Add(self.maxpos_textctrl, 0, wx.ALL, 2)
              
-        self.clear_button = wx.Button(self, wx.ID_ANY, u"Clear", wx.DefaultPosition, wx.DefaultSize, 0)
-        values_sizer.Add(self.clear_button, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL, 2)
-        self.clear_button.Bind(wx.EVT_BUTTON, self.on_clear_button)
+        self.hideshow_button = wx.Button(self, wx.ID_ANY, u"Hide", wx.DefaultPosition, wx.DefaultSize, 0)
+        values_sizer.Add(self.hideshow_button, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL, 2)
+        self.hideshow_button.Bind(wx.EVT_BUTTON, self.on_hideshow_button)
 
         v_sizer1 = wx.BoxSizer(wx.VERTICAL)
         v_sizer1.AddStretchSpacer(1.0)
@@ -189,8 +189,32 @@ class StatsPanel(wx.Panel):
         Publisher().subscribe(self.update_stats, "stats_rect_updated")
         Publisher().subscribe(self.update_stats, "redraw_image")
 
-    def on_clear_button(self, evt):
-        self.ztv_frame.primary_image_panel.clear_stats_box()
+    def on_hideshow_button(self, evt):
+        if self.hideshow_button.GetLabel() == 'Hide':
+            self.hideshow_button.SetLabel(u"Show")
+            self.remove_overplot_on_image()
+        else:
+            self.hideshow_button.SetLabel(u"Hide")        
+            self.redraw_overplot_on_image()
+
+  # HEREIAM:  need to make stats box patch on primary image panel work more like how I did the plot panel line... less over in ztv.py
+  # HEREIAM: need to rewrite next two routines
+#     def redraw_overplot_on_image(self):
+#         if self.primary_image_patch is not None:
+#             self.ztv_frame.primary_image_panel.axes.patches.remove(self.primary_image_patch)
+#         path = Path([self.start_pt, self.end_pt], [Path.MOVETO, Path.LINETO])
+#         self.primary_image_patch = PathPatch(path, color='orange', lw=1)
+#         self.ztv_frame.primary_image_panel.axes.add_patch(self.primary_image_patch)
+#         self.ztv_frame.primary_image_panel.figure.canvas.draw()
+# 
+#     def remove_overplot_on_image(self):
+#         if self.primary_image_patch is not None:
+#             self.ztv_frame.primary_image_panel.axes.patches.remove(self.primary_image_patch)
+#         self.ztv_frame.primary_image_panel.figure.canvas.draw()
+#         self.primary_image_patch = None
+
+      # HEREIAM need to pull stats box back out of ztv_frame???
+#         self.ztv_frame.primary_image_panel.clear_stats_box()
 
     def get_x0y0x1y1_from_stats_rect(self):
         if self.ztv_frame.primary_image_panel.stats_rect is not None:

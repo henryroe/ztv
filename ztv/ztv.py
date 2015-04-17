@@ -1163,6 +1163,12 @@ class CommandListenerThread(threading.Thread):
                                                   self.ztv_frame.plot_panel.end_pt.y]]))
                     else:
                         send_to_stream(sys.stdout, (x[0][4:], 'plot_panel not available'))
+                elif x[0] == 'hide_plot_panel_overplot':
+                    if hasattr(self.ztv_frame, 'plot_panel'):
+                        wx.CallAfter(self.ztv_frame.plot_panel.remove_overplot_on_image)
+                elif x[0] == 'show_plot_panel_overplot':
+                    if hasattr(self.ztv_frame, 'plot_panel'):
+                        wx.CallAfter(self.ztv_frame.plot_panel.redraw_overplot_on_image)
                 else:
                     wx.CallAfter(Publisher().sendMessage, x[0], *x[1:])
 

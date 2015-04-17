@@ -3,7 +3,7 @@ ztv - astronomical image viewer
 
 ztv is an astronomical image viewer designed to be used from a python command line for display and analysis. 
 
-ztv is useful as-is for display and simple analysis of images already loaded in to `numpy arrays <http://numpy.org>`_, as well as `FITS files <http://fits.gsfc.nasa.gov/fits_primer.html>`_.  It can display the most recently acquired image by watching a directory for new FITS files to appear or watching a single FITS file for when it changes. It can also receive new images via an `ActiveMQ message stream <http://activemq.apache.org>`_. 
+ztv is useful as-is for display and simple analysis of images already loaded in to [numpy arrays](http://numpy.org), as well as [FITS files](http://fits.gsfc.nasa.gov/fits_primer.html).  It can display the most recently acquired image by watching a directory for new FITS files to appear or watching a single FITS file for when it changes. It can also receive new images via an [ActiveMQ message stream](http://activemq.apache.org). 
 
 ztv is intended for real-time display and analysis. ztv is not intended to produce publication quality figures. 
 
@@ -69,27 +69,27 @@ See files in ztv_examples/fits_faker_panel/
 Installation and Dependencies
 =============================
 
-ztv uses several packages, including `wxPython <http://wxpython.org>`_, `astropy <http://www.astropy.org>`_.  These should be automatically installed if you install ztv with:
+ztv uses several packages, including [wxPython](http://wxpython.org), [astropy](http://www.astropy.org).  These should be automatically installed if you install ztv with:
 
     pip install ztv
 
 Background
 ==========
 
-In graduate school in the late 1990's I learned to use `IDL <http://en.wikipedia.org/wiki/IDL_(programming_language)>`_ and used `Aaron Barth's ATV <http://www.physics.uci.edu/~barth/atv/>`_ extensively. I even contributed a little to a now-outdated version, adding 3-d image stack capability. ATV was and is incredibly useful for quick-looks at image data, analysis, and all the things you want when working with typical astronomical image data.
+In graduate school in the late 1990's I learned to use [IDL](http://en.wikipedia.org/wiki/IDL_(programming_language)) and used [Aaron Barth's ATV](http://www.physics.uci.edu/~barth/atv/) extensively. I even contributed a little to a now-outdated version, adding 3-d image stack capability. ATV was and is incredibly useful for quick-looks at image data, analysis, and all the things you want when working with typical astronomical image data.
 
 After graduate school I began migrating toward python and away from IDL. I've written about this choice elsewhere, but some of the basic reasons were to avoid IDL licensing issues and being beholden to one company.  (To be fair, I pay every year to keep my IDL license current and it's always been a reasonable price for me. It helps that my license has some obscure history to it that makes the maintenance fees moderate. But, at any time they could raise the prices on me massively. And, I wanted to be using a language that could effectively be on every machine I touch, from my main laptop to an embedded server.)
 
-In python there are already a multitude of possible image viewers. Many of which are great and can do much of what I needed. But, inevitably as I've played with them I've found they each don't scratch my itch in some way. I wanted something that worked exactly the way I wanted, with the right (for me) mix of complexity and simplicity.  And, to be able to easily adapt it to a number of situations, including real-time use on a slit-viewing camera, quick-reduction of incoming data, etc.. So, I wrote ztv.
+In python there are already a multitude of possible image viewers. Many of which are great and can do much of what I needed. But, inevitably as I've played with them I've found they each don't scratch my itch in some way. I wanted something that worked exactly the way I wanted, with the right (for me) mix of complexity and simplicity.  I need day-to-day image quicklook from the python command-line, e.g. while I'm developing some new image processing algorithm or to check on last night's data. But, I also need my viewer to be able to easily adapt to other of situations, including real-time use on a slit-viewing camera, quick-reduction of incoming data, etc.. So, I wrote ztv.
 
-The name "ztv" is an obvious play off of ATV <http://www.physics.uci.edu/~barth/atv/>`_.  And, "z" is my daughter's middle initial. 
+The name "ztv" is an obvious play off of [ATV](http://www.physics.uci.edu/~barth/atv/).  And, "z" is my daughter's middle initial. 
 
 Other Image Viewers You Should Check Out
 ========================================
 
-- If you're using IDL, check out `ATV <http://www.physics.uci.edu/~barth/atv/>`_ of course!
-- `SAOImage DS9 <http://ds9.si.edu/site/Home.html>`_
-- `Aladin Desktop Sky Atlas <http://aladin.u-strasbg.fr>`_ (not primarily an image viewer, but can open FITS files and overlay catalogs and other images nicely)
+- If you're using IDL, check out [ATV](http://www.physics.uci.edu/~barth/atv/) of course!
+- [SAOImage DS9](http://ds9.si.edu/site/Home.html)
+- [Aladin Desktop Sky Atlas](http://aladin.u-strasbg.fr) (not primarily an image viewer, but can open FITS files and overlay catalogs and other images nicely)
 
 (If your favorite isn't on this list, please email hroe@hroe.me to get it added.)
 

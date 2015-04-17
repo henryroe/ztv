@@ -43,9 +43,9 @@ class PlotPanel(wx.Panel):
         self.plot_panel = PlotPlotPanel(self)
         self.sizer.Add(self.plot_panel, 1, wx.LEFT | wx.TOP | wx.EXPAND)
         
-        self.clear_button = wx.Button(self, wx.ID_ANY, u"Clear", wx.DefaultPosition, wx.DefaultSize, 0)
-        self.sizer.Add(self.clear_button, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_BOTTOM, 2)
-        self.clear_button.Bind(wx.EVT_BUTTON, self.on_clear_button)
+        self.hideshow_button = wx.Button(self, wx.ID_ANY, u"Hide", wx.DefaultPosition, wx.DefaultSize, 0)
+        self.sizer.Add(self.hideshow_button, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_BOTTOM, 2)
+        self.hideshow_button.Bind(wx.EVT_BUTTON, self.on_hideshow_button)
 
         self.SetSizer(self.sizer)
         self.Fit()
@@ -63,7 +63,7 @@ class PlotPanel(wx.Panel):
         else:
             x,y = msg
         self.start_pt.x, self.start_pt.y = x, y
-        self.redraw_on_image()
+        self.redraw_overplot_on_image()
         self.redraw()
 
     def on_new_xy1(self, msg):   
@@ -72,10 +72,10 @@ class PlotPanel(wx.Panel):
         else:
             x,y = msg
         self.end_pt.x, self.end_pt.y = x, y
-        self.redraw_on_image()
+        self.redraw_overplot_on_image()
         self.redraw()
 
-    def redraw_on_image(self):
+    def redraw_overplot_on_image(self):
         if self.primary_image_patch is not None:
             self.ztv_frame.primary_image_panel.axes.patches.remove(self.primary_image_patch)
         path = Path([self.start_pt, self.end_pt], [Path.MOVETO, Path.LINETO])
@@ -83,12 +83,20 @@ class PlotPanel(wx.Panel):
         self.ztv_frame.primary_image_panel.axes.add_patch(self.primary_image_patch)
         self.ztv_frame.primary_image_panel.figure.canvas.draw()
 
-    def on_clear_button(self, event):
+    def remove_overplot_on_image(self):
         if self.primary_image_patch is not None:
             self.ztv_frame.primary_image_panel.axes.patches.remove(self.primary_image_patch)
         self.ztv_frame.primary_image_panel.figure.canvas.draw()
         self.primary_image_patch = None
 
+    def on_hideshow_button(self, event):
+        if self.hideshow_button.GetLabel() == 'Hide':
+            self.hideshow_button.SetLabel(u"Show")
+            self.remove_overplot_on_image()
+        else:
+            self.hideshow_button.SetLabel(u"Hide")        
+            self.redraw_overplot_on_image()
+            
     def redraw(self, *args):
         xy_limits = self.ztv_frame.primary_image_panel.set_and_get_xy_limits()
         oversample_factor = 10.
