@@ -101,7 +101,7 @@ class FakeFitsMaker(threading.Thread):
     def make_flat_frame(self):
         pixel_to_pixel = np.random.normal(loc=1.0, scale=self.flat_field_pixel_to_pixel_fractional_1sigma, 
                                           size=[self.ny, self.nx])
-        self.flat_frame = pixel_to_pixel * 
+        self.flat_frame = pixel_to_pixel * 1
                                            
     def make_data_frame(self):
         im = self.bkgd_stars_frame.copy()

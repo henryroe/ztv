@@ -1115,24 +1115,25 @@ class CommandListenerThread(threading.Thread):
                                        self.ztv_frame.source_panel.flatfile_file_picker.current_textctrl_GetValue())))
                     else:
                         send_to_stream(sys.stdout, (x[0][4:], 'source_panel not available'))
-                        
-  # HEREIAM:  NEED TO CLEANUP how autoload-mode is activated/deactivated...use publish/subscribe...
-                        
                 elif x[0] == 'set_autoload_filename_pattern_status':
-                    if x[1]:
-                        self.ztv_frame.launch_autoload_filematch_thread()
-                        self.ztv_frame.autoload_mode = 'file-match'
-                    else:
-                        self.ztv_frame.kill_autoload_filematch_thread()
-                        self.ztv_frame.autoload_mode = None
+                    if hasattr(self.ztv_frame, source_panel):
+                        if x[1]:
+                            self.ztv_frame.source_panel.launch_autoload_filematch_thread()
+                            self.ztv_frame.source_panel.autoload_mode = 'file-match'
+                        else:
+                            self.ztv_frame.source_panel.kill_autoload_filematch_thread()
+                            self.ztv_frame.source_panel.autoload_mode = None
                 elif x[0] == 'set_autoload_filename_pattern':
-                    if source_panel is not None:
-                        source_panel.autoload_curfile_file_picker_on_load(x[1])
+                    if hasattr(self.ztv_frame, source_panel):
+                        self.ztv_frame.source_panel.autoload_curfile_file_picker_on_load(x[1])
                 elif x[0] == 'get_autoload_status_and_filename_pattern':
-                    wx.CallAfter(send_to_stream, sys.stdout, 
-                                 (x[0][4:], 
-                                  (self.ztv_frame.autoload_mode == 'file-match',
-                                   self.ztv_frame.autoload_match_string)))
+                    if hasattr(self.ztv_frame, source_panel):
+                        wx.CallAfter(send_to_stream, sys.stdout, 
+                                     (x[0][4:], 
+                                      (self.ztv_frame.source_panel.autoload_mode == 'file-match',
+                                       self.ztv_frame.source_panel.autoload_match_string)))
+                    else:
+                        send_to_stream(sys.stdout, (x[0][4:], 'source_panel not available'))
                 else:
                     wx.CallAfter(Publisher().sendMessage, x[0], *x[1:])
 

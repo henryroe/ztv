@@ -133,8 +133,7 @@ class SourcePanel(wx.Panel):
         self.sky_checkbox = wx.CheckBox(self, -1, "")
         self.Bind(wx.EVT_CHECKBOX, self.on_sky_checkbox, self.sky_checkbox)
         self.sky_file_picker_sizer.Add(self.sky_checkbox, 0, wx.ALIGN_CENTER_VERTICAL)
-        self.skyfile_file_picker = FilePicker(self, title='Sky:', default_entry='', 
-                                              maintain_default_entry_in_recents=0)
+        self.skyfile_file_picker = FilePicker(self, title='Sky:', default_entry='', maintain_default_entry_in_recents=0)
         self.skyfile_file_picker.on_load = self.load_sky_frame
         self.sky_file_picker_sizer.Add(self.skyfile_file_picker, 1, wx.EXPAND)
         self.sky_header_button = wx.Button(self, wx.ID_ANY, u"hdr", wx.DefaultPosition, wx.DefaultSize,
@@ -147,8 +146,7 @@ class SourcePanel(wx.Panel):
         self.flat_checkbox = wx.CheckBox(self, -1, "")
         self.Bind(wx.EVT_CHECKBOX, self.on_flat_checkbox, self.flat_checkbox)
         self.flat_file_picker_sizer.Add(self.flat_checkbox, 0, wx.ALIGN_CENTER_VERTICAL)
-        self.flatfile_file_picker = FilePicker(self, title='Flat:', default_entry='', 
-                                               maintain_default_entry_in_recents=0)
+        self.flatfile_file_picker = FilePicker(self, title='Flat:', default_entry='', maintain_default_entry_in_recents=0)
         self.flatfile_file_picker.on_load = self.load_flat_frame
         self.flat_file_picker_sizer.Add(self.flatfile_file_picker, 1, wx.EXPAND)
         self.flat_header_button = wx.Button(self, wx.ID_ANY, u"hdr", wx.DefaultPosition, wx.DefaultSize,
@@ -177,12 +175,6 @@ class SourcePanel(wx.Panel):
         h_sizer.Add(wx.StaticText(self, -1, u"sec"), 0)
         self.autoload_sizer.Add(h_sizer, 0, wx.EXPAND)
         self.autoload_sizer.AddSpacer((0, 5), 0, wx.EXPAND)
-#         self.autoload_curdir_file_picker = FilePicker(self, title='Dir:', is_files_not_dirs=False)
-#         self.autoload_sizer.Add(self.autoload_curdir_file_picker, 0, wx.EXPAND)
-#         self.autoload_curfile_file_picker = FilePicker(self, title='Filename Pattern:', allow_glob_matching=True,
-#                                                        assumed_prefix=os.path.expanduser('~/'))
-#         self.autoload_curdir_file_picker.on_load = self.autoload_curfile_file_picker.set_assumed_prefix
-#         self.autoload_curfile_file_picker.on_load = self.autoload_curfile_file_picker_on_load
         self.autoload_curfile_file_picker = FilePicker(self, title='Filename Pattern:', allow_glob_matching=True)
         self.autoload_curfile_file_picker.on_load = self.autoload_curfile_file_picker_on_load
         self.autoload_sizer.Add(self.autoload_curfile_file_picker, 0, wx.EXPAND)
@@ -322,6 +314,7 @@ class SourcePanel(wx.Panel):
         if 'sky_subtraction' in proc_labels:
             self.ztv_frame.image_process_functions_to_apply.pop(proc_labels.index('sky_subtraction'))
             wx.CallAfter(Publisher().sendMessage, "image_process_functions_to_apply-changed", None)
+        self.sky_checkbox.SetValue(False)
 
     def load_sky_subtraction_to_process_stack(self):
         self.unload_sky_subtraction_from_process_stack()
@@ -330,6 +323,7 @@ class SourcePanel(wx.Panel):
             # assume that sky subtraction should always be first in processing stack.
             self.ztv_frame.image_process_functions_to_apply.insert(0, ('sky_subtraction', process_fxn))
             wx.CallAfter(Publisher().sendMessage, "image_process_functions_to_apply-changed", None)
+        self.sky_checkbox.SetValue(True)
 
     def load_sky_frame(self, filename, start_sky_correction=True):
         if len(filename) == 0:
@@ -346,7 +340,7 @@ class SourcePanel(wx.Panel):
                 self.sky_checkbox.SetValue(True)
             self.skyfile_file_picker.pause_on_current_textctrl_changed = True
             self.skyfile_file_picker.set_current_entry(filename)
-            self.flatfile_file_picker.pause_on_current_textctrl_changed = False
+            self.skyfile_file_picker.pause_on_current_textctrl_changed = False
 
     def on_sky_checkbox(self, evt):
         if evt.IsChecked():
@@ -359,6 +353,7 @@ class SourcePanel(wx.Panel):
         if 'flat_division' in proc_labels:
             self.ztv_frame.image_process_functions_to_apply.pop(proc_labels.index('flat_division'))
             wx.CallAfter(Publisher().sendMessage, "image_process_functions_to_apply-changed", None)
+        self.flat_checkbox.SetValue(False)
 
     def load_flat_division_to_process_stack(self):
         self.unload_flat_division_from_process_stack()
@@ -367,6 +362,7 @@ class SourcePanel(wx.Panel):
             # assume that flat division should always be last in processing stack.
             self.ztv_frame.image_process_functions_to_apply.insert(99999, ('flat_division', process_fxn))
             wx.CallAfter(Publisher().sendMessage, "image_process_functions_to_apply-changed", None)
+        self.flat_checkbox.SetValue(True)
 
     def load_flat_frame(self, filename, start_flat_correction=True):
         if len(filename) == 0:
