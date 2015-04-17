@@ -6,12 +6,107 @@ from .fits_header_dialog import FITSHeaderDialog
 from .image_process_action import ImageProcessAction
 import numpy as np
 import os
-import os.path
+import glob
 import sys
+import time
+import threading
 from .ztv_lib import set_textctrl_background_color
+try:
+    import stomp
+    stomp_install_is_ok = True
+except ImportError, e:
+    stomp_install_is_ok = False
+
+
+class ActiveMQListener(object):
+    def __init__(self):
+        pass
+    def on_error(self, headers, message):
+        sys.stderr.write("received an error: {}\n".format(message))
+    def on_message(self, headers, message):
+        try:
+            msg = pickle.loads(message)
+            if msg.has_key('image_data'):
+                wx.CallAfter(Publisher().sendMessage, "load_numpy_array", msg['image_data'])
+        except UnpicklingError:
+            sys.stderr.write('received an unhandled message ({})\n'.format(message))
+
+
+class ActiveMQNotAvailable(Exception): pass
+
+
+class ActiveMQListenerThread(threading.Thread):
+    def __init__(self, source_panel, condition):
+        if not stomp_install_is_ok:
+            sys.stderr.write("ztv source_panel warning: stomp not installed OK, ActiveMQ functionality not available\n")
+            raise ActiveMQNotAvailable
+        threading.Thread.__init__(self)
+        self.source_panel = source_panel
+        self.condition = condition
+        self.daemon = True
+        self.start()
+
+    def run(self):
+        server = self.source_panel.activemq_instances_info[self.source_panel.activemq_selected_instance]['server']
+        port = self.source_panel.activemq_instances_info[self.source_panel.activemq_selected_instance]['port']
+        dest = self.source_panel.activemq_instances_info[self.source_panel.activemq_selected_instance]['destination']
+        conn = stomp.Connection([(server, port)])
+        activemq_listener = ActiveMQListener()
+        conn.set_listener('', activemq_listener)
+        conn.start()
+        conn.connect()
+        # browser='true' means leave the messages intact on server; 'false' means consume them destructively
+        conn.subscribe(destination=dest, id=1, ack='auto', headers={'browser':'false'})
+        with self.condition:
+            self.condition.wait()
+        conn.disconnect()
+
+
+class AutoloadFileMatchWatcherThread(threading.Thread):
+    def __init__(self, source_panel):
+        threading.Thread.__init__(self)
+        self.source_panel = source_panel
+        self.keep_running = True
+        self.daemon = True
+        self.start()
+
+    def run(self):
+        latest_mtime = 0.0
+        while self.keep_running:
+            filename_to_open = None
+            possible_matches = glob.glob(self.source_panel.autoload_match_string)
+            if len(possible_matches) > 0:
+                for cur_match in possible_matches:
+                    cur_match_mtime = os.path.getmtime(cur_match)
+                    if cur_match_mtime > latest_mtime:
+                        filename_to_open = cur_match
+                        latest_mtime = cur_match_mtime
+                if filename_to_open is not None:
+                    wx.CallAfter(Publisher().sendMessage, "load_fits_file", filename_to_open)
+            time.sleep(self.source_panel.autoload_pausetime)
+            if self.source_panel.autoload_mode != 'file-match':
+                self.keep_running = False
+
 
 class SourcePanel(wx.Panel):
     def __init__(self, parent):
+        self.autoload_mode = None # other options are "file-match" and "activemq-stream"
+        self.autoload_pausetime_choices = [0.1, 0.5, 1, 2, 5, 10]
+        # NOTE: Mac OS X truncates file modification times to integer seconds, so ZTV cannot distinguish a newer file
+        #       unless it appears in the next integer second from the prior file.  The <1 sec pausetimes may still be
+        #       desirable to minimize latency.
+        self.autoload_pausetime = self.autoload_pausetime_choices[2]
+        self.autoload_match_string = ''
+        self.autoload_filematch_thread = None
+        Publisher().subscribe(self._add_activemq_instance, "add_activemq_instance")
+        self.stomp_install_is_ok = stomp_install_is_ok
+        self.activemq_instances_info = {}  # will be dict of dicts of, e.g.:
+                                           # {'server':'s1.me.com', 'port':61613, 'destination':'my.queue.name'}
+                                           # with the top level keys looking like:  server:port:destination
+        self.activemq_instances_available = []
+        self.activemq_selected_instance = None
+        self.activemq_listener_thread = None
+        self.activemq_listener_condition = threading.Condition()
         self.sky_hdulist = None
         self.flat_hdulist = None
         self.sky_file_basename = ''
@@ -72,9 +167,9 @@ class SourcePanel(wx.Panel):
         h_sizer = wx.BoxSizer(wx.HORIZONTAL)
         h_sizer.Add(self.autoload_checkbox, 0)
         h_sizer.AddStretchSpacer(1)
-        pausetime_index = self.ztv_frame.autoload_pausetime_choices.index(self.ztv_frame.autoload_pausetime)
+        pausetime_index = self.autoload_pausetime_choices.index(self.autoload_pausetime)
         self.autoload_pausetime_choice = wx.Choice(self, wx.ID_ANY, wx.DefaultPosition, (50, -1),
-                                                   [str(a) for a in self.ztv_frame.autoload_pausetime_choices], 0)
+                                                   [str(a) for a in self.autoload_pausetime_choices], 0)
         self.autoload_pausetime_choice.SetSelection(pausetime_index)
         self.autoload_pausetime_choice.Bind(wx.EVT_CHOICE, self.on_choose_autoload_pausetime)
         h_sizer.Add(wx.StaticText(self, -1, u"Pause"), 0)
@@ -127,7 +222,7 @@ class SourcePanel(wx.Panel):
         self.sky_header_button.Disable()
         self.flat_header_button.Disable()
         Publisher().subscribe(self.update_cur_header_button_status, "redraw_image")
-        if not self.ztv_frame.stomp_install_is_ok: # deactivate activeMQ option if stomp not installed OK
+        if not self.stomp_install_is_ok: # deactivate activeMQ option if stomp not installed OK
             try:  # wrap in a try, just in case source_panel wasn't loaded.
                 wx.CallAfter(self.settings_menu_activemq_item.Check, False)
                 wx.CallAfter(self.activemq_sizer.ShowItems, False)
@@ -298,63 +393,91 @@ class SourcePanel(wx.Panel):
 
     def on_activemq_instances_info_changed(self, msg):
         self.message_queue_choice.Clear()
-        new_keys = sorted(self.ztv_frame.activemq_instances_info.keys())
-        self.ztv_frame.activemq_instances_available = new_keys
+        new_keys = sorted(self.activemq_instances_info.keys())
+        self.activemq_instances_available = new_keys
         if len(new_keys) == 0:
             self.message_queue_choice.AppendItems(['No message queues available'])
-            self.ztv_frame.activemq_selected_instance = None
+            self.activemq_selected_instance = None
         else:
             self.message_queue_choice.AppendItems(new_keys)
-        if ((self.ztv_frame.activemq_selected_instance not in new_keys) or (len(new_keys) == 1)):
-            self.ztv_frame.activemq_selected_instance = new_keys[0]
-        if self.ztv_frame.activemq_selected_instance is None:
+        if ((self.activemq_selected_instance not in new_keys) or (len(new_keys) == 1)):
+            self.activemq_selected_instance = new_keys[0]
+        if self.activemq_selected_instance is None:
             cur_selection = 0
         else:
-            cur_selection = self.ztv_frame.activemq_instances_available.index(self.ztv_frame.activemq_selected_instance)
+            cur_selection = self.activemq_instances_available.index(self.activemq_selected_instance)
         self.message_queue_choice.SetSelection(cur_selection)
 
     def on_message_queue_choice(self, evt):
         new_choice = evt.GetString()
-        if new_choice != self.ztv_frame.activemq_selected_instance:
-            self.ztv_frame.activemq_selected_instance = new_choice
-            if self.ztv_frame.autoload_mode == 'activemq-stream':
-                self.ztv_frame.launch_activemq_listener_thread()
+        if new_choice != self.activemq_selected_instance:
+            self.activemq_selected_instance = new_choice
+            if self.autoload_mode == 'activemq-stream':
+                self.launch_activemq_listener_thread()
 
     def on_choose_autoload_pausetime(self, evt):
-        self.ztv_frame.autoload_pausetime = float(evt.GetString())
+        self.autoload_pausetime = float(evt.GetString())
 
     def autoload_curfile_file_picker_on_load(self, new_entry):
         new_path = os.path.dirname(new_entry) + '/'
         self.autoload_curfile_file_picker.set_current_entry(new_entry)
-        self.ztv_frame.autoload_match_string = new_entry
+        self.autoload_match_string = new_entry
         self.message_queue_checkbox.SetValue(False)
         self.autoload_checkbox.SetValue(True)
-        self.ztv_frame.kill_activemq_listener_thread()
-        self.ztv_frame.autoload_mode = 'file-match'
-        self.ztv_frame.launch_autoload_filematch_thread()
+        self.kill_activemq_listener_thread()
+        self.autoload_mode = 'file-match'
+        self.launch_autoload_filematch_thread()
         set_textctrl_background_color(self.autoload_curfile_file_picker.current_textctrl, 'ok')
 
     def on_autoload_checkbox(self, evt):
         if evt.IsChecked():
             self.message_queue_checkbox.SetValue(False)
-            self.ztv_frame.kill_activemq_listener_thread()
-            self.ztv_frame.autoload_mode = 'file-match'
-            self.ztv_frame.launch_autoload_filematch_thread()
+            self.kill_activemq_listener_thread()
+            self.autoload_mode = 'file-match'
+            self.launch_autoload_filematch_thread()
         else:
-            self.ztv_frame.autoload_mode = None
+            self.autoload_mode = None
 
     def on_message_queue_checkbox(self, evt):
         if evt.IsChecked():
             self.autoload_checkbox.SetValue(False)
-            self.ztv_frame.kill_autoload_filematch_thread()
-            self.ztv_frame.autoload_mode = 'activemq-stream'
-            self.ztv_frame.launch_activemq_listener_thread()
+            self.kill_autoload_filematch_thread()
+            self.autoload_mode = 'activemq-stream'
+            self.launch_activemq_listener_thread()
         else:
-            self.ztv_frame.autoload_mode = None
-            self.ztv_frame.kill_activemq_listener_thread()
+            self.autoload_mode = None
+            self.kill_activemq_listener_thread()
 
     def on_fitsfile_loaded(self, msg):
         self.curfile_file_picker.pause_on_current_textctrl_changed = True
         self.curfile_file_picker.set_current_entry(os.path.join(self.ztv_frame.cur_fitsfile_path,
                                                                 self.ztv_frame.cur_fitsfile_basename))
         self.curfile_file_picker.pause_on_current_textctrl_changed = False
+
+    def kill_autoload_filematch_thread(self):
+        if self.autoload_filematch_thread is not None:
+            self.autoload_filematch_thread.keep_running = False
+
+    def launch_autoload_filematch_thread(self):
+        self.kill_autoload_filematch_thread()
+        self.autoload_filematch_thread = AutoloadFileMatchWatcherThread(self)
+
+    def kill_activemq_listener_thread(self):
+        if self.activemq_listener_thread is not None:
+            with self.activemq_listener_condition:
+                self.activemq_listener_condition.notifyAll()
+            self.activemq_listener_thread = None
+
+    def launch_activemq_listener_thread(self):
+        self.kill_activemq_listener_thread()
+        try:
+            self.activemq_listener_thread = ActiveMQListenerThread(self, condition=self.activemq_listener_condition)
+        except ActiveMQNotAvailable:
+            sys.stderr.write("ztv warning: stomp not installed OK, ActiveMQ functionality not available\n")
+
+    def _add_activemq_instance(self, msg):
+        server, port, destination = msg.data
+        new_key = str(server) + ':' + str(port) + ':' + str(destination)
+        self.activemq_instances_info[new_key] = {'server':server, 'port':port, 'destination':destination}
+        wx.CallAfter(Publisher().sendMessage, "activemq_instances_info-changed", None)
+        

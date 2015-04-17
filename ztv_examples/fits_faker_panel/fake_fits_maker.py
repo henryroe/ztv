@@ -13,6 +13,11 @@ class FakeFitsMaker(threading.Thread):
         self.nx = 512
         self.ny = 512
         self.flat_field_pixel_to_pixel_fractional_1sigma = 0.15
+        self.flat_field_num_dust_donuts = 30
+        self.flat_field_dust_donuts_radius_range = [20, 50]
+        self.flat_field_dust_donuts_width_range = [10, 15]
+        self.flat_field_dust_donuts_peak_range = [0.5, 0.8]
+          # HEREIAM implementing dust donuts
         self.sky_pattern_mean_cts = 9000.
         self.sky_pattern_row_to_row_variation_1sigma_cts = 2000.
         self.saturation_cts = 2**16
@@ -94,8 +99,9 @@ class FakeFitsMaker(threading.Thread):
         self.sky_frame = self.calc_one_sky()
     
     def make_flat_frame(self):
-        self.flat_frame = np.random.normal(loc=1.0, scale=self.flat_field_pixel_to_pixel_fractional_1sigma, 
-                                           size=[self.ny, self.nx])
+        pixel_to_pixel = np.random.normal(loc=1.0, scale=self.flat_field_pixel_to_pixel_fractional_1sigma, 
+                                          size=[self.ny, self.nx])
+        self.flat_frame = pixel_to_pixel * 
                                            
     def make_data_frame(self):
         im = self.bkgd_stars_frame.copy()

@@ -45,10 +45,9 @@ class FitsFakerPanel(wx.Panel):
         self.fake_fits_maker.start()
         self.launch_button.Disable()
         self.halt_button.Enable()
-        source_panel_id = self.ztv_frame.controls_notebook.panel_name_to_id['Source']
-        self.ztv_frame.controls_notebook.panels_by_id[source_panel_id].load_sky_frame('/tmp/sky_frame.fits', False)
-        self.ztv_frame.controls_notebook.panels_by_id[source_panel_id].load_flat_frame('/tmp/flat_frame.fits', False)
-        self.ztv_frame.controls_notebook.panels_by_id[source_panel_id].autoload_curfile_file_picker_on_load('/tmp/n*.fits')
+        self.ztv_frame.source_panel.load_sky_frame('/tmp/sky_frame.fits', False)
+        self.ztv_frame.source_panel.load_flat_frame('/tmp/flat_frame.fits', False)
+        self.ztv_frame.source_panel.autoload_curfile_file_picker_on_load('/tmp/n*.fits')
         
         
     def on_halt_button(self, evt):

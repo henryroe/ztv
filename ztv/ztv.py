@@ -12,11 +12,6 @@ import os
 import sys
 import pickle
 import glob
-try:
-    import stomp
-    stomp_install_is_ok = True
-except ImportError, e:
-    stomp_install_is_ok = False
 from astropy.io import fits
 from astropy import wcs
 from astropy.coordinates import ICRS
@@ -629,14 +624,6 @@ class ZTVFrame(wx.Frame):
         self.cur_fitsfile_basename = ''
         self.cur_fitsfile_path = ''
   # HEREIAM need to migrate autolaod functionality to source panel
-        self.autoload_mode = None # other options are "file-match" and "activemq-stream"
-        self.autoload_pausetime_choices = [0.1, 0.5, 1, 2, 5, 10]
-        # NOTE: Mac OS X truncates file modification times to integer seconds, so ZTV cannot distinguish a newer file
-        #       unless it appears in the next integer second from the prior file.  The <1 sec pausetimes may still be
-        #       desirable to minimize latency.
-        self.autoload_pausetime = self.autoload_pausetime_choices[2]
-        self.autoload_match_string = ''
-        self.autoload_filematch_thread = None
         self.image_process_functions_to_apply = []  # list of tuples of ('NameOrLabelIdentifier', fxn), where fxn must accept the image and return the processed image
         self.raw_image = self.get_default_image()   # underlying raw data, can be 2-d [y,x] or 3-d [z,y,x]
         self.proc_image = self.raw_image.copy()     # raw_image processed with currently selected flat/sky/etc
@@ -668,15 +655,6 @@ class ZTVFrame(wx.Frame):
         self.available_value_modes_on_new_image = ['data-min/max', 'auto', 'constant']
         self.min_value_mode_on_new_image = 'data-min/max'
         self.max_value_mode_on_new_image = 'data-min/max'
-        self.stomp_install_is_ok = stomp_install_is_ok
-        Publisher().subscribe(self._add_activemq_instance, "add_activemq_instance")
-        self.activemq_instances_info = {}  # will be dict of dicts of, e.g.:
-                                           # {'server':'s1.me.com', 'port':61613, 'destination':'my.queue.name'}
-                                           # with the top level keys looking like:  server:port:destination
-        self.activemq_instances_available = []
-        self.activemq_selected_instance = None
-        self.activemq_listener_thread = None
-        self.activemq_listener_condition = threading.Condition()
         self.main_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.primary_image_panel = PrimaryImagePanel(self)
         self.primary_image_panel.SetMinSize(wx.Size(256, 256))
@@ -772,12 +750,6 @@ class ZTVFrame(wx.Frame):
     def kill_ztv(self, *args):
         self.Close()
 
-    def _add_activemq_instance(self, msg):
-        server, port, destination = msg.data
-        new_key = str(server) + ':' + str(port) + ':' + str(destination)
-        self.activemq_instances_info[new_key] = {'server':server, 'port':port, 'destination':destination}
-        wx.CallAfter(Publisher().sendMessage, "activemq_instances_info-changed", None)
-        
     def on_cmd_left_arrow(self, evt):
         self.controls_notebook.SetSelection((self.controls_notebook.GetSelection() - 1) % len(self.control_panels))
 
@@ -1048,95 +1020,6 @@ class ZTVFrame(wx.Frame):
     def load_default_image(self, *args):
         self.load_numpy_array(self.get_default_image())
         self.primary_image_panel.reset_zoom_and_center()
-
-    def kill_autoload_filematch_thread(self):
-        if self.autoload_filematch_thread is not None:
-            self.autoload_filematch_thread.keep_running = False
-
-    def launch_autoload_filematch_thread(self):
-        self.kill_autoload_filematch_thread()
-        self.autoload_filematch_thread = AutoloadFileMatchWatcherThread(self)
-
-    def kill_activemq_listener_thread(self):
-        if self.activemq_listener_thread is not None:
-            with self.activemq_listener_condition:
-                self.activemq_listener_condition.notifyAll()
-            self.activemq_listener_thread = None
-
-    def launch_activemq_listener_thread(self):
-        self.kill_activemq_listener_thread()
-        try:
-            self.activemq_listener_thread = ActiveMQListenerThread(self, condition=self.activemq_listener_condition)
-        except ActiveMQNotAvailable:
-            sys.stderr.write("ztv warning: stomp not installed OK, ActiveMQ functionality not available\n")
-
-
-class ActiveMQListener(object):
-    def __init__(self, ztv_frame):
-        self.ztv_frame = ztv_frame
-    def on_error(self, headers, message):
-        sys.stderr.write("received an error: {}\n".format(message))
-    def on_message(self, headers, message):
-        try:
-            msg = pickle.loads(message)
-            if msg.has_key('image_data'):
-                wx.CallAfter(Publisher().sendMessage, "load_numpy_array", msg['image_data'])
-        except UnpicklingError:
-            sys.stderr.write('received an unhandled message ({})\n'.format(message))
-
-class ActiveMQNotAvailable(Exception): pass
-
-class ActiveMQListenerThread(threading.Thread):
-    def __init__(self, ztv_frame, condition):
-        if not stomp_install_is_ok:
-            sys.stderr.write("ztv warning: stomp not installed OK, ActiveMQ functionality not available\n")
-            raise ActiveMQNotAvailable
-        threading.Thread.__init__(self)
-        self.ztv_frame = ztv_frame
-        self.condition = condition
-        self.daemon = True
-        self.start()
-
-    def run(self):
-        server = self.ztv_frame.activemq_instances_info[self.ztv_frame.activemq_selected_instance]['server']
-        port = self.ztv_frame.activemq_instances_info[self.ztv_frame.activemq_selected_instance]['port']
-        dest = self.ztv_frame.activemq_instances_info[self.ztv_frame.activemq_selected_instance]['destination']
-        conn = stomp.Connection([(server, port)])
-        activemq_listener = ActiveMQListener(self.ztv_frame)
-        conn.set_listener('', activemq_listener)
-        conn.start()
-        conn.connect()
-        # browser='true' means leave the messages intact on server; 'false' means consume them destructively
-        conn.subscribe(destination=dest, id=1, ack='auto', headers={'browser':'false'})
-        with self.condition:
-            self.condition.wait()
-        conn.disconnect()
-
-
-class AutoloadFileMatchWatcherThread(threading.Thread):
-    def __init__(self, ztv_frame):
-        threading.Thread.__init__(self)
-        self.ztv_frame = ztv_frame
-        self.keep_running = True
-        self.daemon = True
-        self.start()
-
-    def run(self):
-        latest_mtime = 0.0
-        while self.keep_running:
-            filename_to_open = None
-            possible_matches = glob.glob(self.ztv_frame.autoload_match_string)
-            if len(possible_matches) > 0:
-                for cur_match in possible_matches:
-                    cur_match_mtime = os.path.getmtime(cur_match)
-                    if cur_match_mtime > latest_mtime:
-                        filename_to_open = cur_match
-                        latest_mtime = cur_match_mtime
-                if filename_to_open is not None:
-                    wx.CallAfter(Publisher().sendMessage, "load_fits_file", filename_to_open)
-            time.sleep(self.ztv_frame.autoload_pausetime)
-            if self.ztv_frame.autoload_mode != 'file-match':
-                self.keep_running = False
 
 
 class WatchMasterPIDThread(threading.Thread):

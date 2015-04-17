@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 import wx
-import os.path
 import os
 import glob
 import sys
