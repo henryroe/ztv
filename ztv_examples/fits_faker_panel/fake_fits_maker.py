@@ -34,8 +34,8 @@ class FakeFitsMaker(threading.Thread):
         self.frame_number = 1
         
         self.set_up_bkgd_stars()
-        self.make_sky_frame()
         self.make_flat_frame()
+        self.make_sky_frame()
         self.write_to_fits_file(self.sky_frame, 'sky_frame.fits')
         self.write_to_fits_file(self.flat_frame, 'flat_frame.fits')
         threading.Thread.__init__(self)
@@ -96,12 +96,24 @@ class FakeFitsMaker(threading.Thread):
                                                        self.sky_pattern_row_to_row_variation_1sigma_cts,
                                                        size=self.ny)
         self.sky_frame_row_baseline[self.sky_frame_row_baseline <= 0] = 0.
-        self.sky_frame = self.calc_one_sky()
+        self.sky_frame = self.calc_one_sky() * self.flat_frame
     
     def make_flat_frame(self):
-        pixel_to_pixel = np.random.normal(loc=1.0, scale=self.flat_field_pixel_to_pixel_fractional_1sigma, 
-                                          size=[self.ny, self.nx])
-        self.flat_frame = pixel_to_pixel * 1
+        flat = np.random.normal(loc=1.0, scale=self.flat_field_pixel_to_pixel_fractional_1sigma, size=[self.ny, self.nx])
+        for i in range(self.flat_field_num_dust_donuts):
+            x = np.random.uniform(0., self.nx)
+            y = np.random.uniform(0., self.ny)
+            radius = np.random.uniform(min(self.flat_field_dust_donuts_radius_range), 
+                                       max(self.flat_field_dust_donuts_radius_range))
+            width = np.random.uniform(min(self.flat_field_dust_donuts_width_range), 
+                                      max(self.flat_field_dust_donuts_width_range))
+            peak = np.random.uniform(min(self.flat_field_dust_donuts_peak_range),
+                                     max(self.flat_field_dust_donuts_peak_range))
+            xdist = np.outer(np.ones(flat.shape[0]), np.arange(flat.shape[1]) - x)
+            ydist = np.outer(np.arange(flat.shape[0]) - y, np.ones(flat.shape[1]))
+            dist = np.sqrt(xdist**2 + ydist**2)
+            flat *= 1. - (1. - peak) * np.exp(-((dist - radius)**2) / (2. * width**2))
+        self.flat_frame = flat
                                            
     def make_data_frame(self):
         im = self.bkgd_stars_frame.copy()
