@@ -7,7 +7,7 @@
 
 *ztv* is intended for real-time display and analysis. *ztv* is not intended to produce publication quality figures. 
 
-*ztv* comes with a number of built-in control panels (see *Additional Screenshots* section below), for:
+*ztv* comes with a number of built-in control panels, for:
 - selecting input source (FITS file, auto-reload from FITS file, etc)
 - selecting a frame to subtract (e.g. sky or dark) and a flat field frame to divide by
 - setting colormap, stretch, and lower/upper limits
@@ -34,11 +34,15 @@ To load an image in a numpy array:
 
 ![](screenshots/random_noise1.png)
 
-You can now look at your data, manipulate display parameters, etc all using the gui elements. But, you can also access most of these via the command line api, e.g.: To switch amongst control panels:
+You can now look at your data, manipulate display parameters, etc all using the gui elements. All of these elements are accessible through the tabbed control panels. You can also switch amongst the control panel tabs by `cmd-alt-#` where *#* is the number of the panel, starting from 1. Or, by `cmd-[` and `cmd-]` to move left/right amongst the tabs. You can even switch tabs from the command line api, e.g.:
 
     z.control_panel('Color')
 
 ![](screenshots/random_noise2.png)
+
+To change cursor mode, press `cmd-#` where *#* is the number shown in the pop-up menu that's available by right-clicking in the primary image area:
+
+![](screenshots/popup_menu.png)
 
 To manipulate display parameters:
 
@@ -57,7 +61,7 @@ To set up a statistics box and see the GUI output (note that output is also retu
 
 ![](screenshots/random_noise4.png)
 
-There's a lot more you can do from the command line if you explore *ztv*, especially in an exploration-friendly environment like [ipython](http://ipython.org/). And, anything you can do from the command line can be done from the GUI.
+There's a lot more you can do from the command line if you play with *ztv*, especially in an exploration-friendly environment like [ipython](http://ipython.org/). And, anything you can do from the command line can be done from the GUI.
 
 Download an iconic FITS image from the web and display it:
 
@@ -71,15 +75,16 @@ Download an iconic FITS image from the web and display it:
     open(local_filename, 'w').write(zip.open(zip_filename).read())
     z.load(local_filename)
     z.scaling('Log')
-    z.cmap('spectral')
+    z.cmap('gist-heat')
     z.minmax(0, 500)
 
 ![](screenshots/eagle1.png)
 
 We can even do a little aperture photometry while we're here:
 
-    z.xy_center(624, 524)
     z.cmap('gray')
+    z.xy_center(624, 524)
+    z.zoom(4)
     z.minmax(0, 1000)
     z.scaling('Asinh')
     z.control_panel('phot')
@@ -99,16 +104,20 @@ One of the motivating use cases for *ztv* was real-time quick-look of incoming i
 
 ![](screenshots/faker1.png)
 
-Additional Screenshots
-======================
+Our fake example data looks a lot better when we subtract the sky and divide the flat field (someone needs to blow the dust off that fake dewar window...):
 
+    z.control_panel('Source')
+    z.sky_frame(True)
+    z.flat_frame(True)
+
+![](screenshots/faker2.png)
 
 Installation and Dependencies
 =============================
 
 *ztv* uses several packages, including [wxPython](http://wxpython.org), [astropy](http://www.astropy.org). These should be automatically installed if you install *ztv* with:
 
-    pip install ztv
+    pip install ztv 
 
 Background
 ==========
@@ -127,6 +136,7 @@ Other Image Viewers You Should Check Out
 - If you're using IDL, check out [ATV](http://www.physics.uci.edu/~barth/atv/) of course!
 - [SAOImage DS9](http://ds9.si.edu/site/Home.html)
 - [Aladin Desktop Sky Atlas](http://aladin.u-strasbg.fr) (not primarily an image viewer, but can open FITS files and overlay catalogs and other images nicely)
+- [ginga](http://ejeschke.github.io/ginga/)
 
 (If your favorite isn't on this list, please email hroe@hroe.me to get it added.)
 
