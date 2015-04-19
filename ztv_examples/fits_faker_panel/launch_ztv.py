@@ -16,6 +16,7 @@ def launch_ztv():
     z = ZTV(control_panels_module_path='ztv_examples.fits_faker_panel.control_panels')
     z.start_fits_faker = lambda: z._send_to_ztv('fits-faker-start')
     z.stop_fits_faker = lambda: z._send_to_ztv('fits-faker-stop')
+    z.control_panel('Faker')
     return z
 
 if __name__ == '__main__':
