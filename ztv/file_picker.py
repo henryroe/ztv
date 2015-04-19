@@ -348,7 +348,8 @@ class MyFrame(wx.Frame):
         history = sticky_history[:]
         v_sizer.Add(wx.StaticLine(self, -1, style=wx.LI_HORIZONTAL), 0, wx.EXPAND|wx.ALL, 5)
         self.dir_picker = FilePicker(self, is_files_not_dirs=False, history=history)
-        self.file_picker = FilePicker(self, assumed_prefix='/Users/hroe/', allow_glob_matching=True, title='glob match')
+        self.file_picker = FilePicker(self, assumed_prefix=os.path.expanduser('~/'), allow_glob_matching=True, 
+                                      title='glob match')
         self.dir_picker.on_load = self.file_picker.set_assumed_prefix
         self.file_picker.on_load = self.file_picker_on_load
 
