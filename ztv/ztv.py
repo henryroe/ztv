@@ -87,7 +87,6 @@ class PrimaryImagePanel(wx.Panel):
         self.ztv_frame = self.GetTopLevelParent()
         self.accelerator_table = []
         self.center = wx.RealPoint()
-        self.zoom_factor = 2.0
         self.zoom_rect = None
         self.eventID_to_cmap = {wx.NewId(): x for x in self.ztv_frame.available_cmaps}
         self.cmap_to_eventID = {self.eventID_to_cmap[x]: x for x in self.eventID_to_cmap}
@@ -188,11 +187,11 @@ class PrimaryImagePanel(wx.Panel):
 
     def set_and_get_xy_limits(self):
         num_x_pixels = self.canvas.GetSize().x
-        halfsize = (num_x_pixels / 2.0) / self.zoom_factor
+        halfsize = (num_x_pixels / 2.0) / self.ztv_frame.zoom_factor
         xlim = (self.center.x - halfsize, self.center.x + halfsize)
         self.axes.set_xlim(xlim)
         num_y_pixels = self.canvas.GetSize().y
-        halfsize = (num_y_pixels / 2.0) / self.zoom_factor
+        halfsize = (num_y_pixels / 2.0) / self.ztv_frame.zoom_factor
         ylim = (self.center.y - halfsize, self.center.y + halfsize)
         self.axes.set_ylim(ylim)
         self.figure.canvas.draw()
@@ -254,10 +253,10 @@ class PrimaryImagePanel(wx.Panel):
             zoom_factor = msg.data
         else:
             zoom_factor = msg
-        old_zoom_factor = self.zoom_factor
+        old_zoom_factor = self.ztv_frame.zoom_factor
         if zoom_factor > 0.0:
-            self.zoom_factor = zoom_factor
-        if old_zoom_factor != self.zoom_factor:
+            self.ztv_frame.zoom_factor = zoom_factor
+        if old_zoom_factor != self.ztv_frame.zoom_factor:
             self.set_and_get_xy_limits()
 
     def reset_zoom_and_center(self, *args, **kwargs):
@@ -265,7 +264,7 @@ class PrimaryImagePanel(wx.Panel):
         self.center.y = (self.ztv_frame.display_image.shape[0] / 2.) - 0.5
         max_zoom_x = self.canvas.GetSize().x / float(self.ztv_frame.display_image.shape[1])
         max_zoom_y = self.canvas.GetSize().y / float(self.ztv_frame.display_image.shape[0])
-        self.zoom_factor = min(max_zoom_x, max_zoom_y)
+        self.ztv_frame.zoom_factor = min(max_zoom_x, max_zoom_y)
         self.set_and_get_xy_limits()
 
     def on_change_cmap_event(self, event):
@@ -281,7 +280,7 @@ class PrimaryImagePanel(wx.Panel):
             if self.cursor_mode == 'Zoom':
                 if event.dblclick:
                     self.center = wx.RealPoint(event.xdata, event.ydata)
-                    self.zoom_factor /= 2.
+                    self.ztv_frame.zoom_factor /= 2.
                     self.set_and_get_xy_limits()
                 else:
                     self.zoom_start_timestamp = event.guiEvent.GetTimestamp()  # millisec
@@ -352,9 +351,10 @@ class PrimaryImagePanel(wx.Panel):
                         panel_size = self.canvas.GetSize()
                         x_zoom_factor = panel_size.x / abs(event.xdata - x0)
                         y_zoom_factor = panel_size.y / abs(event.ydata - y0)
-                        self.zoom_factor = min(x_zoom_factor, y_zoom_factor)
+                        self.ztv_frame.zoom_factor = min(x_zoom_factor, y_zoom_factor)
                         self.set_and_get_xy_limits()
-                self.axes.patches.remove(self.zoom_rect)
+                if self.zoom_rect in self.axes.patches:
+                    self.axes.patches.remove(self.zoom_rect)
                 self.zoom_rect = None
                 self.figure.canvas.draw()
             elif self.cursor_mode == 'Stats box':
@@ -447,8 +447,8 @@ class OverviewImagePanel(wx.Panel):
         else:
             if self.curview_rectangle.contains(event)[0]:
                 self.dragging_curview_is_active = True
-                self.convert_x_to_xdata = lambda x: (x / self.zoom_factor) + self.xlim[0]
-                self.convert_y_to_ydata = lambda y: (y / self.zoom_factor) + self.ylim[0]
+                self.convert_x_to_xdata = lambda x: (x / self.ztv_frame.zoom_factor) + self.xlim[0]
+                self.convert_y_to_ydata = lambda y: (y / self.ztv_frame.zoom_factor) + self.ylim[0]
                 self.dragging_cursor_xdata0 = self.convert_x_to_xdata(event.x)
                 self.dragging_cursor_ydata0 = self.convert_y_to_ydata(event.y)
                 self.dragging_rect_xdata0 = self.ztv_frame.primary_image_panel.center.x
@@ -489,11 +489,11 @@ class OverviewImagePanel(wx.Panel):
     def set_xy_limits(self):
         max_zoom_x = self.size.x / float(self.ztv_frame.display_image.shape[1])
         max_zoom_y = self.size.y / float(self.ztv_frame.display_image.shape[0])
-        self.zoom_factor = min(max_zoom_x, max_zoom_y)
+        overview_zoom_factor = min(max_zoom_x, max_zoom_y)
         x_cen = (self.ztv_frame.display_image.shape[1] / 2.) - 0.5
         y_cen = (self.ztv_frame.display_image.shape[0] / 2.) - 0.5
-        halfXsize = self.size.x / (self.zoom_factor * 2.)
-        halfYsize = self.size.y / (self.zoom_factor * 2.)
+        halfXsize = self.size.x / (overview_zoom_factor * 2.)
+        halfYsize = self.size.y / (overview_zoom_factor * 2.)
         self.xlim = (x_cen - halfXsize, x_cen + halfXsize)
         self.ylim = (y_cen - halfYsize, y_cen + halfYsize)
         self.axes.set_xlim(self.xlim)
@@ -521,6 +521,7 @@ class LoupeImagePanel(wx.Panel):
         self.axes = self.figure.add_axes([0., 0., 1., 1.])
         self.canvas = FigureCanvasWxAgg(self, -1, self.figure)
         self._SetSize()
+        self.set_xy_limits()
         Publisher().subscribe(self.redraw_image, "redraw_image")
 
     def _SetSize(self):
@@ -601,9 +602,8 @@ class ZTVFrame(wx.Frame):
         Publisher().subscribe(self.load_default_image, "load_default_image")
         self.cur_fitsfile_basename = ''
         self.cur_fitsfile_path = ''
-  # HEREIAM need to migrate autolaod functionality to source panel
         self.image_process_functions_to_apply = []  # list of tuples of ('NameOrLabelIdentifier', fxn), where fxn must accept the image and return the processed image
-        self.raw_image = self.get_default_image()   # underlying raw data, can be 2-d [y,x] or 3-d [z,y,x]
+        self.raw_image = np.zeros([2, 2])   # underlying raw data, can be 2-d [y,x] or 3-d [z,y,x]
         self.proc_image = self.raw_image.copy()     # raw_image processed with currently selected flat/sky/etc
         self.cur_display_frame_num = 0              # ignored if raw_image/proc_image is 2-d, otherwise 
                                                     # display_image is proc_image[self.cur_display_frame_num,:,:]
@@ -611,7 +611,8 @@ class ZTVFrame(wx.Frame):
         self.available_cmaps = ColorMaps().basic()
         self.cmap = 'jet'  # will go back to gray later
         self.is_cmap_inverted = False
-        self.accelerator_table = []
+        self.accelerator_table = []  # keyboard accelerators, e.g. cmd-Q
+        self.zoom_factor = 2.0
         Publisher().subscribe(self.invert_cmap, "invert_cmap")
         Publisher().subscribe(self.set_cmap, "set_cmap")
         Publisher().subscribe(self.set_cmap_inverted, "set_cmap_inverted")
@@ -1192,6 +1193,11 @@ class CommandListenerThread(threading.Thread):
                         wx.CallAfter(send_to_stream, sys.stdout, (x[0][4:], phot_info))
                     else:
                         send_to_stream(sys.stdout, (x[0][4:], 'phot_panel not available'))
+                elif x[0] == 'switch_to_control_panel':
+                    name_lower = x[1].lower()
+                    display_names_lower = [a.ztv_display_name.lower() for a in self.ztv_frame.control_panels]
+                    if name_lower in display_names_lower:
+                        self.ztv_frame.control_panels[display_names_lower.index(name_lower)].select_panel()
                 else:
                     wx.CallAfter(Publisher().sendMessage, x[0], *x[1:])
 

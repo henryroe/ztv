@@ -388,4 +388,9 @@ class ZTV():
         waiting = self._request_return_value_from_ztv('set_aperture_phot_parameters_done')
         return self._request_return_value_from_ztv('get_aperture_phot_info')
 
+    def control_panel(self, name):
+        """
+        Switch to the control panel `name`.  `name` is matched against the names shown in the gui tabs, except case insenstive. 
+        """
+        self._send_to_ztv(('switch_to_control_panel', name))
         
