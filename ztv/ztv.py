@@ -1146,21 +1146,52 @@ class CommandListenerThread(threading.Thread):
                 elif x[0] == 'show_plot_panel_overplot':
                     if hasattr(self.ztv_frame, 'plot_panel'):
                         wx.CallAfter(self.ztv_frame.plot_panel.redraw_overplot_on_image)
-                elif x[0] == 'set_new_stats_box':
+                elif x[0] == 'set_stats_box_parameters':
                     if hasattr(self.ztv_frame, 'stats_panel'):
-                        wx.CallAfter(self.ztv_frame.stats_panel.update_stats_box, *(np.array(x[1]).ravel()))
-                elif x[0] == 'hide_stats_panel_overplot':
+                        x0,x1,y0,y1 = [None]*4
+                        if x[1]['xrange'] is not None:
+                            x0,x1 = x[1]['xrange']
+                        if x[1]['yrange'] is not None:
+                            y0,y1 = x[1]['yrange']
+                        if x[1]['xrange'] is not None or x[1]['yrange'] is not None:
+                            wx.CallAfter(self.ztv_frame.stats_panel.update_stats_box, *[x0, y0, x1, y1])
+                        if x[1]['show_overplot'] is not None:
+                            if x[1]['show_overplot']:
+                                self.ztv_frame.stats_panel.redraw_overplot_on_image()
+                            else:
+                                self.ztv_frame.stats_panel.remove_overplot_on_image()
+                    send_to_stream(sys.stdout, (x[0] + '_done', True))
+                elif x[0] == 'get_stats_box_info':
                     if hasattr(self.ztv_frame, 'stats_panel'):
-                        wx.CallAfter(self.ztv_frame.stats_panel.remove_overplot_on_image)
-                elif x[0] == 'show_stats_panel_overplot':
-                    if hasattr(self.ztv_frame, 'stats_panel'):
-                        wx.CallAfter(self.ztv_frame.stats_panel.redraw_overplot_on_image)
-                elif x[0] == 'get_stats_box_coords':
-                    if hasattr(self.ztv_frame, 'stats_panel'):
-                        x0,y0,x1,y1 = self.ztv_frame.stats_panel.get_x0y0x1y1_from_stats_rect()
-                        wx.CallAfter(send_to_stream, sys.stdout, (x[0][4:], [[x0,y0], [x1, y1]]))
+                        wx.CallAfter(send_to_stream, sys.stdout, (x[0][4:], self.ztv_frame.stats_panel.stats_info))
                     else:
-                        send_to_stream(sys.stdout, (x[0][4:], 'plot_panel not available'))
+                        send_to_stream(sys.stdout, (x[0][4:], 'stats_panel not available'))
+                elif x[0] == 'set_aperture_phot_parameters':
+                    if hasattr(self.ztv_frame, 'phot_panel'):
+                        if x[1]['xclick'] is not None:
+                            self.ztv_frame.phot_panel.xclick = x[1]['xclick']
+                        if x[1]['yclick'] is not None:
+                            self.ztv_frame.phot_panel.yclick = x[1]['yclick']
+                        if x[1]['radius'] is not None:
+                            self.ztv_frame.phot_panel.aprad = x[1]['radius']
+                        if x[1]['inner_sky_radius'] is not None:
+                            self.ztv_frame.phot_panel.skyradin = x[1]['inner_sky_radius']
+                        if x[1]['outer_sky_radius'] is not None:
+                            self.ztv_frame.phot_panel.skyradout = x[1]['outer_sky_radius']
+                        self.ztv_frame.phot_panel.recalc_phot()
+                        if x[1]['show_overplot'] is not None:
+                            if x[1]['show_overplot']:
+                                self.ztv_frame.phot_panel.redraw_overplot_on_image()
+                            else:
+                                self.ztv_frame.phot_panel.remove_overplot_on_image()
+                    send_to_stream(sys.stdout, (x[0] + '_done', True))
+                elif x[0] == 'get_aperture_phot_info':
+                    if hasattr(self.ztv_frame, 'phot_panel'):
+                        phot_info = self.ztv_frame.phot_panel.phot_info.copy()
+                        phot_info.pop('distances', None)
+                        wx.CallAfter(send_to_stream, sys.stdout, (x[0][4:], phot_info))
+                    else:
+                        send_to_stream(sys.stdout, (x[0][4:], 'phot_panel not available'))
                 else:
                     wx.CallAfter(Publisher().sendMessage, x[0], *x[1:])
 

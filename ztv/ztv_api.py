@@ -65,6 +65,8 @@ class ZTV():
         """
         if expected_return_message_title is None and request_message.startswith('get_'):
             expected_return_message_title = request_message[4:]
+        elif expected_return_message_title is None:
+            expected_return_message_title = request_message
         send_to_stream(self._subproc.stdin, request_message)
         try:
             x = self.stream_listener.read_pickled_message(timeout=timeout)
@@ -349,25 +351,21 @@ class ZTV():
             send_to_stream(self._subproc.stdin, 'hide_plot_panel_overplot')
         return self._request_return_value_from_ztv('get_slice_plot_coords')
         
-    def stats_box(self, box=None, show_overplot=True):
+    def stats_box(self, xrange=None, yrange=None, show_overplot=None):
         """
-        box: of form [x0, y0, x1, y1]
+        box: of form [[x0, y0], [x1, y1]]
         show_overplot:  If True, then show the over-plotted box
                         If False, then hide the box, although stats panel itself will continue to update
+                        If None, leave unchanged
         Returns current (new) box
         """
-        if box is not None:
-            send_to_stream(self._subproc.stdin, ('set_new_stats_box', box))
-            self._request_return_value_from_ztv('get_stats_box_coords')  # dummy call to give time to update so that return is correct.
-            send_to_stream(self._subproc.stdin, ('set_new_stats_box_xy1', box[1]))
-        if show_overplot:
-            send_to_stream(self._subproc.stdin, 'show_stats_panel_overplot')
-        else:
-            send_to_stream(self._subproc.stdin, 'hide_stats_panel_overplot')
-        return self._request_return_value_from_ztv('get_stats_box_coords')
+        send_to_stream(self._subproc.stdin, ('set_stats_box_parameters', {'xrange':xrange, 'yrange':yrange,
+                                                                          'show_overplot':show_overplot}))
+        waiting = self._request_return_value_from_ztv('set_stats_box_parameters_done')
+        return self._request_return_value_from_ztv('get_stats_box_info')
 
-    def aperture_phot(self, x=None, y=None, radius=None, inner_sky_radius=None, outer_sky_radius=None,
-                      xcenter=None, ycenter=None, show_overplot=False):
+    def aperture_phot(self, xclick=None, yclick=None, radius=None, inner_sky_radius=None, outer_sky_radius=None,
+                      show_overplot=None):
         """
         Send updated parameters to the Aperture Photometry control panel.
         Any unmodified arguments will be left unmodified in ztv. 
@@ -375,12 +373,16 @@ class ZTV():
         x,y:  coordinates, will be used as starting point to centroid on (as if user had clicked at that x/y)
         radius:  Object radius
         inner_sky_radius,outer_sky_radius:  defines the sky annulus
-        xcenter,ycenter:  If present, these over-ride x/y. Coordinates will not be re-centroided and 
-                          xcenter/ycenter will be used as the center of the photometry radii.
         show_overplot:  If True, then show the over-plotted apertures on the display
                         If False, then hide the apertures, although phot panel itself will continue to update
-                        
+                        If None, don't change.
         returns a dict with output photometry
-        TODO: show what dict contains
         """  
+        send_to_stream(self._subproc.stdin, ('set_aperture_phot_parameters', 
+                                             {'xclick':xclick, 'yclick':yclick, 'radius':radius, 
+                                              'inner_sky_radius':inner_sky_radius, 'outer_sky_radius':outer_sky_radius,
+                                              'show_overplot':show_overplot}))
+        waiting = self._request_return_value_from_ztv('set_aperture_phot_parameters_done')
+        return self._request_return_value_from_ztv('get_aperture_phot_info')
+
         

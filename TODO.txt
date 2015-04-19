@@ -1,8 +1,5 @@
 # URGENT - before next release
 
-## Clear buttons on stats/plot/phot should be changed to a hide/show button that updates as needed
-
-Also, set_new_slice plot needs to somehow turn on/off plot line 
 
 ## refactor ztv_api to get rid of the number of send_to_stream(self._subproc.stdin....
 
@@ -13,11 +10,6 @@ Also, set_new_slice plot needs to somehow turn on/off plot line
 
 
 ## review for critical additional commands to ztv_api and implement
-
-- move all autoload functionality to source_panel
-- clean up autoload mode chagnes to be just with publish/subscribe signals - may need to think abotu some better programmatic way of signaling to sub-objects of ztv_frame... (in same way as did "get_..." )
-
-## migrate README.rst to markdown
 
 ## add screenshots to README.rst
 
@@ -53,6 +45,14 @@ test basic pip install to minimal package (& maybe prepped with matplotlib/wxpyt
 
 
 # For some future release
+
+## in ztv_api.aperture_phot, implement forcing x/y without recentroiding:
+
+center=None, ycenter=None, 
+        xcenter,ycenter:  If present, these over-ride x/y. Coordinates will not be re-centroided and 
+                          xcenter/ycenter will be used as the center of the photometry radii.
+
+## in ztv_api.aperture_phot and ztv_api.stats_box, need to think about show/hide behavior.  probably should show by default if it's the FIRST call that sets any parameters.  (but maybe not if it's just the first call gettting phot info back out?)  Needs some thought as to proper behavior.
 
 ## clean up how auto-load mode is turned on/off, e.g. in CommandListenerThread is messy
 

@@ -58,13 +58,18 @@ class PhotPanel(wx.Panel):
         self.sky_aperture_patch = None
 
         self.last_string_values = {'aprad':'', 'skyradin':'', 'skyradout':''}
-        self.xclicked = 0.
-        self.yclicked = 0.
+        self.xclick = 0.
+        self.yclick = 0.
         self.xcentroid = 0.
         self.ycentroid = 0.
         self.aprad = 10.
         self.skyradin = 20.
         self.skyradout = 30.
+        self.phot_info = None
+        
+        self.aprad_color = 'blue'
+        self.skyrad_color = 'red'
+        self.alpha = 0.25
         
         textentry_font = wx.Font(14, wx.FONTFAMILY_MODERN, wx.NORMAL, wx.FONTWEIGHT_LIGHT, False)
         values_sizer = wx.FlexGridSizer( 3, 5, 0, 0 )
@@ -102,14 +107,14 @@ class PhotPanel(wx.Panel):
                                                  wx.DefaultSize, wx.ALIGN_RIGHT )
         self.clicked_static_text.Wrap( -1 )
         values_sizer.Add(self.clicked_static_text, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
-        self.xclicked_textctrl = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize,
+        self.xclick_textctrl = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize,
                                              wx.TE_PROCESS_ENTER)
-        self.xclicked_textctrl.SetFont(textentry_font)
-        values_sizer.Add(self.xclicked_textctrl, 0, wx.ALL, 2)
-        self.yclicked_textctrl = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize,
+        self.xclick_textctrl.SetFont(textentry_font)
+        values_sizer.Add(self.xclick_textctrl, 0, wx.ALL, 2)
+        self.yclick_textctrl = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize,
                                              wx.TE_PROCESS_ENTER)
-        self.yclicked_textctrl.SetFont(textentry_font)
-        values_sizer.Add(self.yclicked_textctrl, 0, wx.ALL, 2)
+        self.yclick_textctrl.SetFont(textentry_font)
+        values_sizer.Add(self.yclick_textctrl, 0, wx.ALL, 2)
 
         self.skyradout_static_text = wx.StaticText(self, wx.ID_ANY, u"Sky outer radius", wx.DefaultPosition, 
                                                    wx.DefaultSize, wx.ALIGN_RIGHT )
@@ -181,9 +186,9 @@ class PhotPanel(wx.Panel):
         self.pix_static_text.Wrap( -1 )
         h_sizer2.Add(self.pix_static_text, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
         h_sizer2.AddSpacer([30, 0], 0, 1)
-        self.clear_button = wx.Button(self, wx.ID_ANY, u"Clear", wx.DefaultPosition, wx.DefaultSize, 0)
-        h_sizer2.Add(self.clear_button, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 2)
-        self.clear_button.Bind(wx.EVT_BUTTON, self.on_clear_button)
+        self.hideshow_button = wx.Button(self, wx.ID_ANY, u"Hide", wx.DefaultPosition, wx.DefaultSize, 0)
+        h_sizer2.Add(self.hideshow_button, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 2)
+        self.hideshow_button.Bind(wx.EVT_BUTTON, self.on_hideshow_button)
 
         v_sizer1.Add(h_sizer2, 0, wx.ALIGN_LEFT)
 
@@ -194,7 +199,13 @@ class PhotPanel(wx.Panel):
         Publisher().subscribe(self.update_phot_xy, "new_phot_xy")
         Publisher().subscribe(self.recalc_phot, "redraw_image")
 
-    def on_clear_button(self, evt):
+    def on_hideshow_button(self, evt):
+        if self.hideshow_button.GetLabel() == 'Hide':
+            self.remove_overplot_on_image()
+        else:
+            self.redraw_overplot_on_image()
+
+    def remove_overplot_on_image(self, *args):
         if self.star_center_patch is not None:
             self.ztv_frame.primary_image_panel.axes.patches.remove(self.star_center_patch)
             self.star_center_patch = None
@@ -205,86 +216,96 @@ class PhotPanel(wx.Panel):
             self.ztv_frame.primary_image_panel.axes.patches.remove(self.sky_aperture_patch)
             self.sky_aperture_patch = None
         self.ztv_frame.primary_image_panel.figure.canvas.draw()
+        self.hideshow_button.SetLabel(u"Show")
 
-    def update_phot_xy(self, msg):
-        if isinstance(msg, Message):
-            x,y = msg.data
-        else:
-            x,y = msg
-        self.xclicked, self.yclicked = x,y
-        self.recalc_phot()
-        
-    def recalc_phot(self, msg=None):
-        self.xclicked_textctrl.SetValue("{:8.2f}".format(self.xclicked))
-        self.yclicked_textctrl.SetValue("{:8.2f}".format(self.yclicked))
-        self.xcentroid,self.ycentroid = centroid(self.ztv_frame.display_image, self.xclicked, self.yclicked)
-        self.xcentroid_textctrl.SetValue("{:8.2f}".format(self.xcentroid))
-        self.ycentroid_textctrl.SetValue("{:8.2f}".format(self.ycentroid))
-        phot = aperture_phot(self.ztv_frame.display_image, self.xcentroid, self.ycentroid, 
-                             self.aprad, self.skyradin, self.skyradout, return_distances=True)
-        aprad = phot['star_radius']
-        skyradin = phot['sky_inner_radius']
-        skyradout = phot['sky_outer_radius']
-        self.flux_textctrl.SetValue("{:0.6g}".format(phot['flux']))
-        self.sky_textctrl.SetValue("{:0.6g}".format(phot['sky_per_pixel']))
-        self.skyerr_textctrl.SetValue("{:0.6g}".format(phot['sky_per_pixel_err']))
-        aprad_color = 'blue'
-        skyrad_color = 'red'
-        self.plot_panel.axes.cla()
+    def redraw_overplot_on_image(self, *args):
         if self.star_center_patch is not None:
             self.ztv_frame.primary_image_panel.axes.patches.remove(self.star_center_patch)
         if self.star_aperture_patch is not None:
             self.ztv_frame.primary_image_panel.axes.patches.remove(self.star_aperture_patch)
         if self.sky_aperture_patch is not None:
             self.ztv_frame.primary_image_panel.axes.patches.remove(self.sky_aperture_patch)
-        if len(phot['distances']) > 5:
-            unrounded_xmax = skyradout + 0.2 * (skyradout - skyradin)
+        self.star_center_patch = Circle([self.xcentroid, self.ycentroid], 0.125, color=self.aprad_color)
+        self.ztv_frame.primary_image_panel.axes.add_patch(self.star_center_patch)
+        self.star_aperture_patch = Circle([self.xcentroid, self.ycentroid], self.aprad, color=self.aprad_color, alpha=self.alpha)
+        self.ztv_frame.primary_image_panel.axes.add_patch(self.star_aperture_patch)
+        self.sky_aperture_patch = Wedge([self.xcentroid, self.ycentroid], self.skyradout, 0., 360., 
+                                        width=self.skyradout - self.skyradin, color=self.skyrad_color, alpha=self.alpha)
+        self.ztv_frame.primary_image_panel.axes.add_patch(self.sky_aperture_patch)
+        self.ztv_frame.primary_image_panel.figure.canvas.draw()
+        self.hideshow_button.SetLabel(u"Hide")
+
+    def update_phot_xy(self, msg):
+        if isinstance(msg, Message):
+            x,y = msg.data
+        else:
+            x,y = msg
+        self.xclick, self.yclick = x,y
+        self.recalc_phot()
+        self.redraw_overplot_on_image()
+        
+    def recalc_phot(self, msg=None):
+        self.xclick_textctrl.SetValue("{:8.2f}".format(self.xclick))
+        self.yclick_textctrl.SetValue("{:8.2f}".format(self.yclick))
+        self.xcentroid,self.ycentroid = centroid(self.ztv_frame.display_image, self.xclick, self.yclick)
+        self.xcentroid_textctrl.SetValue("{:8.2f}".format(self.xcentroid))
+        self.ycentroid_textctrl.SetValue("{:8.2f}".format(self.ycentroid))
+        self.phot_info = aperture_phot(self.ztv_frame.display_image, self.xcentroid, self.ycentroid, 
+                             self.aprad, self.skyradin, self.skyradout, return_distances=True)
+        self.phot_info['xclick'] = self.xclick
+        self.phot_info['yclick'] = self.yclick
+        self.phot_info['xcentroid'] = self.xcentroid
+        self.phot_info['ycentroid'] = self.ycentroid
+        self.flux_textctrl.SetValue("{:0.6g}".format(self.phot_info['flux']))
+        self.sky_textctrl.SetValue("{:0.6g}".format(self.phot_info['sky_per_pixel']))
+        self.skyerr_textctrl.SetValue("{:0.6g}".format(self.phot_info['sky_per_pixel_err']))
+        self.plot_panel.axes.cla()
+        if len(self.phot_info['distances']) > 5:
+            unrounded_xmax = self.skyradout + 0.2 * (self.skyradout - self.skyradin)
             nice_factor = 10./5.
             sensible_xmax = ((nice_factor*10**np.floor(np.log10(unrounded_xmax))) * 
                              np.ceil(unrounded_xmax / (nice_factor*10**np.floor(np.log10(unrounded_xmax)))))
-            mask = phot['distances'] <= sensible_xmax
-            self.plot_panel.axes.plot(phot['distances'][mask].ravel(), self.ztv_frame.display_image[mask].ravel(), 
-                                      'ko', markersize=1)
+            mask = self.phot_info['distances'] <= sensible_xmax
+            self.plot_panel.axes.plot(self.phot_info['distances'][mask].ravel(), 
+                                      self.ztv_frame.display_image[mask].ravel(), 'ko', markersize=1)
             ylim = self.plot_panel.axes.get_ylim()
             n_sigma = 6.
-            if (phot['sky_per_pixel'] - n_sigma*phot['sky_per_pixel_err']*np.sqrt(phot['n_sky_pix'])) > 0.:
-                ylim = (phot['sky_per_pixel'] - n_sigma*phot['sky_per_pixel_err']*np.sqrt(phot['n_sky_pix']), ylim[1])
+            if (self.phot_info['sky_per_pixel'] - 
+                n_sigma*self.phot_info['sky_per_pixel_err']*np.sqrt(self.phot_info['n_sky_pix'])) > 0.:
+                ylim = (self.phot_info['sky_per_pixel'] - 
+                        n_sigma*self.phot_info['sky_per_pixel_err']*np.sqrt(self.phot_info['n_sky_pix']), ylim[1])
             self.plot_panel.axes.set_ylim(ylim)
-            alpha = 0.25
-            self.plot_panel.axes.fill_between([0., aprad], [ylim[0], ylim[0]], [ylim[1], ylim[1]], 
-                                              facecolor=aprad_color, alpha=alpha)
-            self.plot_panel.axes.fill_between([skyradin, skyradout], [ylim[0], ylim[0]], [ylim[1], ylim[1]], 
-                                              facecolor=skyrad_color, alpha=alpha)
-            self.plot_panel.axes.plot([0, sensible_xmax], [phot['sky_per_pixel'], phot['sky_per_pixel']], '-r')
-            self.plot_panel.axes.plot([0, sensible_xmax], [phot['sky_per_pixel'] - phot['sky_per_pixel_err'], 
-                                                           phot['sky_per_pixel'] - phot['sky_per_pixel_err']], ':r')
-            self.plot_panel.axes.plot([0, sensible_xmax], [phot['sky_per_pixel'] + phot['sky_per_pixel_err'], 
-                                                           phot['sky_per_pixel'] + phot['sky_per_pixel_err']], ':r')
+            self.plot_panel.axes.fill_between([0., self.aprad], [ylim[0], ylim[0]], [ylim[1], ylim[1]], 
+                                              facecolor=self.aprad_color, alpha=self.alpha)
+            self.plot_panel.axes.fill_between([self.skyradin, self.skyradout], [ylim[0], ylim[0]], [ylim[1], ylim[1]], 
+                                              facecolor=self.skyrad_color, alpha=self.alpha)
+            self.plot_panel.axes.plot([0, sensible_xmax], [self.phot_info['sky_per_pixel'], 
+                                                           self.phot_info['sky_per_pixel']], '-r')
+            self.plot_panel.axes.plot([0, sensible_xmax], [self.phot_info['sky_per_pixel'] - 
+                                                           self.phot_info['sky_per_pixel_err'], 
+                                                           self.phot_info['sky_per_pixel'] - 
+                                                           self.phot_info['sky_per_pixel_err']], ':r')
+            self.plot_panel.axes.plot([0, sensible_xmax], [self.phot_info['sky_per_pixel'] + 
+                                                           self.phot_info['sky_per_pixel_err'], 
+                                                           self.phot_info['sky_per_pixel'] + 
+                                                           self.phot_info['sky_per_pixel_err']], ':r')
             self.plot_panel.axes.set_xlim([0, sensible_xmax])
-            mask = phot['distances'] <= aprad
-            xs = phot['distances'][mask]
-            vals = self.ztv_frame.display_image[mask] - phot['sky_per_pixel']
-            p0 = [aprad*0.3, vals.max()]
+            mask = self.phot_info['distances'] <= self.aprad
+            xs = self.phot_info['distances'][mask]
+            vals = self.ztv_frame.display_image[mask] - self.phot_info['sky_per_pixel']
+            p0 = [self.aprad*0.3, vals.max()]
             if scipy_install_is_ok:
                 popt, pcov = curve_fit(fixed_gauss, xs, vals, p0=p0)
-                xs = np.arange(0, aprad+0.1, 0.1)
+                xs = np.arange(0, self.aprad+0.1, 0.1)
                 c = popt[0] / (2. * np.sqrt(2. * np.log(2.)))
-                self.plot_panel.axes.plot(xs, phot['sky_per_pixel'] + 
-                                              popt[1] * np.exp(-((xs)**2) / (2.*c**2)), '-', color=aprad_color)
+                self.plot_panel.axes.plot(xs, self.phot_info['sky_per_pixel'] + 
+                                              popt[1] * np.exp(-((xs)**2) / (2.*c**2)), '-', color=self.aprad_color)
                 self.fwhm_textctrl.SetValue("{:0.3g}".format(np.abs(popt[0])))
             else:
                 self.fwhm_textctrl.SetValue("n/a")
                 sys.stderr.write("ztv.phot_panel warning: scipy not installed OK. " + 
                                  "Gaussfit to PSF radial profile unavailable\n")
-            self.star_center_patch = Circle([self.xcentroid, self.ycentroid], 0.125, color=aprad_color)
-            self.ztv_frame.primary_image_panel.axes.add_patch(self.star_center_patch)
-            self.star_aperture_patch = Circle([self.xcentroid, self.ycentroid], aprad, color=aprad_color, alpha=alpha)
-            self.ztv_frame.primary_image_panel.axes.add_patch(self.star_aperture_patch)
-            self.sky_aperture_patch = Wedge([self.xcentroid, self.ycentroid], skyradout, 0., 360., 
-                                            width=skyradout-skyradin, color=skyrad_color, alpha=alpha)
-            self.ztv_frame.primary_image_panel.axes.add_patch(self.sky_aperture_patch)
         self.plot_panel.figure.canvas.draw()
-        self.ztv_frame.primary_image_panel.figure.canvas.draw()
 
     def aprad_textctrl_changed(self, evt):
         validate_textctrl_str(self.aprad_textctrl, lambda x: float(x) if float(x) > 0 else float('x'), 
@@ -296,6 +317,7 @@ class PhotPanel(wx.Panel):
             self.last_string_values['aprad'] = self.aprad_textctrl.GetValue()
             self.aprad = float(self.last_string_values['aprad'])
             self.recalc_phot()
+            self.redraw_overplot_on_image()
             validate_textctrl_str(self.aprad_textctrl, lambda x: float(x) if float(x) > 0 else float('x'), 
                                   self.last_string_values['aprad'])
             self.aprad_textctrl.SetSelection(-1, -1)
@@ -310,6 +332,7 @@ class PhotPanel(wx.Panel):
             self.last_string_values['skyradin'] = self.skyradin_textctrl.GetValue()
             self.skyradin = float(self.last_string_values['skyradin'])
             self.recalc_phot()
+            self.redraw_overplot_on_image()
             validate_textctrl_str(self.skyradin_textctrl, lambda x: float(x) if float(x) > 0 else float('x'), 
                                   self.last_string_values['skyradin'])
             self.skyradin_textctrl.SetSelection(-1, -1)
@@ -324,10 +347,8 @@ class PhotPanel(wx.Panel):
             self.last_string_values['skyradout'] = self.skyradout_textctrl.GetValue()
             self.skyradout = float(self.last_string_values['skyradout'])
             self.recalc_phot()
+            self.redraw_overplot_on_image()
             validate_textctrl_str(self.skyradout_textctrl, lambda x: float(x) if float(x) > 0 else float('x'), 
                                   self.last_string_values['skyradout'])
             self.skyradout_textctrl.SetSelection(-1, -1)
             
-#TODO: set up reasonable defaults for aprad, skyradin, & skyradout
-# TODO; clear button?  or just toggle switch for turning circles on/off?  maybe latter?
-

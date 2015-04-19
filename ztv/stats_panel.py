@@ -14,6 +14,7 @@ class StatsPanel(wx.Panel):
         self.ztv_frame = self.GetTopLevelParent()
         # TODO: figure out why min size is not being respected by comparing with the framebuilder example
         self.SetSizeHintsSz( wx.Size( 1024,512 ), wx.DefaultSize )
+        self.stats_info = None
         
         self.last_string_values = {'x0':'', 'xsize':'', 'x1':'', 'y0':'', 'ysize':'', 'y1':''}
         self.stats_rect = Rectangle((0, 0), 10, 10, color='orange', fill=False, zorder=100)
@@ -206,6 +207,7 @@ class StatsPanel(wx.Panel):
         x1 = min(max(0, x1), self.ztv_frame.display_image.shape[1])
         y1 = min(max(0, y1), self.ztv_frame.display_image.shape[0])
         self.stats_rect.set_bounds(x0, y0, x1 - x0, y1 - y0)
+        self.ztv_frame.primary_image_panel.figure.canvas.draw()
         self.update_stats()
 
     def remove_overplot_on_image(self):
@@ -261,24 +263,32 @@ class StatsPanel(wx.Panel):
         self.npix_textctrl.SetValue(str(x_npix * y_npix))
 
         stats_data = self.ztv_frame.display_image[y0:y1+1, x0:x1+1]
-        self.mean_textctrl.SetValue("{:0.4g}".format(stats_data.mean()))
-        self.median_textctrl.SetValue("{:0.4g}".format(np.median(stats_data)))
-        self.stdev_textctrl.SetValue("{:0.4g}".format(stats_data.std()))
-        robust_mean, robust_median, robust_stdev = sigma_clipped_stats(stats_data)
+        self.stats_info = {'xrange':[x0,x1], 'yrange':[y0,y1],
+                           'mean':stats_data.mean(), 'median':np.median(stats_data), 'std':stats_data.std(),
+                           'min':stats_data.min(), 'max':stats_data.max()}
+        self.mean_textctrl.SetValue("{:0.4g}".format(self.stats_info['mean']))
+        self.median_textctrl.SetValue("{:0.4g}".format(self.stats_info['median']))
+        self.stdev_textctrl.SetValue("{:0.4g}".format(self.stats_info['std']))
+        robust_mean, robust_median, robust_std = sigma_clipped_stats(stats_data)
+        self.stats_info['robust_mean'] = robust_mean
+        self.stats_info['robust_median'] = robust_median
+        self.stats_info['robust_std'] = robust_std
         self.robust_mean_textctrl.SetValue("{:0.4g}".format(robust_mean)) 
-        self.robust_stdev_textctrl.SetValue("{:0.4g}".format(robust_stdev))
-        self.minval_textctrl.SetValue("{:0.4g}".format(stats_data.min()))
-        self.maxval_textctrl.SetValue("{:0.4g}".format(stats_data.max()))
+        self.robust_stdev_textctrl.SetValue("{:0.4g}".format(robust_std))
+        self.minval_textctrl.SetValue("{:0.4g}".format(self.stats_info['min']))
+        self.maxval_textctrl.SetValue("{:0.4g}".format(self.stats_info['max']))
         wmin = np.where(stats_data == stats_data.min())
         wmin = [(wmin[1][i] + x0,wmin[0][i] + y0) for i in np.arange(wmin[0].size)]
         if len(wmin) == 1:
             wmin = wmin[0]
         self.minpos_textctrl.SetValue("{}".format(wmin))
+        self.stats_info['wmin'] = wmin
         wmax = np.where(stats_data == stats_data.max())
         wmax = [(wmax[1][i] + x0,wmax[0][i] + y0) for i in np.arange(wmax[0].size)]
         if len(wmax) == 1:
             wmax = wmax[0]
         self.maxpos_textctrl.SetValue("{}".format(wmax))
+        self.stats_info['wmax'] = wmax
         set_textctrl_background_color(self.x0_textctrl, 'ok')
         set_textctrl_background_color(self.x1_textctrl, 'ok')
         set_textctrl_background_color(self.xsize_textctrl, 'ok')
