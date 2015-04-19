@@ -1,23 +1,6 @@
 # URGENT - before next release
 
 
-## add screenshots to README.rst
-
-## get rid of all hardwired hroe path references
-
-## update Manual.txt
-
-including migration to *.md
-
-including adding screenshots
-
-including write up example fits faker panel to manual
-
-
-## write up release notes
-
-including updating CHANGES.txt
-
 ## Final to releasing:
 
 ### write up pip install documentation
@@ -38,6 +21,8 @@ test basic pip install to minimal package (& maybe prepped with matplotlib/wxpyt
 
 
 # For some future release
+
+## add write-up of ability to look-at and search in fits headers to write-up (probably manual, not readme?)
 
 ## script the screen-shot creation, including making cursor some how visible
 
