@@ -75,7 +75,6 @@ Download an iconic FITS image from the web and display it:
     open(local_filename, 'w').write(zip.open(zip_filename).read())
     z.load(local_filename)
     z.scaling('Log')
-    z.cmap('gist-heat')
     z.minmax(0, 500)
 
 ![](screenshots/eagle1.png)
@@ -91,6 +90,11 @@ We can even do a little aperture photometry while we're here:
     z.aperture_phot(xclick=614, yclick=516, show_overplot=True)
 
 ![](screenshots/eagle2.png)
+
+And, of course, you can adjust the window size to suit your needs, either smaller or larger:
+
+![](screenshots/eagle-small.png) 
+![](screenshots/eagle-large.png)
 
 
 Example of an Add-on Control Panel 
