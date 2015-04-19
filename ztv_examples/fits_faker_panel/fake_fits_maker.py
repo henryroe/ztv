@@ -17,7 +17,6 @@ class FakeFitsMaker(threading.Thread):
         self.flat_field_dust_donuts_radius_range = [20, 50]
         self.flat_field_dust_donuts_width_range = [10, 15]
         self.flat_field_dust_donuts_peak_range = [0.5, 0.8]
-          # HEREIAM implementing dust donuts
         self.sky_pattern_mean_cts = 9000.
         self.sky_pattern_row_to_row_variation_1sigma_cts = 2000.
         self.saturation_cts = 2**16
@@ -138,10 +137,18 @@ class FakeFitsMaker(threading.Thread):
                 pass
 
     def write_to_fits_file(self, im, filename):
+        max_files_on_disk = 10  # play nice with space in people's /tmp/ dirs
         hdu = fits.PrimaryHDU(im)
         hdu.writeto(os.path.join(self.data_dir, filename), clobber=True)
         if filename not in self.files_to_delete:
-            self.files_to_delete.append(filename)
+            if filename.startswith('n'):
+                self.files_to_delete = ([a for a in self.files_to_delete if a.startswith('n')] + 
+                                        [filename] +
+                                        [a for a in self.files_to_delete if not a.startswith('n')])
+            else:
+                self.files_to_delete.append(filename)
+        while len(self.files_to_delete) > max_files_on_disk:
+            os.remove(os.path.join(self.data_dir, self.files_to_delete.pop(0)))
             
 
 if __name__ == '__main__':
