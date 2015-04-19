@@ -346,11 +346,17 @@ class PrimaryImagePanel(wx.Panel):
                 if (event.guiEvent.GetTimestamp() - self.zoom_start_timestamp) > self.max_doubleclick_millisec:
                     # this catches for a long click-and-release without motion
                     x0,y0 = self.zoom_rect.get_x(),self.zoom_rect.get_y()
-                    if abs(x0 - event.xdata) >= 2 and abs(y0 - event.ydata) >= 2:
-                        self.center = wx.RealPoint((x0 + event.xdata)/2., (y0 + event.ydata)/2.)
+                    x1 = x0 + self.zoom_rect.get_width()
+                    y1 = y0 + self.zoom_rect.get_height()
+                    if hasattr(event, 'xdata') and event.xdata is not None:
+                        x1 = event.xdata
+                    if hasattr(event, 'ydata') and event.ydata is not None:
+                        y1 = event.ydata
+                    if abs(x0 - x1) >= 2 and abs(y0 - y1) >= 2:
+                        self.center = wx.RealPoint((x0 + x1)/2., (y0 + y1)/2.)
                         panel_size = self.canvas.GetSize()
-                        x_zoom_factor = panel_size.x / abs(event.xdata - x0)
-                        y_zoom_factor = panel_size.y / abs(event.ydata - y0)
+                        x_zoom_factor = panel_size.x / abs(x1 - x0)
+                        y_zoom_factor = panel_size.y / abs(y1 - y0)
                         self.ztv_frame.zoom_factor = min(x_zoom_factor, y_zoom_factor)
                         self.set_and_get_xy_limits()
                 if self.zoom_rect in self.axes.patches:
@@ -426,6 +432,7 @@ class OverviewImagePanel(wx.Panel):
                                            color='green', fill=False, zorder=100)
         self.axes.add_patch(self.curview_rectangle)
         self.canvas = FigureCanvasWxAgg(self, -1, self.figure)
+        self.overview_zoom_factor = 1.
         self._SetSize()
         self.set_xy_limits()
         self.axes_widget = AxesWidget(self.figure.gca())
@@ -447,8 +454,8 @@ class OverviewImagePanel(wx.Panel):
         else:
             if self.curview_rectangle.contains(event)[0]:
                 self.dragging_curview_is_active = True
-                self.convert_x_to_xdata = lambda x: (x / self.ztv_frame.zoom_factor) + self.xlim[0]
-                self.convert_y_to_ydata = lambda y: (y / self.ztv_frame.zoom_factor) + self.ylim[0]
+                self.convert_x_to_xdata = lambda x: (x / self.overview_zoom_factor) + self.xlim[0]
+                self.convert_y_to_ydata = lambda y: (y / self.overview_zoom_factor) + self.ylim[0]
                 self.dragging_cursor_xdata0 = self.convert_x_to_xdata(event.x)
                 self.dragging_cursor_ydata0 = self.convert_y_to_ydata(event.y)
                 self.dragging_rect_xdata0 = self.ztv_frame.primary_image_panel.center.x
@@ -489,11 +496,11 @@ class OverviewImagePanel(wx.Panel):
     def set_xy_limits(self):
         max_zoom_x = self.size.x / float(self.ztv_frame.display_image.shape[1])
         max_zoom_y = self.size.y / float(self.ztv_frame.display_image.shape[0])
-        overview_zoom_factor = min(max_zoom_x, max_zoom_y)
+        self.overview_zoom_factor = min(max_zoom_x, max_zoom_y)
         x_cen = (self.ztv_frame.display_image.shape[1] / 2.) - 0.5
         y_cen = (self.ztv_frame.display_image.shape[0] / 2.) - 0.5
-        halfXsize = self.size.x / (overview_zoom_factor * 2.)
-        halfYsize = self.size.y / (overview_zoom_factor * 2.)
+        halfXsize = self.size.x / (self.overview_zoom_factor * 2.)
+        halfYsize = self.size.y / (self.overview_zoom_factor * 2.)
         self.xlim = (x_cen - halfXsize, x_cen + halfXsize)
         self.ylim = (y_cen - halfYsize, y_cen + halfYsize)
         self.axes.set_xlim(self.xlim)
