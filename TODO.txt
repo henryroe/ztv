@@ -1,15 +1,9 @@
 # URGENT - before next release
 
 
-## add z.methods to fits faker example that starts/stops faker
-
-
-
-
-
-## review for critical additional commands to ztv_api and implement
-
 ## add screenshots to README.rst
+
+## get rid of all hardwired hroe path references
 
 ## update Manual.txt
 
@@ -40,9 +34,16 @@ test basic pip install to minimal package (& maybe prepped with matplotlib/wxpyt
 
 ## write-up/clean-up notes on how to package/test/release in NOTES.txt
 
+## point ztv.zone to github site
 
 
 # For some future release
+
+## script the screen-shot creation, including making cursor some how visible
+
+## make better website, separate from github/pypi sites (though pointing over to them)
+
+## add some examples for how to send input in overloaded api commands to fits_faker_panel example
 
 ## in ztv_api.aperture_phot, implement forcing x/y without recentroiding:
 
