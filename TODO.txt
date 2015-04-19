@@ -1,8 +1,6 @@
 # URGENT - before next release
 
 
-## refactor ztv_api to get rid of the number of send_to_stream(self._subproc.stdin....
-
 ## add z.methods to fits faker example that starts/stops faker
 
 

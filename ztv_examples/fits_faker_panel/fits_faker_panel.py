@@ -1,7 +1,8 @@
 from __future__ import absolute_import
 import wx
 from .fake_fits_maker import FakeFitsMaker
-            
+from wx.lib.pubsub import Publisher
+
 class FitsFakerPanel(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL)
@@ -39,18 +40,19 @@ class FitsFakerPanel(wx.Panel):
 
         v_sizer1.AddSpacer((0, 0), 1, wx.EXPAND)
         self.SetSizer(v_sizer1)
+        Publisher().subscribe(self.on_launch_button, "fits-faker-start")
+        Publisher().subscribe(self.on_halt_button, "fits-faker-stop")
 
-    def on_launch_button(self, evt):
+    def on_launch_button(self, evt=None):
         self.fake_fits_maker = FakeFitsMaker(ztv_frame_pid=self.ztv_frame.ztv_frame_pid)
         self.fake_fits_maker.start()
         self.launch_button.Disable()
         self.halt_button.Enable()
         self.ztv_frame.source_panel.load_sky_frame('/tmp/sky_frame.fits', False)
         self.ztv_frame.source_panel.load_flat_frame('/tmp/flat_frame.fits', False)
-        self.ztv_frame.source_panel.autoload_curfile_file_picker_on_load('/tmp/n*.fits')
-        
-        
-    def on_halt_button(self, evt):
+        self.ztv_frame.source_panel.autoload_curfile_file_picker_on_load('/tmp/n*.fits')    
+
+    def on_halt_button(self, evt=None):
         self.launch_button.Enable()
         self.halt_button.Disable()
         self.fake_fits_maker.keep_running = False

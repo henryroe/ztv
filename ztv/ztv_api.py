@@ -56,7 +56,7 @@ class ZTV():
         """
         Shutdown this instance of ZTV
         """
-        send_to_stream(self._subproc.stdin, "kill_ztv")
+        self._send_to_ztv("kill_ztv")
         # self._subproc.terminate()   # TODO: neither .terminate() nor .kill() seem to close out the subprocess, something must be holding it up.
 
     def _request_return_value_from_ztv(self, request_message, expected_return_message_title=None, timeout=10.):
@@ -67,7 +67,7 @@ class ZTV():
             expected_return_message_title = request_message[4:]
         elif expected_return_message_title is None:
             expected_return_message_title = request_message
-        send_to_stream(self._subproc.stdin, request_message)
+        self._send_to_ztv(request_message)
         try:
             x = self.stream_listener.read_pickled_message(timeout=timeout)
         except StreamListenerTimeOut:
@@ -79,12 +79,15 @@ class ZTV():
                 raise Error("Unrecognized return value from ztv ({}) " +
                             "in response to request: {}".format(x, request_message))
 
+    def _send_to_ztv(self, msg):
+        send_to_stream(self._subproc.stdin, msg)
+
     def _load_numpy_array(self, image):
         """
         Load a numpy array into the image.
         """
         if isinstance(image, np.ndarray):
-            send_to_stream(self._subproc.stdin, ('load_numpy_array', image))
+            self._send_to_ztv(('load_numpy_array', image))
         else:
             raise Error('Tried to send type {} instead of a numpy array'.format(type(image)))
 
@@ -111,7 +114,7 @@ class ZTV():
         (or any other capitalization of those file suffixes)
         """
         if self._validate_fits_filename(filename):
-            send_to_stream(self._subproc.stdin, ('load_fits_file', filename))
+            self._send_to_ztv(('load_fits_file', filename))
 
     def load(self, input):
         """
@@ -131,7 +134,7 @@ class ZTV():
         """
         Load the default nonsense image
         """
-        send_to_stream(self._subproc.stdin, "load_default_image")
+        self._send_to_ztv("load_default_image")
 
     def cmap(self, cmap=None):
         """
@@ -149,7 +152,7 @@ class ZTV():
         returns the current (new) colormap
         """
         if isinstance(cmap, str):
-            send_to_stream(self._subproc.stdin, ('set_cmap', cmap))
+            self._send_to_ztv(('set_cmap', cmap))
         return self._request_return_value_from_ztv('get_cmap')
         
     def cmaps_list(self):
@@ -166,7 +169,7 @@ class ZTV():
         Returns the current inversion state
         """
         if state is not None:
-            send_to_stream(self._subproc.stdin, ('set_cmap_inverted', state))
+            self._send_to_ztv(('set_cmap_inverted', state))
         return self._request_return_value_from_ztv('get_is_cmap_inverted')
 
     def scaling(self, scaling=None):
@@ -181,7 +184,7 @@ class ZTV():
         returns the current (new) scaling
         """
         if isinstance(scaling, str):
-            send_to_stream(self._subproc.stdin, ('set_scaling', scaling))
+            self._send_to_ztv(('set_scaling', scaling))
         return self._request_return_value_from_ztv('get_scaling')
 
     def scalings_list(self):
@@ -196,7 +199,7 @@ class ZTV():
         
         returns current (new) min/max range
         """
-        send_to_stream(self._subproc.stdin, 'set_clim_to_minmax')
+        self._send_to_ztv('set_clim_to_minmax')
         return self._request_return_value_from_ztv('get_clim')
 
     def set_minmax_to_auto(self):
@@ -205,7 +208,7 @@ class ZTV():
         
         returns current (new) min/max range
         """
-        send_to_stream(self._subproc.stdin, 'set_clim_to_auto')
+        self._send_to_ztv('set_clim_to_auto')
         return self._request_return_value_from_ztv('get_clim')
 
     def minmax(self, minval=None, maxval=None):
@@ -219,7 +222,7 @@ class ZTV():
         returns current (new) min/max range
         """
         if minval is not None and maxval is not None:
-            send_to_stream(self._subproc.stdin, ('set_clim', (minval, maxval)))
+            self._send_to_ztv(('set_clim', (minval, maxval)))
         return self._request_return_value_from_ztv('get_clim')
 
     def reset_zoom_and_center(self):
@@ -227,7 +230,7 @@ class ZTV():
         Reset pan to center of image
         Reset zoom to image just fitting in primary display frame
         """
-        send_to_stream(self._subproc.stdin, 'reset_zoom_and_center')
+        self._send_to_ztv('reset_zoom_and_center')
   
     def zoom(self, zoom=None):
         """
@@ -236,7 +239,7 @@ class ZTV():
         returns current zoom factor
         """
         if zoom is not None:
-            send_to_stream(self._subproc.stdin, ('set_zoom_factor', zoom))
+            self._send_to_ztv(('set_zoom_factor', zoom))
         return self._request_return_value_from_ztv('get_zoom_factor')
 
     def xy_center(self, *args):
@@ -250,7 +253,7 @@ class ZTV():
                 x,y = args[0]
             else:
                 x,y = args[0], args[1]
-            send_to_stream(self._subproc.stdin, ('set_xy_center', (x, y)))
+            self._send_to_ztv(('set_xy_center', (x, y)))
         return self._request_return_value_from_ztv('get_xy_center')
 
     def add_activemq(self, server=None, port=61613, destination=None):
@@ -261,7 +264,7 @@ class ZTV():
             raise Error('Must specify a server address in server keyword, e.g.  "myserver.mywebsite.com"')
         if destination is None:
             raise Error('Must specify a message queue to follow in destination keyword')
-        send_to_stream(self._subproc.stdin, ('add_activemq_instance', (server, port, destination)))
+        self._send_to_ztv(('add_activemq_instance', (server, port, destination)))
 
     def frame_number(self, n=None, relative=False):
         """
@@ -277,7 +280,7 @@ class ZTV():
                 flag = 'relative'
             else:
                 flag = 'absolute'
-            send_to_stream(self._subproc.stdin, ('set_cur_display_frame_num', (n, flag)))
+            self._send_to_ztv(('set_cur_display_frame_num', (n, flag)))
         return self._request_return_value_from_ztv('get_cur_display_frame_num')
         
     def sky_frame(self, filename=None):
@@ -290,9 +293,9 @@ class ZTV():
         returns tuple of current sky subtraction status (True/False) and current sky frame filename
         """
         if filename is True or filename is False:
-            send_to_stream(self._subproc.stdin, ('set_sky_subtraction_status', filename))
+            self._send_to_ztv(('set_sky_subtraction_status', filename))
         elif filename is not None:
-            send_to_stream(self._subproc.stdin, ('set_sky_subtraction_filename', filename))
+            self._send_to_ztv(('set_sky_subtraction_filename', filename))
         return self._request_return_value_from_ztv('get_sky_subtraction_status_and_filename')
         
     def flat_frame(self, filename=None):
@@ -305,9 +308,9 @@ class ZTV():
         returns current flat frame filename
         """
         if filename is True or filename is False:
-            send_to_stream(self._subproc.stdin, ('set_flat_division_status', filename))
+            self._send_to_ztv(('set_flat_division_status', filename))
         elif filename is not None:
-            send_to_stream(self._subproc.stdin, ('set_flat_division_filename', filename))
+            self._send_to_ztv(('set_flat_division_filename', filename))
         return self._request_return_value_from_ztv('get_flat_division_status_and_filename')
         
     def autoload_filename_pattern(self, filename=None):
@@ -320,9 +323,9 @@ class ZTV():
         returns current auto-load filename pattern
         """
         if filename is True or filename is False:
-            send_to_stream(self._subproc.stdin, ('set_autoload_filename_pattern_status', filename))
+            self._send_to_ztv(('set_autoload_filename_pattern_status', filename))
         elif filename is not None:
-            send_to_stream(self._subproc.stdin, ('set_autoload_filename_pattern', filename))
+            self._send_to_ztv(('set_autoload_filename_pattern', filename))
         return self._request_return_value_from_ztv('get_autoload_status_and_filename_pattern')
 
     def autoload_pause_seconds(self, seconds=None):
@@ -331,7 +334,7 @@ class ZTV():
         returns current autoload pause time
         """
         if seconds is not None:
-            send_to_stream(self._subproc.stdin, ('set_autoload_pausetime', seconds))
+            self._send_to_ztv(('set_autoload_pausetime', seconds))
         return self._request_return_value_from_ztv('get_autoload_pausetime')
 
     def slice_plot(self, pts=None, show_overplot=True):
@@ -342,13 +345,13 @@ class ZTV():
         Returns current (new) pts
         """
         if pts is not None:
-            send_to_stream(self._subproc.stdin, ('set_new_slice_plot_xy0', pts[0]))
+            self._send_to_ztv(('set_new_slice_plot_xy0', pts[0]))
             self._request_return_value_from_ztv('get_slice_plot_coords')  # dummy call to give time to update so that return is correct.
-            send_to_stream(self._subproc.stdin, ('set_new_slice_plot_xy1', pts[1]))
+            self._send_to_ztv(('set_new_slice_plot_xy1', pts[1]))
         if show_overplot:
-            send_to_stream(self._subproc.stdin, 'show_plot_panel_overplot')
+            self._send_to_ztv('show_plot_panel_overplot')
         else:
-            send_to_stream(self._subproc.stdin, 'hide_plot_panel_overplot')
+            self._send_to_ztv('hide_plot_panel_overplot')
         return self._request_return_value_from_ztv('get_slice_plot_coords')
         
     def stats_box(self, xrange=None, yrange=None, show_overplot=None):
@@ -359,7 +362,7 @@ class ZTV():
                         If None, leave unchanged
         Returns current (new) box
         """
-        send_to_stream(self._subproc.stdin, ('set_stats_box_parameters', {'xrange':xrange, 'yrange':yrange,
+        self._send_to_ztv(('set_stats_box_parameters', {'xrange':xrange, 'yrange':yrange,
                                                                           'show_overplot':show_overplot}))
         waiting = self._request_return_value_from_ztv('set_stats_box_parameters_done')
         return self._request_return_value_from_ztv('get_stats_box_info')
@@ -378,7 +381,7 @@ class ZTV():
                         If None, don't change.
         returns a dict with output photometry
         """  
-        send_to_stream(self._subproc.stdin, ('set_aperture_phot_parameters', 
+        self._send_to_ztv(('set_aperture_phot_parameters', 
                                              {'xclick':xclick, 'yclick':yclick, 'radius':radius, 
                                               'inner_sky_radius':inner_sky_radius, 'outer_sky_radius':outer_sky_radius,
                                               'show_overplot':show_overplot}))
