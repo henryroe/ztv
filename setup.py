@@ -14,6 +14,10 @@ with open(os.path.join(base_dir, 'README.md'), encoding='utf-8') as f:
 try:
     from pypandoc import convert
     long_description = convert('README.md', 'rst', format='md')
+    # also, convert screen shot links
+    import re
+    rep = re.compile('screenshots/(.*).png')
+    long_description = rep.sub(r'https://raw.githubusercontent.com/henryroe/ztv/master/screenshots/\1.png', long_description)
 except ImportError:
     print("warning: pypandoc module not found, could not convert Markdown to RST")
 
