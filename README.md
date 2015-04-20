@@ -91,16 +91,19 @@ We can even do a little aperture photometry while we're here:
 
 ![](screenshots/eagle2.png)
 
-And, of course, you can adjust the window size to suit your needs, either smaller or larger:
+And, of course, you can adjust the window size to suit your needs, either smaller:
 
 ![](screenshots/eagle-small.png) 
+
+or larger:
+
 ![](screenshots/eagle-large.png)
 
 
 Example of an Add-on Control Panel 
 ----------------------------------
 
-One of the motivating use cases for *ztv* was real-time quick-look of incoming images, and the ability to extend the basic installation to even control instrumentation. An example of this is that *ztv* will be used to both control and inspect the images from a slit viewing camera on a spectrograph of mine. To demonstrate this extensibility, there's a simple example in `ztv_examples/fits_faker_panel/`:
+One of the motivating use cases for *ztv* was real-time quick-look of incoming images and the ability to extend the basic installation, including instrumentat control. An example of this is that *ztv* will be used to both control and inspect the images from a slit viewing camera on a spectrograph of mine. To demonstrate this extensibility, there's a simple example in `ztv_examples/fits_faker_panel/`:
 
     from ztv_examples.fits_faker_panel.launch_ztv import launch_ztv
     z = launch_ztv()
@@ -121,16 +124,18 @@ Installation and Dependencies
 
 *ztv* uses several packages, including [wxPython](http://wxpython.org), [astropy](http://www.astropy.org). These should be automatically installed if you install *ztv* with:
 
-    pip install ztv 
+    pip install ztv
+    
+You can also grab source code from [github](https://github.com/henryroe/ztv).
 
 Background
 ==========
 
-In graduate school in the late 1990's I learned to use [IDL](http://en.wikipedia.org/wiki/IDL_(programming_language)) and used [Aaron Barth's ATV](http://www.physics.uci.edu/~barth/atv/) extensively. I even contributed a little to a now-outdated version, adding 3-d image stack capability. ATV was and is incredibly useful for quick-looks at image data, analysis, and all the things you want when working with typical astronomical image data.
+In graduate school in the late 1990's I learned [IDL](http://en.wikipedia.org/wiki/IDL_(programming_language)) and used [Aaron Barth's ATV](http://www.physics.uci.edu/~barth/atv/) extensively. I even contributed a little to a now-outdated version of [ATV](http://www.physics.uci.edu/~barth/atv/), adding 3-d image stack capability. [ATV](http://www.physics.uci.edu/~barth/atv/) was and is incredibly useful for quick-looks at image data, analysis, and all the things you want when working with typical astronomical image data.
 
-After graduate school I began migrating toward python and away from IDL. I've written about this choice elsewhere, but some of the basic reasons were to avoid IDL licensing issues and being beholden to one company. (To be fair, I pay every year to keep my IDL license current and it's always been a reasonable price for me. It helps that my license has some obscure history to it that makes the maintenance fees moderate. But, at any time they could raise the prices on me massively. And, I wanted to be using a language that could effectively be on every machine I touch, from my main laptop to an embedded server.)
+After graduate school I began migrating toward python and away from IDL. I've written about this choice elsewhere, but some of the basic reasons were to avoid IDL licensing issues and being beholden to one company. (To be fair, how much I pay every year to keep my IDL license current has always been reasonable. It helps that my license has some obscure history to it that makes the maintenance fees moderate. But, at any time they could raise the prices on me massively. And, I wanted to use a language that could effectively be on every machine I touch, from my main laptop to an embedded server.)
 
-In python there are already a multitude of possible image viewers. Many of which are great and can do much of what I needed. But, inevitably as I've played with them I've found they each don't scratch my itch in some way. I wanted something that worked exactly the way I wanted, with the right (for me) mix of complexity and simplicity. I need day-to-day image quicklook from the python command-line, e.g. while I'm developing some new image processing algorithm or to check on last night's data. But, I also need my viewer to be able to easily adapt to other of situations, including real-time use on a slit-viewing camera, quick-reduction of incoming data, etc.. So, I wrote *ztv*.
+In python there are already a multitude of possible image viewers. Many of which are great and can do much of what I needed. (See next section for some links.) But, inevitably as I've played with them I've found they each doesn't scratch my itch in some way. I wanted something that worked exactly the way I wanted, with the right (for me) mix of complexity and simplicity. I need day-to-day image quicklook from the python command-line, e.g. while I'm developing some new image processing algorithm or to check on last night's data. But, I also need to be able to easily adapt my viewer to other situations, including real-time use on a slit-viewing camera, quick-reduction of incoming data, etc.. So, I wrote *ztv*.
 
 The name *ztv* is an obvious play off of [ATV](http://www.physics.uci.edu/~barth/atv/). And, "z" is my daughter's middle initial. 
 
