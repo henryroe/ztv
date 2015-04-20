@@ -2,7 +2,8 @@ exclude Manual.txt
 include README.md
 include CHANGES.txt
 include LICENSE.txt
-include TODO.txt
+exclude TODO.txt
+exclude NOTES.txt
 
 
 # TODO: add appropriate lines to incude sample data files, something like:
