@@ -8,9 +8,15 @@ about = {}
 with open(os.path.join(base_dir, "ztv", "__about__.py")) as f:
     exec(f.read(), about)
 
-# Get the long description from the relevant file
+# Get the long description from the relevant file, converting from md to rst if possible
 with open(os.path.join(base_dir, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
+try:
+    from pypandoc import convert
+    long_description = convert('README.md', 'rst', format='md')
+except ImportError:
+    print("warning: pypandoc module not found, could not convert Markdown to RST")
+
 
 setup(
     name=about["__title__"],
