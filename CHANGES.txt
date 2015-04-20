@@ -3,7 +3,7 @@ ztv Change Log
 ~~~~~~~~~~~~~~
 
 ------------------
-v0.1.0, 2015-04-19
+v0.1.0, 2015-04-20
 ------------------
 
 - First public release to github and pypi
