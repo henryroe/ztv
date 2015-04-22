@@ -109,7 +109,9 @@ class ColorPanel(wx.Panel):
         self.init_cmap_popup_menu()
         self.cmap_button = wx.Button(self, wx.ID_ANY, 'X'*max([len(a) for a in self.ztv_frame.available_cmaps]),
                                      wx.DefaultPosition, wx.DefaultSize, 0)
-        self.cmap_button.SetBitmap(self.cmap_button_bitmaps[self.ztv_frame.cmap])
+  # HEREIAM commented out next line in trying to get working on ubuntu
+        if hasattr(self.cmap_button, 'SetBitmap'):
+            self.cmap_button.SetBitmap(self.cmap_button_bitmaps[self.ztv_frame.cmap])
         cmap_sizer.Add(self.cmap_button, 0, wx.ALL|wx.ALIGN_LEFT|wx.ALIGN_CENTER_VERTICAL, 2)
         self.cmap_button.Bind(wx.EVT_LEFT_DOWN, self.on_cmap_button)
         cmap_options_sizer = wx.BoxSizer(wx.VERTICAL)
@@ -158,7 +160,8 @@ class ColorPanel(wx.Panel):
         for cmap in self.ztv_frame.available_cmaps:
             menu_item = menu.AppendCheckItem(self.cmap_to_eventID[cmap], cmap)
             wx.EVT_MENU(menu, self.cmap_to_eventID[cmap], self.on_change_cmap_event)
-            menu_item.SetBitmap(self.cmap_menu_bitmaps[cmap])
+            if hasattr(menu_item, 'SetBitmap'):
+                menu_item.SetBitmap(self.cmap_menu_bitmaps[cmap])
         self.cmap_popup_menu = menu
 
     def on_change_cmap_event(self, event):
@@ -263,7 +266,8 @@ class ColorPanel(wx.Panel):
             force_textctrl_color_update(self.maxval_textctrl)
 
     def on_cmap_changed(self, *args):
-        self.cmap_button.SetBitmap(self.cmap_button_bitmaps[self.ztv_frame.cmap])
+        if hasattr(self.cmap_button, 'SetBitmap'):
+            self.cmap_button.SetBitmap(self.cmap_button_bitmaps[self.ztv_frame.cmap])
         self.cmap_button.SetLabel(self.ztv_frame.cmap)
 
     def minval_textctrl_changed(self, evt):

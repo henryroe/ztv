@@ -128,6 +128,10 @@ Installation and Dependencies
     
 You can also grab source code from [github](https://github.com/henryroe/ztv).
 
+Note that *ztv* was developed and tested on OS X. 
+
+**Linux/Ubuntu:** I tested briefly on Ubuntu 14.04. *ztv* basically works, although the pulldown colormap menus will not have bitmaps of the colormaps.  Also, (at least on my testing virtual machine) the performance of *ztv* was much laggier than on my main OS X laptop. For the colormaps you could try looking at [this link](http://askubuntu.com/questions/464146/how-to-enable-icons-in-menus-in-ubuntu-14-04), but it didn't work on my test system.
+
 Background
 ==========
 

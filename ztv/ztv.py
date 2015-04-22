@@ -22,7 +22,12 @@ from astropy.stats import sigma_clipped_stats
 import matplotlib
 matplotlib.interactive(True)
 matplotlib.use('WXAgg')
-from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg
+try:
+    from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg
+except IOError:
+    # on some linux installations this import needs to be done twice as the first time raises an error:
+    #   IOError: [Errno 2] No such file or directory: '/tmp/matplotlib-parallels/fontList.cache'
+    from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg
 from matplotlib.figure import Figure
 from matplotlib.widgets import AxesWidget
 from matplotlib.patches import Rectangle
@@ -383,7 +388,7 @@ class PrimaryImagePanel(wx.Panel):
             self.popup_menu.Enable(self.popup_menu_cur_fits_header_eventID, False)
         else:
             self.popup_menu.Enable(self.popup_menu_cur_fits_header_eventID, True)
-        self.figure.canvas.PopupMenuXY(self.popup_menu, event.x + 8,  event.y + 8)
+        self.figure.canvas.PopupMenuXY(self.popup_menu, event.GetX() + 8,  event.GetY() + 8)
 
     def on_cursor_leave(self, event):
         self.ztv_frame.status_bar.SetStatusText('')
@@ -568,13 +573,14 @@ class ControlsNotebook(wx.Notebook):
             self.AddPanelAndStoreID(cur_panel(self), cur_title)
         
     def AddPanelAndStoreID(self, panel, text, **kwargs):
-        setattr(panel, 'ztv_page_id', len(self.ztv_frame.control_panels))
+        new_page_image_id = len(self.ztv_frame.control_panels)
+        setattr(panel, 'ztv_page_id', new_page_image_id)
         setattr(panel, 'ztv_display_name', text)
         setattr(panel, 'ztv_ref_name', text.lower() + '_panel')
         setattr(panel, 'highlight_panel', lambda : self._highlight_page(panel))
         setattr(panel, 'select_panel', lambda : self.SetSelection(panel.ztv_page_id))
         setattr(self.ztv_frame, text.lower() + '_panel', panel)
-        self.AddPage(panel, text, imageId=len(self.ztv_frame.control_panels))
+        self.AddPage(panel, text)
         self.ztv_frame.control_panels.append(panel)
     
     def clear_highlights(self):

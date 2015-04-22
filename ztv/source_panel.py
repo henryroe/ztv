@@ -223,9 +223,11 @@ class SourcePanel(wx.Panel):
         # TODO: eventually want to be able to pass a flag parameter for whether to 
         #       show activemq (and/or fits auto-load) at startup.  
         # For now, just hide activemq as default.  (user can always unhide with gear-tools menu)
-        wx.CallAfter(self.settings_menu_activemq_item.Check, False)
-        wx.CallAfter(self.activemq_sizer.ShowItems, False)
-
+# 2015-04-22 13:15MST:  comment out next two lines and add one stderr while debugging github issue #1
+#         wx.CallAfter(self.settings_menu_activemq_item.Check, False)
+#         wx.CallAfter(self.activemq_sizer.ShowItems, False)
+  # HEREIAM
+  
     def init_settings_popup_menu(self):
         menu = wx.Menu()
         menu.Append(wx.NewId(), 'Show in GUI:').Enable(False)

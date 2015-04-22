@@ -6,7 +6,12 @@ import matplotlib
 matplotlib.interactive(True)
 matplotlib.use('WXAgg')
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg
+try:
+    from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg
+except IOError:
+    # on some linux installations this import needs to be done twice as the first time raises an error:
+    #   IOError: [Errno 2] No such file or directory: '/tmp/matplotlib-parallels/fontList.cache'
+    from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg
 from matplotlib.patches import PathPatch
 from matplotlib.path import Path
 import numpy as np
