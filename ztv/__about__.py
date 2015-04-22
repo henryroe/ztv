@@ -7,7 +7,8 @@ __title__ = "ztv"
 __summary__ = "Simple python image viewer, largely intended for astronomical applications"
 __uri__ = "https://github.com/henryroe/ztv"
 
-__version__ = "0.1.0"
+#   https://python-packaging-user-guide.readthedocs.org/en/latest/distributing.html#version
+__version__ = "0.1.0.post1"
 
 __author__ = "Henry Roe"
 __email__ = "hroe@hroe.me"
