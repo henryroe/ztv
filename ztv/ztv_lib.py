@@ -8,7 +8,8 @@ def force_textctrl_color_update(textctrl):
     cur_focused_item = textctrl.GetParent().FindFocus()
     insertion_point = textctrl.GetInsertionPoint()
     children = textctrl.GetParent().GetChildren()
-    can_accept_focus_mask = [(a.CanAcceptFocus() and (a is not textctrl)) for a in children]
+    can_accept_focus_mask = [(hasattr(a, 'CanAcceptFocus') and a.CanAcceptFocus() and 
+                              (a is not textctrl)) for a in children]
     if True in can_accept_focus_mask:
         children[can_accept_focus_mask.index(True)].SetFocus()
     textctrl.SetFocus()
