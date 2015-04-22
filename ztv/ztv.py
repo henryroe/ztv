@@ -219,16 +219,16 @@ class PrimaryImagePanel(wx.Panel):
     def set_cursor_to_pan_mode(self, event):
         self.cursor_mode = 'Pan'
         self.ztv_frame.controls_notebook.clear_highlights()
-
-    def set_cursor_to_stats_box_mode(self, event):
-        self.cursor_mode = 'Stats box'
-        self.ztv_frame.stats_panel.select_panel()
-        self.ztv_frame.stats_panel.highlight_panel()
         
     def set_cursor_to_plot_mode(self, event):
         self.cursor_mode = 'Slice plot'
         self.ztv_frame.plot_panel.select_panel()
         self.ztv_frame.plot_panel.highlight_panel()
+
+    def set_cursor_to_stats_box_mode(self, event):
+        self.cursor_mode = 'Stats box'
+        self.ztv_frame.stats_panel.select_panel()
+        self.ztv_frame.stats_panel.highlight_panel()
 
     def set_cursor_to_phot_mode(self, event):
         self.cursor_mode = 'Phot'
