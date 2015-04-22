@@ -92,7 +92,7 @@ setup(
     # Note: matplotlib version requirement could probably be even earlier as we're not doing anything bleeding edge.
     # Note: scipy not required, but highly recommended and some functionality may be lost without it. 
     #       (at time of writing, v0.1.0, you lost some of the analysis in the phot_panel.py)
-    install_requires=['astropy>=1.0.0', 'wxPython', 'matplotlib>=1.4.3', 'psutil'],
+    install_requires=['astropy>=1.0.0', 'wxPython', 'matplotlib', 'psutil'],
 
     # List additional groups of dependencies here (e.g. development dependencies).
     # You can install these using the following syntax, for example:
