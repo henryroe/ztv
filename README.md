@@ -150,6 +150,7 @@ Other Image Viewers You Should Check Out
 - [SAOImage DS9](http://ds9.si.edu/site/Home.html)
 - [Aladin Desktop Sky Atlas](http://aladin.u-strasbg.fr) (not primarily an image viewer, but can open FITS files and overlay catalogs and other images nicely)
 - [ginga](http://ejeschke.github.io/ginga/)
+- [Toyz](http://fred3m.github.io/toyz/)
 
 (If your favorite isn't on this list, please email hroe@hroe.me to get it added.)
 
