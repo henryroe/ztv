@@ -961,7 +961,17 @@ class ZTVFrame(wx.Frame):
         """
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
-            hdulist = fits.open(filename, ignore_missing_end=True)
+            max_n_tries = 5
+            pause_time_between_tries_sec = 1.
+            cur_try = 0
+            not_yet_successful = True
+            while (cur_try < max_n_tries) and not_yet_successful:
+                try:
+                    hdulist = fits.open(filename, ignore_missing_end=True)
+                    not_yet_successful = False
+                except:  # I've only seen IOerror, but might as well catch for all errors and re-try
+                    time.sleep(pause_time_between_tries_sec)
+                cur_try += 1
         return hdulist
         
     def load_fits_file(self, msg):
@@ -975,7 +985,18 @@ class ZTVFrame(wx.Frame):
                     self.cur_fits_hdulist = self.load_hdulist_from_fitsfile(filename)
                     # TODO: be more flexible about hdulist where image data is NOT just [0].data
                     # TODO also, in case of extended fits files need to deal with additional header info
-                    self.load_numpy_array(self.cur_fits_hdulist[0].data, is_fits_file=True)
+                    # following try/except code is to more gracefully handle the situation when autoloading files and you try to autoload a file before it's been fully written to disk.
+                    max_n_tries = 5
+                    pause_time_between_tries_sec = 1.
+                    cur_try = 0
+                    not_yet_successful = True
+                    while (cur_try < max_n_tries) and not_yet_successful:
+                        try:
+                            self.load_numpy_array(self.cur_fits_hdulist[0].data, is_fits_file=True)
+                            not_yet_successful = False
+                        except:  # I've only seen ValueError, but might as well catch for all errors and re-try
+                            time.sleep(pause_time_between_tries_sec)
+                        cur_try += 1
                     self.cur_fitsfile_basename = os.path.basename(filename)
                     self.cur_fitsfile_path = os.path.abspath(os.path.dirname(filename))
                     self.SetTitle(self.base_title + ': ' + self.cur_fitsfile_basename)
