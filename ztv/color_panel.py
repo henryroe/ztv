@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 import wx
-from wx.lib.pubsub import Publisher
+from wx.lib.pubsub import setuparg1
+from wx.lib.pubsub import pub as Publisher
 from matplotlib import cm
 import numpy as np
 from .ztv_lib import force_textctrl_color_update, set_textctrl_background_color, validate_textctrl_str
@@ -130,14 +131,14 @@ class ColorPanel(wx.Panel):
         v_sizer1.Add(cmap_sizer, 0)
         v_sizer1.AddSpacer((0, 0), 1, wx.EXPAND)
         self.SetSizer(v_sizer1)
-        Publisher().subscribe(self.on_clim_changed, "clim-changed")
-        Publisher().subscribe(self.on_cmap_changed, "cmap-changed")
-        Publisher().subscribe(self.on_is_cmap_inverted_changed, "is_cmap_inverted-changed")
-        Publisher().subscribe(self.on_scaling_changed, "scaling-changed")
+        Publisher.subscribe(self.on_clim_changed, "clim-changed")
+        Publisher.subscribe(self.on_cmap_changed, "cmap-changed")
+        Publisher.subscribe(self.on_is_cmap_inverted_changed, "is_cmap_inverted-changed")
+        Publisher.subscribe(self.on_scaling_changed, "scaling-changed")
         self.Bind(wx.EVT_NAVIGATION_KEY, self.on_navigation_key)
 
     def on_choose_scaling(self, evt):
-        wx.CallAfter(Publisher().sendMessage, "set_scaling", evt.GetString())
+        wx.CallAfter(Publisher.sendMessage, "set_scaling", evt.GetString())
 
     def init_cmap_popup_menu(self):
         cmap_button_bitmap_height = 30
@@ -165,7 +166,7 @@ class ColorPanel(wx.Panel):
         self.cmap_popup_menu = menu
 
     def on_change_cmap_event(self, event):
-        wx.CallAfter(Publisher().sendMessage, "set_cmap", self.eventID_to_cmap[event.GetId()])
+        wx.CallAfter(Publisher.sendMessage, "set_cmap", self.eventID_to_cmap[event.GetId()])
 
     def on_navigation_key(self, evt):
         # TODO: figure out how to make tab order work the way I want.  Currently the following code works partly, but is ignored by some tabs.  Weird. Looks like it's an issue that tab is triggering some *other* event when it's a button that has focus.  Might have to play around with catching all key-presses inside of ColorPanel & passing along the non-tab keypresses???
@@ -188,7 +189,7 @@ class ColorPanel(wx.Panel):
         new_focus.SetFocus()
 
     def on_is_cmap_inverted_checkbox(self, evt):
-        wx.CallAfter(Publisher().sendMessage, "set_cmap_inverted", evt.IsChecked())
+        wx.CallAfter(Publisher.sendMessage, "set_cmap_inverted", evt.IsChecked())
 
     def on_is_cmap_inverted_changed(self, *args):
         self.is_cmap_inverted_checkbox.SetValue(self.ztv_frame.is_cmap_inverted)

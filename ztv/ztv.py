@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 import wx
-from wx.lib.pubsub import Publisher
+from wx.lib.pubsub import setuparg1
+from wx.lib.pubsub import pub as Publisher
 from wx.lib.pubsub.core.datamsg import Message
 import  wx.lib.layoutf as layoutf
 import numpy as np
@@ -129,10 +130,10 @@ class PrimaryImagePanel(wx.Panel):
         self.axes_widget.connect_event('button_release_event', self.on_button_release)
         self.axes_widget.connect_event('key_press_event', self.on_key_press)
         wx.EVT_RIGHT_DOWN(self.figure.canvas, self.on_right_down)  # supercedes the above button_press_event
-        Publisher().subscribe(self.redraw_image, "redraw_image")
-        Publisher().subscribe(self.reset_zoom_and_center, "reset_zoom_and_center")
-        Publisher().subscribe(self.set_zoom_factor, "set_zoom_factor")
-        Publisher().subscribe(self.set_xy_center, "set_xy_center")
+        Publisher.subscribe(self.redraw_image, "redraw_image")
+        Publisher.subscribe(self.reset_zoom_and_center, "reset_zoom_and_center")
+        Publisher.subscribe(self.set_zoom_factor, "set_zoom_factor")
+        Publisher.subscribe(self.set_xy_center, "set_xy_center")
         self.SetAcceleratorTable(wx.AcceleratorTable(self.accelerator_table))
 
     def _append_menu_item(self, menu, wx_id, title, fxn):
@@ -205,7 +206,7 @@ class PrimaryImagePanel(wx.Panel):
             send_change_message = False
         self.xlim, self.ylim = xlim, ylim
         if send_change_message:
-            wx.CallAfter(Publisher().sendMessage, "primary_xy_limits-changed", None)
+            wx.CallAfter(Publisher.sendMessage, "primary_xy_limits-changed", None)
         return {'xlim':xlim, 'ylim':ylim}
 
     def set_cursor_to_none_mode(self, event):
@@ -239,10 +240,10 @@ class PrimaryImagePanel(wx.Panel):
         # TODO: figure out why keypresses are only recognized after a click in the matplotlib frame.
         if event.key in ['c', 'C', 'v', 'V', 'y', 'Y']:
             x = np.round(event.xdata)
-            wx.CallAfter(Publisher().sendMessage, "update_line_plot_points", ((x + 0.5, -9e9), (x + 0.5, 9e9)))
+            wx.CallAfter(Publisher.sendMessage, "update_line_plot_points", ((x + 0.5, -9e9), (x + 0.5, 9e9)))
         elif event.key in ['r', 'R', 'h', 'H', 'x', 'X']:
             y = np.round(event.ydata)
-            wx.CallAfter(Publisher().sendMessage, "update_line_plot_points", ((-9e9, y + 0.5), (9e9, y + 0.5)))
+            wx.CallAfter(Publisher.sendMessage, "update_line_plot_points", ((-9e9, y + 0.5), (9e9, y + 0.5)))
 
     def set_xy_center(self, msg):
         if isinstance(msg, Message):
@@ -273,10 +274,10 @@ class PrimaryImagePanel(wx.Panel):
         self.set_and_get_xy_limits()
 
     def on_change_cmap_event(self, event):
-        wx.CallAfter(Publisher().sendMessage, "set_cmap", self.eventID_to_cmap[event.GetId()])
+        wx.CallAfter(Publisher.sendMessage, "set_cmap", self.eventID_to_cmap[event.GetId()])
 
     def on_change_scaling_event(self, event):
-        wx.CallAfter(Publisher().sendMessage, "set_scaling", self.eventID_to_scaling[event.GetId()])
+        wx.CallAfter(Publisher.sendMessage, "set_scaling", self.eventID_to_scaling[event.GetId()])
 
     # TODO: would like to figure out way to refactor on the control_panel related cursors to get the code out of here and over into the individual panels.
 
@@ -302,11 +303,11 @@ class PrimaryImagePanel(wx.Panel):
                 self.ztv_frame.stats_panel.redraw_overplot_on_image()
             elif self.cursor_mode == 'Phot':
                 self.ztv_frame.phot_panel.select_panel()
-                wx.CallAfter(Publisher().sendMessage, "new_phot_xy", (event.xdata, event.ydata))
+                wx.CallAfter(Publisher.sendMessage, "new_phot_xy", (event.xdata, event.ydata))
             elif self.cursor_mode == 'Slice plot':
                 self.ztv_frame.plot_panel.select_panel()
-                wx.CallAfter(Publisher().sendMessage, "new_slice_plot_xy0", (event.xdata, event.ydata))
-                wx.CallAfter(Publisher().sendMessage, "new_slice_plot_xy1", (event.xdata, event.ydata))
+                wx.CallAfter(Publisher.sendMessage, "new_slice_plot_xy0", (event.xdata, event.ydata))
+                wx.CallAfter(Publisher.sendMessage, "new_slice_plot_xy1", (event.xdata, event.ydata))
 
     def on_motion(self, event):
         if event.xdata is None or event.ydata is None:
@@ -324,7 +325,7 @@ class PrimaryImagePanel(wx.Panel):
                 self.ztv_frame.stats_panel.redraw_overplot_on_image()
                 self.ztv_frame.stats_panel.update_stats()
             elif self.cursor_mode == 'Slice plot':
-                wx.CallAfter(Publisher().sendMessage, "new_slice_plot_xy1", (event.xdata, event.ydata))
+                wx.CallAfter(Publisher.sendMessage, "new_slice_plot_xy1", (event.xdata, event.ydata))
         if ((x >= 0) and (x < self.ztv_frame.display_image.shape[1]) and
             (y >= 0) and (y < self.ztv_frame.display_image.shape[0])):
             imval = self.ztv_frame.display_image[y, x]
@@ -372,7 +373,7 @@ class PrimaryImagePanel(wx.Panel):
                 self.ztv_frame.stats_panel.redraw_overplot_on_image()
                 self.ztv_frame.stats_panel.update_stats()
             elif self.cursor_mode == 'Slice plot':
-                wx.CallAfter(Publisher().sendMessage, "new_slice_plot_xy1", (event.xdata, event.ydata))
+                wx.CallAfter(Publisher.sendMessage, "new_slice_plot_xy1", (event.xdata, event.ydata))
 
     def on_right_down(self, event):
         for cursor_mode in self.cursor_mode_to_eventID:
@@ -444,8 +445,8 @@ class OverviewImagePanel(wx.Panel):
         self.axes_widget.connect_event('button_press_event', self.on_button_press)
         self.axes_widget.connect_event('button_release_event', self.on_button_release)
         self.axes_widget.connect_event('motion_notify_event', self.on_motion)
-        Publisher().subscribe(self.redraw_image, "redraw_image")
-        Publisher().subscribe(self.redraw_box, "primary_xy_limits-changed")
+        Publisher.subscribe(self.redraw_image, "redraw_image")
+        Publisher.subscribe(self.redraw_box, "primary_xy_limits-changed")
 
     def redraw_box(self, *args):
         xlim = self.ztv_frame.primary_image_panel.xlim
@@ -534,7 +535,7 @@ class LoupeImagePanel(wx.Panel):
         self.canvas = FigureCanvasWxAgg(self, -1, self.figure)
         self._SetSize()
         self.set_xy_limits()
-        Publisher().subscribe(self.redraw_image, "redraw_image")
+        Publisher.subscribe(self.redraw_image, "redraw_image")
 
     def _SetSize(self):
         self.SetSize(tuple(self.size))
@@ -609,10 +610,10 @@ class ZTVFrame(wx.Frame):
         self.control_panels_to_load = control_panels_to_load
         wx.Frame.__init__(self, None, title=self.base_title, pos=wx.DefaultPosition, size=wx.Size(1024,512),
                           style = wx.DEFAULT_FRAME_STYLE)
-        Publisher().subscribe(self.kill_ztv, 'kill_ztv')
-        Publisher().subscribe(self.load_numpy_array, "load_numpy_array")
-        Publisher().subscribe(self.load_fits_file, "load_fits_file")
-        Publisher().subscribe(self.load_default_image, "load_default_image")
+        Publisher.subscribe(self.kill_ztv, 'kill_ztv')
+        Publisher.subscribe(self.load_numpy_array, "load_numpy_array")
+        Publisher.subscribe(self.load_fits_file, "load_fits_file")
+        Publisher.subscribe(self.load_default_image, "load_default_image")
         self.cur_fitsfile_basename = ''
         self.cur_fitsfile_path = ''
         self.image_process_functions_to_apply = []  # list of tuples of ('NameOrLabelIdentifier', fxn), where fxn must accept the image and return the processed image
@@ -626,19 +627,19 @@ class ZTVFrame(wx.Frame):
         self.is_cmap_inverted = False
         self.accelerator_table = []  # keyboard accelerators, e.g. cmd-Q
         self.zoom_factor = 2.0
-        Publisher().subscribe(self.invert_cmap, "invert_cmap")
-        Publisher().subscribe(self.set_cmap, "set_cmap")
-        Publisher().subscribe(self.set_cmap_inverted, "set_cmap_inverted")
+        Publisher.subscribe(self.invert_cmap, "invert_cmap")
+        Publisher.subscribe(self.set_cmap, "set_cmap")
+        Publisher.subscribe(self.set_cmap_inverted, "set_cmap_inverted")
         self.clim = [0.0, 1.0]
-        Publisher().subscribe(self.set_clim_to_minmax, "set_clim_to_minmax")
-        Publisher().subscribe(self.set_clim_to_auto, "set_clim_to_auto")
-        Publisher().subscribe(self.set_clim, "set_clim")
-        Publisher().subscribe(self.set_scaling, "set_scaling")
-        Publisher().subscribe(self.set_norm, "clim-changed")
-        Publisher().subscribe(self.set_norm, "scaling-changed")
-        Publisher().subscribe(self.recalc_proc_image, "image_process_functions_to_apply-changed")
-        Publisher().subscribe(self.recalc_display_image, "cur_display_frame_num-changed")
-        Publisher().subscribe(self.set_cur_display_frame_num, "set_cur_display_frame_num")
+        Publisher.subscribe(self.set_clim_to_minmax, "set_clim_to_minmax")
+        Publisher.subscribe(self.set_clim_to_auto, "set_clim_to_auto")
+        Publisher.subscribe(self.set_clim, "set_clim")
+        Publisher.subscribe(self.set_scaling, "set_scaling")
+        Publisher.subscribe(self.set_norm, "clim-changed")
+        Publisher.subscribe(self.set_norm, "scaling-changed")
+        Publisher.subscribe(self.recalc_proc_image, "image_process_functions_to_apply-changed")
+        Publisher.subscribe(self.recalc_display_image, "cur_display_frame_num-changed")
+        Publisher.subscribe(self.set_cur_display_frame_num, "set_cur_display_frame_num")
         self.scaling = 'Linear'
         self.available_scalings = ['Linear', 'Asinh', 'Log', 'PowerDist', 'Sinh', 'Sqrt', 'Squared']
         # scalings that require inputs & need additional work to implement:  
@@ -764,8 +765,8 @@ class ZTVFrame(wx.Frame):
         else:
             self.is_cmap_inverted = msg
         if old_is_cmap_inverted != self.is_cmap_inverted:
-            wx.CallAfter(Publisher().sendMessage, "is_cmap_inverted-changed", None)
-            wx.CallAfter(Publisher().sendMessage, "redraw_image", None)
+            wx.CallAfter(Publisher.sendMessage, "is_cmap_inverted-changed", None)
+            wx.CallAfter(Publisher.sendMessage, "redraw_image", None)
 
     def invert_cmap(self, *args):
         self.set_cmap_inverted(not self.is_cmap_inverted)
@@ -792,8 +793,8 @@ class ZTVFrame(wx.Frame):
         else:
             sys.stderr.write("unrecognized cmap ({}) requested\n".format(new_cmap))
         if self.cmap != old_cmap:
-            wx.CallAfter(Publisher().sendMessage, "cmap-changed", None)
-            wx.CallAfter(Publisher().sendMessage, "redraw_image", None)
+            wx.CallAfter(Publisher.sendMessage, "cmap-changed", None)
+            wx.CallAfter(Publisher.sendMessage, "redraw_image", None)
             
     def set_clim(self, msg):
         if isinstance(msg, Message):
@@ -811,8 +812,8 @@ class ZTVFrame(wx.Frame):
         else:
             self.clim = clim
         if old_clim != self.clim:
-            wx.CallAfter(Publisher().sendMessage, "clim-changed", None)
-            wx.CallAfter(Publisher().sendMessage, "redraw_image", None)
+            wx.CallAfter(Publisher.sendMessage, "clim-changed", None)
+            wx.CallAfter(Publisher.sendMessage, "redraw_image", None)
 
     def set_clim_to_minmax(self, *args):
         self.set_clim([self.display_image.min(), self.display_image.max()])
@@ -839,7 +840,7 @@ class ZTVFrame(wx.Frame):
     def set_norm(self, *args):
         self._norm = Normalize(vmin=self.clim[0], vmax=self.clim[1])
         self._scaling = eval('astropy.visualization.' + self.scaling + 'Stretch()')
-        wx.CallAfter(Publisher().sendMessage, "redraw_image", None)
+        wx.CallAfter(Publisher.sendMessage, "redraw_image", None)
 
     def normalize(self, im):
         return self._scaling(self._norm(self.display_image))
@@ -852,7 +853,7 @@ class ZTVFrame(wx.Frame):
         available_scalings_lowercase = [a.lower() for a in self.available_scalings]
         if scaling.lower() in available_scalings_lowercase:
             self.scaling = self.available_scalings[available_scalings_lowercase.index(scaling.lower())]
-            wx.CallAfter(Publisher().sendMessage, "scaling-changed", None)
+            wx.CallAfter(Publisher.sendMessage, "scaling-changed", None)
         else:
             sys.stderr.write("unrecognized scaling ({}) requested\n".format(scaling))
 
@@ -892,7 +893,7 @@ class ZTVFrame(wx.Frame):
         self.cur_display_frame_num = n
         self.frame_number_textctrl.SetValue("{}".format(n))
         set_textctrl_background_color(self.frame_number_textctrl, 'ok')
-        wx.CallAfter(Publisher().sendMessage, "cur_display_frame_num-changed", None)
+        wx.CallAfter(Publisher.sendMessage, "cur_display_frame_num-changed", None)
 
     def recalc_proc_image(self, msg=None):
         self.proc_image = self.raw_image.copy()
@@ -922,7 +923,7 @@ class ZTVFrame(wx.Frame):
                 auto_clim = self.get_auto_clim_values()
             new_max = auto_clim[1]
         self.set_clim([new_min, new_max])
-        wx.CallAfter(Publisher().sendMessage, "redraw_image")
+        wx.CallAfter(Publisher.sendMessage, "redraw_image")
   
     def load_numpy_array(self, msg, is_fits_file=False):
         if isinstance(msg, Message):
@@ -1013,7 +1014,7 @@ class ZTVFrame(wx.Frame):
                         self.image_radec = ICRS(a[0]*units.degree, a[1]*units.degree)
                     except:  # just ignore radec if anything at all goes wrong.
                         self.image_radec = None
-                    wx.CallAfter(Publisher().sendMessage, "fitsfile-loaded", filename)
+                    wx.CallAfter(Publisher.sendMessage, "fitsfile-loaded", filename)
                 else:
                     raise Error("Cannot find file: {}".format(filename))
             else:
@@ -1047,7 +1048,7 @@ class WatchMasterPIDThread(threading.Thread):
         while psutil.pid_exists(self.masterPID):
             time.sleep(2)
         sys.stderr.write("\n\n----\nlooks like python session that owned this instance of the ZTV gui is gone, so disposing of the window\n----\n")
-        wx.CallAfter(Publisher().sendMessage, "kill_ztv", None)
+        wx.CallAfter(Publisher.sendMessage, "kill_ztv", None)
 
 
 class CommandListenerThread(threading.Thread):
@@ -1056,8 +1057,8 @@ class CommandListenerThread(threading.Thread):
         CommandListenerThread expects to be passed the main ZTVFrame object.  Access to the ZTVFrame must be used
         *very* carefully.  Essentially view this access as "readonly".  It's easy to screw things up with the gui if
         CommandListenerThread starts messing with parameters in ZTVFrame.  The appropriate way for CommandListenerThread
-        to send commands to ZTVFrame is with a wx.CallAfter(Publisher().sendMessage....   call, e.g.:
-            wx.CallAfter(Publisher().sendMessage, "load_default_image", None)
+        to send commands to ZTVFrame is with a wx.CallAfter(Publisher.sendMessage....   call, e.g.:
+            wx.CallAfter(Publisher.sendMessage, "load_default_image", None)
         """
         threading.Thread.__init__(self)
         self.ztv_frame = ztv_frame
@@ -1162,10 +1163,10 @@ class CommandListenerThread(threading.Thread):
                         send_to_stream(sys.stdout, (x[0][4:], 'source_panel not available'))
                 elif x[0] == 'set_new_slice_plot_xy0':
                     if hasattr(self.ztv_frame, 'plot_panel'):
-                        wx.CallAfter(Publisher().sendMessage, 'new_slice_plot_xy0', *x[1:])
+                        wx.CallAfter(Publisher.sendMessage, 'new_slice_plot_xy0', *x[1:])
                 elif x[0] == 'set_new_slice_plot_xy1':
                     if hasattr(self.ztv_frame, 'plot_panel'):
-                        wx.CallAfter(Publisher().sendMessage, 'new_slice_plot_xy1', *x[1:])
+                        wx.CallAfter(Publisher.sendMessage, 'new_slice_plot_xy1', *x[1:])
                 elif x[0] == 'get_slice_plot_coords':
                     if hasattr(self.ztv_frame, 'plot_panel'):
                         wx.CallAfter(send_to_stream, sys.stdout, 
@@ -1233,7 +1234,7 @@ class CommandListenerThread(threading.Thread):
                     if name_lower in display_names_lower:
                         self.ztv_frame.control_panels[display_names_lower.index(name_lower)].select_panel()
                 else:
-                    wx.CallAfter(Publisher().sendMessage, x[0], *x[1:])
+                    wx.CallAfter(Publisher.sendMessage, x[0], *x[1:])
 
 
 class ZTVMain():
