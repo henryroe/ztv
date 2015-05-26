@@ -1,8 +1,8 @@
 from __future__ import absolute_import
 import wx
+from wx.lib.pubsub.core.datamsg import Message
 from wx.lib.pubsub import setuparg1
 from wx.lib.pubsub import pub as Publisher
-from wx.lib.pubsub.core.datamsg import Message
 import matplotlib
 matplotlib.interactive(True)
 matplotlib.use('WXAgg')
