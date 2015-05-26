@@ -2,6 +2,8 @@
 ztv Change Log
 ~~~~~~~~~~~~~~
 
+- Fix bug in reading fits files that was a problem in autoloading when fits file hadn't yet been written fully to disk.
+
 ------------------
 v0.1.0post1, 2015-04-22
 ------------------
