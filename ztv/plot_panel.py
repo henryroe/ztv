@@ -84,7 +84,7 @@ class PlotPanel(wx.Panel):
         if self.primary_image_patch is not None:
             self.ztv_frame.primary_image_panel.axes.patches.remove(self.primary_image_patch)
         path = Path([self.start_pt, self.end_pt], [Path.MOVETO, Path.LINETO])
-        self.primary_image_patch = PathPatch(path, color='orange', lw=1)
+        self.primary_image_patch = PathPatch(path, color='magenta', lw=1)
         self.ztv_frame.primary_image_panel.axes.add_patch(self.primary_image_patch)
         self.ztv_frame.primary_image_panel.figure.canvas.draw()
         self.hideshow_button.SetLabel(u"Hide")        

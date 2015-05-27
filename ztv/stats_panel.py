@@ -17,7 +17,7 @@ class StatsPanel(wx.Panel):
         self.stats_info = None
         
         self.last_string_values = {'x0':'', 'xsize':'', 'x1':'', 'y0':'', 'ysize':'', 'y1':''}
-        self.stats_rect = Rectangle((0, 0), 10, 10, color='orange', fill=False, zorder=100)
+        self.stats_rect = Rectangle((0, 0), 10, 10, color='magenta', fill=False, zorder=100)
 
         textentry_font = wx.Font(14, wx.FONTFAMILY_MODERN, wx.NORMAL, wx.FONTWEIGHT_LIGHT, False)
         
