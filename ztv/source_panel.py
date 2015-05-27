@@ -182,6 +182,8 @@ class SourcePanel(wx.Panel):
         self.autoload_sizer.Add(h_sizer, 0, wx.EXPAND)
         self.autoload_sizer.AddSpacer((0, 5), 0, wx.EXPAND)
         self.autoload_curfile_file_picker = FilePicker(self, title='Filename Pattern:', allow_glob_matching=True, default_entry=self.ztv_frame.default_autoload_pattern)
+        if self.ztv_frame.default_autoload_pattern is not None:
+            self.autoload_match_string = self.ztv_frame.default_autoload_pattern
         self.autoload_curfile_file_picker.on_load = self.autoload_curfile_file_picker_on_load
         self.autoload_sizer.Add(self.autoload_curfile_file_picker, 0, wx.EXPAND)
         v_sizer1.Add(self.autoload_sizer, 0, wx.EXPAND)
