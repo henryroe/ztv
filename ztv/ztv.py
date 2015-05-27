@@ -632,6 +632,7 @@ class ZTVFrame(wx.Frame):
         self.clim = [0.0, 1.0]
         Publisher().subscribe(self.set_clim_to_minmax, "set_clim_to_minmax")
         Publisher().subscribe(self.set_clim_to_auto, "set_clim_to_auto")
+        Publisher().subscribe(self.set_clim_to_auto_stats_box, "set_clim_to_auto_stats_box")
         Publisher().subscribe(self.set_clim, "set_clim")
         Publisher().subscribe(self.set_scaling, "set_scaling")
         Publisher().subscribe(self.set_norm, "clim-changed")
@@ -644,7 +645,7 @@ class ZTVFrame(wx.Frame):
         # scalings that require inputs & need additional work to implement:  
         #      'AsymmetricPercentile', 'ContrastBias', 'HistEq', 'Power'
         # don't bother implementing these unless strong case is made they're needed in a way that existing can't satisfy
-        self.available_value_modes_on_new_image = ['data-min/max', 'auto', 'constant']
+        self.available_value_modes_on_new_image = ['data-min/max', 'auto', 'auto-stats-box', 'constant']
         self.min_value_mode_on_new_image = 'data-min/max'
         self.max_value_mode_on_new_image = 'data-min/max'
         self.main_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -828,8 +829,34 @@ class ZTVFrame(wx.Frame):
         robust_mean, robust_median, robust_stdev = sigma_clipped_stats(self.display_image.ravel()[0::stepsize])
         n_sigma_below = 1.0
         n_sigma_above = 6.
-        sys.stderr.write("\n\nauto_clim = {}\n\n".format((robust_mean - n_sigma_below * robust_stdev, robust_mean + n_sigma_above * robust_stdev)))
         return (robust_mean - n_sigma_below * robust_stdev, robust_mean + n_sigma_above * robust_stdev)
+
+    def get_auto_stats_box_clim_values(self, *args):
+        """
+        Set min/max of display to n_sigma_below and n_sigma_above background in stats box
+        
+        'cheat' for speed by sampling only a subset of pts
+        """
+        n_pts = 1000
+        if (isinstance(self.stats_panel.stats_info, dict) and 
+            self.stats_panel.stats_info.has_key('xrange') and
+            self.stats_panel.stats_info.has_key('yrange')):
+            temp_image = self.display_image[min(self.stats_panel.stats_info['yrange']):
+                                            max(self.stats_panel.stats_info['yrange']),
+                                            min(self.stats_panel.stats_info['xrange']):
+                                            max(self.stats_panel.stats_info['xrange'])] 
+        else:
+            temp_image = self.display_image
+        stepsize = max([1, temp_image.size/n_pts])
+        robust_mean, robust_median, robust_stdev = sigma_clipped_stats(temp_image.ravel()[0::stepsize])
+        n_sigma_below = 1.0
+        n_sigma_above = 6.
+        return (robust_mean - n_sigma_below * robust_stdev, robust_mean + n_sigma_above * robust_stdev)
+
+    def set_clim_to_auto_stats_box(self, *args):
+        # TODO: need to add calling this from ztv_api
+        auto_clim = self.get_auto_stats_box_clim_values()
+        self.set_clim([auto_clim[0], auto_clim[1]])
 
     def set_clim_to_auto(self, *args):
         # TODO: need to add calling this from ztv_api
@@ -910,16 +937,23 @@ class ZTVFrame(wx.Frame):
         else:
             raise Error("proc_image must be 2-d or 3-d, was instead {}-d".format(self.proc_image.ndim))
         new_min, new_max = None, None
+        # TODO: speed up the following by only calculating each once
         if self.min_value_mode_on_new_image == 'data-min/max':
             new_min = self.display_image.min()
         elif self.min_value_mode_on_new_image == 'auto':
             auto_clim = self.get_auto_clim_values()
+            new_min = auto_clim[0]
+        elif self.min_value_mode_on_new_image == 'auto-stats-box':
+            auto_clim = self.get_auto_stats_box_clim_values()
             new_min = auto_clim[0]
         if self.max_value_mode_on_new_image == 'data-min/max':
             new_max = self.display_image.max()
         elif self.max_value_mode_on_new_image == 'auto':
             if self.min_value_mode_on_new_image != 'auto':
                 auto_clim = self.get_auto_clim_values()
+            new_max = auto_clim[1]
+        elif self.max_value_mode_on_new_image == 'auto-stats-box':
+            auto_clim = self.get_auto_stats_box_clim_values()
             new_max = auto_clim[1]
         self.set_clim([new_min, new_max])
         wx.CallAfter(Publisher().sendMessage, "redraw_image")
