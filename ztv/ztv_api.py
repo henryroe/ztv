@@ -34,7 +34,8 @@ class ZTV():
         z.cmap('jet')
         z.minmax(0.3 * (2**16), 0.7 * (2**16))
     """
-    def __init__(self, title=None, control_panels_module_path=None, default_data_dir=None):
+    def __init__(self, title=None, control_panels_module_path=None, default_data_dir=None,
+                 default_autoload_pattern=None):
         self.__version__ = about["__version__"]
         if control_panels_module_path is None:
             cmd = "python -c 'from ztv.ztv import ZTVMain ; ZTVMain(launch_listen_thread=True,"
@@ -49,6 +50,8 @@ class ZTV():
             cmd += 'title="' + title + '",'
         if default_data_dir is not None:
             cmd += 'default_data_dir="' + default_data_dir + '",'
+        if default_autoload_pattern is not None:
+            cmd += 'default_autoload_pattern="' + default_autoload_pattern + '",'
         cmd += 'masterPID=' + str(os.getpid()) +")'"
         self._subproc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
         self.stream_listener = StreamListener(self._subproc.stdout)
