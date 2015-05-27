@@ -95,7 +95,7 @@ class SourcePanel(wx.Panel):
         # NOTE: Mac OS X truncates file modification times to integer seconds, so ZTV cannot distinguish a newer file
         #       unless it appears in the next integer second from the prior file.  The <1 sec pausetimes may still be
         #       desirable to minimize latency.
-        self.autoload_pausetime = self.autoload_pausetime_choices[2]
+        self.autoload_pausetime = self.autoload_pausetime_choices[0]
         self.autoload_match_string = ''
         self.autoload_filematch_thread = None
         Publisher().subscribe(self._add_activemq_instance, "add_activemq_instance")
