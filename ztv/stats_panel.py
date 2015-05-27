@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 import wx
-from wx.lib.pubsub import setuparg1
-from wx.lib.pubsub import pub as Publisher
+from wx.lib.pubsub import Publisher
 from matplotlib.patches import Rectangle
 from matplotlib import cm
 import numpy as np
@@ -190,7 +189,7 @@ class StatsPanel(wx.Panel):
         v_sizer1.Add(values_sizer, 0, wx.ALIGN_CENTER_HORIZONTAL)
         v_sizer1.AddStretchSpacer(1.0)
         self.SetSizer(v_sizer1)
-        Publisher.subscribe(self.update_stats, "redraw_image")
+        Publisher().subscribe(self.update_stats, "redraw_image")
 
         # TODO: clean up in stats_box stuff whether ranges are pythonic or inclusive.  Might be that is pythonic behind scenes, but inclusive in some of the display of info?  There are trickinesses to getting this right, as sometimes need to flip x0/x1 and y0/y1 when range is negative
 

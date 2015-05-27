@@ -1,8 +1,7 @@
 from __future__ import absolute_import
 import wx
+from wx.lib.pubsub import Publisher
 from wx.lib.pubsub.core.datamsg import Message
-from wx.lib.pubsub import setuparg1
-from wx.lib.pubsub import pub as Publisher
 import matplotlib
 matplotlib.interactive(True)
 matplotlib.use('WXAgg')
@@ -58,10 +57,10 @@ class PlotPanel(wx.Panel):
         self.start_pt = wx.RealPoint(0., 0.)
         self.end_pt = wx.RealPoint(0., 0.)
         self.redraw()
-        Publisher.subscribe(self.on_new_xy0, "new_slice_plot_xy0")
-        Publisher.subscribe(self.on_new_xy1, "new_slice_plot_xy1")
-        Publisher.subscribe(self.redraw, "primary_xy_limits-changed")
-        Publisher.subscribe(self.redraw, "redraw_image")
+        Publisher().subscribe(self.on_new_xy0, "new_slice_plot_xy0")
+        Publisher().subscribe(self.on_new_xy1, "new_slice_plot_xy1")
+        Publisher().subscribe(self.redraw, "primary_xy_limits-changed")
+        Publisher().subscribe(self.redraw, "redraw_image")
 
     def on_new_xy0(self, msg):
         if isinstance(msg, Message):
