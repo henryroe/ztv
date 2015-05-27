@@ -597,13 +597,15 @@ class ControlsNotebook(wx.Notebook):
             
 class ZTVFrame(wx.Frame):
     # TODO: create __init__ input parameters for essentially every adjustable parameter
-    def __init__(self, title=None, launch_listen_thread=False, control_panels_to_load=None):
+    def __init__(self, title=None, launch_listen_thread=False, control_panels_to_load=None,
+                 default_data_dir=None):
         self.__version__ = version=about["__version__"]
         self.ztv_frame_pid = os.getpid()  # some add-on control panels will want this to pass to subprocs for knowing when to kill themselves, but NOTE: currently (as of 2015-04-13) on OS X is not working right as process doesn't die fully until uber-python session is killed.
         if title is None:
             self.base_title = 'ztv'
         else:
             self.base_title = title
+        self.default_data_dir = default_data_dir
         if control_panels_to_load is None:
             from .default_panels import control_panels_to_load
         self.control_panels_to_load = control_panels_to_load
@@ -1271,12 +1273,14 @@ class CommandListenerThread(threading.Thread):
 
 
 class ZTVMain():
-    def __init__(self, title=None, masterPID=-1, launch_listen_thread=False, control_panels_to_load=None):
+    def __init__(self, title=None, masterPID=-1, launch_listen_thread=False, control_panels_to_load=None,
+                 default_data_dir=None):
         self.__version__ = version=about["__version__"]
         WatchMasterPIDThread(masterPID)
         app = wx.App(False)
         self.frame = ZTVFrame(title=title, launch_listen_thread=launch_listen_thread,
-                              control_panels_to_load=control_panels_to_load)
+                              control_panels_to_load=control_panels_to_load,
+                              default_data_dir=default_data_dir)
         app.MainLoop()
         # TODO: need to figure out why ztvframe_pid is being left alive
 

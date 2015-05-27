@@ -119,7 +119,7 @@ class SourcePanel(wx.Panel):
         v_sizer1.AddSpacer((0, 0), 1, wx.EXPAND)
 
         h_current_file_picker_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.curfile_file_picker = FilePicker(self, title='')
+        self.curfile_file_picker = FilePicker(self, title='', default_entry=self.ztv_frame.default_data_dir)
         self.curfile_file_picker.on_load = self.ztv_frame.load_fits_file
         h_current_file_picker_sizer.Add(self.curfile_file_picker, 1, wx.EXPAND)
         self.cur_header_button = wx.Button(self, wx.ID_ANY, u"hdr", wx.DefaultPosition, wx.DefaultSize,
@@ -139,7 +139,7 @@ class SourcePanel(wx.Panel):
         self.sky_checkbox = wx.CheckBox(self, -1, "")
         self.Bind(wx.EVT_CHECKBOX, self.on_sky_checkbox, self.sky_checkbox)
         self.sky_file_picker_sizer.Add(self.sky_checkbox, 0, wx.ALIGN_CENTER_VERTICAL)
-        self.skyfile_file_picker = FilePicker(self, title='Sky:', default_entry='', maintain_default_entry_in_recents=0)
+        self.skyfile_file_picker = FilePicker(self, title='Sky:', default_entry=self.ztv_frame.default_data_dir, maintain_default_entry_in_recents=0)
         self.skyfile_file_picker.on_load = self.load_sky_frame
         self.sky_file_picker_sizer.Add(self.skyfile_file_picker, 1, wx.EXPAND)
         self.sky_header_button = wx.Button(self, wx.ID_ANY, u"hdr", wx.DefaultPosition, wx.DefaultSize,
@@ -152,7 +152,7 @@ class SourcePanel(wx.Panel):
         self.flat_checkbox = wx.CheckBox(self, -1, "")
         self.Bind(wx.EVT_CHECKBOX, self.on_flat_checkbox, self.flat_checkbox)
         self.flat_file_picker_sizer.Add(self.flat_checkbox, 0, wx.ALIGN_CENTER_VERTICAL)
-        self.flatfile_file_picker = FilePicker(self, title='Flat:', default_entry='', maintain_default_entry_in_recents=0)
+        self.flatfile_file_picker = FilePicker(self, title='Flat:', default_entry=self.ztv_frame.default_data_dir, maintain_default_entry_in_recents=0)
         self.flatfile_file_picker.on_load = self.load_flat_frame
         self.flat_file_picker_sizer.Add(self.flatfile_file_picker, 1, wx.EXPAND)
         self.flat_header_button = wx.Button(self, wx.ID_ANY, u"hdr", wx.DefaultPosition, wx.DefaultSize,
@@ -181,7 +181,7 @@ class SourcePanel(wx.Panel):
         h_sizer.Add(wx.StaticText(self, -1, u"sec"), 0)
         self.autoload_sizer.Add(h_sizer, 0, wx.EXPAND)
         self.autoload_sizer.AddSpacer((0, 5), 0, wx.EXPAND)
-        self.autoload_curfile_file_picker = FilePicker(self, title='Filename Pattern:', allow_glob_matching=True)
+        self.autoload_curfile_file_picker = FilePicker(self, title='Filename Pattern:', allow_glob_matching=True, default_entry=self.ztv_frame.default_data_dir)
         self.autoload_curfile_file_picker.on_load = self.autoload_curfile_file_picker_on_load
         self.autoload_sizer.Add(self.autoload_curfile_file_picker, 0, wx.EXPAND)
         v_sizer1.Add(self.autoload_sizer, 0, wx.EXPAND)
