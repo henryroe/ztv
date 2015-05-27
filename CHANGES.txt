@@ -2,6 +2,13 @@
 ztv Change Log
 ~~~~~~~~~~~~~~
 
+------------------
+v0.1.0post2, 2015-04-22
+------------------
+
+- added default_data_dir, and default_autoload-pattern options
+- changed default color of lines to be more visible against gist-heat map
+- added auto-stats-box option for scaling on load of new image
 - Fix bug in reading fits files that was a problem in autoloading when fits file hadn't yet been written fully to disk.
 
 ------------------

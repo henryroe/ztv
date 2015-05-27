@@ -10,7 +10,7 @@ __summary__ = "Simple python image viewer, largely intended for astronomical app
 __uri__ = "https://github.com/henryroe/ztv"
 
 # VERSION should be PEP386 compatible (http://www.python.org/dev/peps/pep-0386)
-__version__ = "0.1.1.dev"
+__version__ = "0.1.0post2"
 
 # Indicates if this version is a release version
 RELEASE = 'dev' not in __version__
