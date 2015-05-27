@@ -128,6 +128,12 @@ class SourcePanel(wx.Panel):
         self.cur_header_button.Bind(wx.EVT_BUTTON, self.ztv_frame.primary_image_panel.on_display_cur_fits_header)
         v_sizer1.Add(h_current_file_picker_sizer, 0, wx.EXPAND)
 
+        self.load_current_to_sky_button = wx.Button(self, wx.ID_ANY, 
+                                                    u"\u2193\u2193Make current image the sky frame\u2193\u2193", 
+                                                    wx.DefaultPosition, wx.DefaultSize)
+        self.load_current_to_sky_button.Bind(wx.EVT_BUTTON, self.on_load_current_to_sky)
+        v_sizer1.Add(self.load_current_to_sky_button, 0, wx.CENTER)
+
         v_sizer1.AddSpacer((0, 5), 0, wx.EXPAND)
         self.sky_file_picker_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.sky_checkbox = wx.CheckBox(self, -1, "")
@@ -343,6 +349,9 @@ class SourcePanel(wx.Panel):
             self.skyfile_file_picker.pause_on_current_textctrl_changed = True
             self.skyfile_file_picker.set_current_entry(filename)
             self.skyfile_file_picker.pause_on_current_textctrl_changed = False
+
+    def on_load_current_to_sky(self, msg):
+        self.load_sky_frame(os.path.join(self.ztv_frame.cur_fitsfile_path, self.ztv_frame.cur_fitsfile_basename))
 
     def on_sky_checkbox(self, evt):
         if evt.IsChecked():
