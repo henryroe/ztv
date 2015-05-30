@@ -109,8 +109,8 @@ class SourcePanel(wx.Panel):
         self.activemq_listener_condition = threading.Condition()
         self.sky_hdulist = None
         self.flat_hdulist = None
-        self.sky_file_basename = ''
-        self.flat_file_basename = ''
+        self.sky_file_fullname = ''
+        self.flat_file_fullname = ''
         wx.Panel.__init__(self, parent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL)
         self.ztv_frame = self.GetTopLevelParent()
         Publisher().subscribe(self.on_fitsfile_loaded, "fitsfile-loaded")
@@ -289,7 +289,7 @@ class SourcePanel(wx.Panel):
         raw_header_str = self.sky_hdulist[0].header.tostring()
         header_str = (('\n'.join([raw_header_str[i:i+80] for i in np.arange(0, len(raw_header_str), 80)
                                   if raw_header_str[i:i+80] != " "*80])) + '\n')
-        new_title = "Sky: " + self.sky_file_basename
+        new_title = "Sky: " + os.path.basename(self.sky_file_fullname)
         if hasattr(self, 'sky_fits_header_dialog') and self.sky_fits_header_dialog.is_dialog_still_open:
             self.sky_fits_header_dialog.SetTitle(new_title)
             self.sky_fits_header_dialog.text.SetValue(header_str)
@@ -303,7 +303,7 @@ class SourcePanel(wx.Panel):
         raw_header_str = self.flat_hdulist[0].header.tostring()
         header_str = (('\n'.join([raw_header_str[i:i+80] for i in np.arange(0, len(raw_header_str), 80)
                                   if raw_header_str[i:i+80] != " "*80])) + '\n')
-        new_title = "Flat: " + self.flat_file_basename
+        new_title = "Flat: " + os.path.basename(self.flat_file_fullname)
         if hasattr(self, 'flat_fits_header_dialog') and self.flat_fits_header_dialog.is_dialog_still_open:
             self.flat_fits_header_dialog.SetTitle(new_title)
             self.flat_fits_header_dialog.text.SetValue(header_str)
@@ -324,6 +324,7 @@ class SourcePanel(wx.Panel):
         if 'sky_subtraction' in proc_labels:
             self.ztv_frame.image_process_functions_to_apply.pop(proc_labels.index('sky_subtraction'))
             wx.CallAfter(Publisher().sendMessage, "image_process_functions_to_apply-changed", None)
+            wx.CallAfter(Publisher().sendMessage, "set_window_title", None)
         self.sky_checkbox.SetValue(False)
 
     def load_sky_subtraction_to_process_stack(self):
@@ -333,6 +334,7 @@ class SourcePanel(wx.Panel):
             # assume that sky subtraction should always be first in processing stack.
             self.ztv_frame.image_process_functions_to_apply.insert(0, ('sky_subtraction', process_fxn))
             wx.CallAfter(Publisher().sendMessage, "image_process_functions_to_apply-changed", None)
+            wx.CallAfter(Publisher().sendMessage, "set_window_title", None)
         self.sky_checkbox.SetValue(True)
 
     def load_sky_frame(self, filename, start_sky_correction=True):
@@ -343,7 +345,7 @@ class SourcePanel(wx.Panel):
             self.sky_checkbox.SetValue(False)
         else:
             self.sky_hdulist = self.ztv_frame.load_hdulist_from_fitsfile(filename)
-            self.sky_file_basename = os.path.basename(filename)
+            self.sky_file_fullname = filename
             self.sky_header_button.Enable()
             if start_sky_correction:
                 self.load_sky_subtraction_to_process_stack()
@@ -366,6 +368,7 @@ class SourcePanel(wx.Panel):
         if 'flat_division' in proc_labels:
             self.ztv_frame.image_process_functions_to_apply.pop(proc_labels.index('flat_division'))
             wx.CallAfter(Publisher().sendMessage, "image_process_functions_to_apply-changed", None)
+            wx.CallAfter(Publisher().sendMessage, "set_window_title", None)
         self.flat_checkbox.SetValue(False)
 
     def load_flat_division_to_process_stack(self):
@@ -375,6 +378,7 @@ class SourcePanel(wx.Panel):
             # assume that flat division should always be last in processing stack.
             self.ztv_frame.image_process_functions_to_apply.insert(99999, ('flat_division', process_fxn))
             wx.CallAfter(Publisher().sendMessage, "image_process_functions_to_apply-changed", None)
+            wx.CallAfter(Publisher().sendMessage, "set_window_title", None)
         self.flat_checkbox.SetValue(True)
 
     def load_flat_frame(self, filename, start_flat_correction=True):
@@ -385,7 +389,7 @@ class SourcePanel(wx.Panel):
             self.flat_checkbox.SetValue(False)
         else:
             self.flat_hdulist = self.ztv_frame.load_hdulist_from_fitsfile(filename)
-            self.flat_file_basename = os.path.basename(filename)
+            self.flat_file_fullname = os.path.basename(filename)
             self.flat_header_button.Enable()
             if start_flat_correction:
                 self.load_flat_division_to_process_stack()

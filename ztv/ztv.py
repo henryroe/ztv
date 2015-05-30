@@ -643,6 +643,7 @@ class ZTVFrame(wx.Frame):
         Publisher().subscribe(self.recalc_proc_image, "image_process_functions_to_apply-changed")
         Publisher().subscribe(self.recalc_display_image, "cur_display_frame_num-changed")
         Publisher().subscribe(self.set_cur_display_frame_num, "set_cur_display_frame_num")
+        Publisher().subscribe(self.set_window_title, "set_window_title")
         self.scaling = 'Linear'
         self.available_scalings = ['Linear', 'Asinh', 'Log', 'PowerDist', 'Sinh', 'Sqrt', 'Squared']
         # scalings that require inputs & need additional work to implement:  
@@ -1010,7 +1011,22 @@ class ZTVFrame(wx.Frame):
                     time.sleep(pause_time_between_tries_sec)
                 cur_try += 1
         return hdulist
-        
+
+    def set_window_title(self, msg=None):
+        new_title = 'ztv'
+        if len(self.cur_fitsfile_basename) > 0:
+            sky_subtraction = 'sky_subtraction' in [a[0] for a in self.image_process_functions_to_apply]
+            flat_division = 'flat_division' in [a[0] for a in self.image_process_functions_to_apply]
+            new_title += ': ' 
+            if flat_division:
+                new_title += '('
+            new_title += self.cur_fitsfile_basename            
+            if sky_subtraction:
+                new_title += ' - ' + os.path.basename(self.source_panel.sky_file_fullname)
+            if flat_division:
+                new_title += ') / ' + os.path.basename(self.source_panel.flat_file_fullname)
+        self.SetTitle(new_title)
+
     def load_fits_file(self, msg):
         if isinstance(msg, Message):
             filename = msg.data
@@ -1036,7 +1052,7 @@ class ZTVFrame(wx.Frame):
                         cur_try += 1
                     self.cur_fitsfile_basename = os.path.basename(filename)
                     self.cur_fitsfile_path = os.path.abspath(os.path.dirname(filename))
-                    self.SetTitle(self.base_title + ': ' + self.cur_fitsfile_basename)
+                    self.set_window_title()
                     # TODO: better error handling for if WCS not available or partially available
                     try:
                         w = wcs.WCS(self.cur_fits_hdulist[0].header)
@@ -1141,9 +1157,8 @@ class CommandListenerThread(threading.Thread):
                         if 'sky_subtraction' in [a[0] for a in self.ztv_frame.image_process_functions_to_apply]:
                             sky_subtraction_loaded = True
                         wx.CallAfter(send_to_stream, sys.stdout, 
-                                     (x[0][4:], 
-                                      (sky_subtraction_loaded, 
-                                       self.ztv_frame.source_panel.skyfile_file_picker.current_textctrl_GetValue())))
+                                     (x[0][4:], (sky_subtraction_loaded, 
+                                                 self.ztv_frame.source_panel.sky_file_fullname)))
                     else:
                         send_to_stream(sys.stdout, (x[0][4:], 'source_panel not available'))
                 elif x[0] == 'set_flat_division_status':
