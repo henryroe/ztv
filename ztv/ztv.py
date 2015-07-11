@@ -641,7 +641,6 @@ class ZTVFrame(wx.Frame):
         Publisher().subscribe(self.set_norm, "clim-changed")
         Publisher().subscribe(self.set_norm, "scaling-changed")
         Publisher().subscribe(self.recalc_proc_image, "image_process_functions_to_apply-changed")
-        Publisher().subscribe(self.recalc_display_image, "cur_display_frame_num-changed")
         Publisher().subscribe(self.set_cur_display_frame_num, "set_cur_display_frame_num")
         Publisher().subscribe(self.set_window_title, "set_window_title")
         self.scaling = 'Linear'
@@ -923,7 +922,7 @@ class ZTVFrame(wx.Frame):
         self.cur_display_frame_num = n
         self.frame_number_textctrl.SetValue("{}".format(n))
         set_textctrl_background_color(self.frame_number_textctrl, 'ok')
-        wx.CallAfter(Publisher().sendMessage, "cur_display_frame_num-changed", None)
+        self.recalc_display_image()
 
     def recalc_proc_image(self, msg=None):
         self.proc_image = self.raw_image.copy()
