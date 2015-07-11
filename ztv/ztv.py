@@ -940,26 +940,26 @@ class ZTVFrame(wx.Frame):
         else:
             raise Error("proc_image must be 2-d or 3-d, was instead {}-d".format(self.proc_image.ndim))
         new_min, new_max = None, None
-        # TODO: speed up the following by only calculating each once
         if self.min_value_mode_on_new_image == 'data-min/max':
             new_min = self.display_image.min()
         elif self.min_value_mode_on_new_image == 'auto':
-            auto_clim = self.get_auto_clim_values()
-            new_min = auto_clim[0]
+            auto_clim_values = self.get_auto_clim_values()
+            new_min = auto_clim_values[0]
         elif self.min_value_mode_on_new_image == 'auto-stats-box':
-            auto_clim = self.get_auto_stats_box_clim_values()
-            new_min = auto_clim[0]
+            auto_stats_box_clim_values = self.get_auto_stats_box_clim_values()
+            new_min = auto_stats_box_clim_values[0]
         if self.max_value_mode_on_new_image == 'data-min/max':
             new_max = self.display_image.max()
         elif self.max_value_mode_on_new_image == 'auto':
-            if self.min_value_mode_on_new_image != 'auto':
-                auto_clim = self.get_auto_clim_values()
-            new_max = auto_clim[1]
+            if self.min_value_mode_on_new_image != 'auto':  # only calculate if didn't already calculate above
+                auto_clim_values = self.get_auto_clim_values()
+            new_max = auto_clim_values[1]
         elif self.max_value_mode_on_new_image == 'auto-stats-box':
-            auto_clim = self.get_auto_stats_box_clim_values()
-            new_max = auto_clim[1]
-        self.set_clim([new_min, new_max])
-        wx.CallAfter(Publisher().sendMessage, "redraw_image")
+            if self.min_value_mode_on_new_image != 'auto-stats-box':  # only calculate if didn't already calculate above
+                auto_stats_box_clim_values = self.get_auto_stats_box_clim_values()
+            new_max = auto_stats_box_clim_values[1]
+        self.set_clim([new_min, new_max])  
+        # don't need to send a separate "redraw_image" message because set_clim sends one
   
     def load_numpy_array(self, msg, is_fits_file=False):
         if isinstance(msg, Message):
