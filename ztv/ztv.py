@@ -288,8 +288,6 @@ class PrimaryImagePanel(wx.Panel):
     def on_change_scaling_event(self, event):
         wx.CallAfter(Publisher().sendMessage, "set_scaling", self.eventID_to_scaling[event.GetId()])
 
-    # TODO: would like to figure out way to refactor on the control_panel related cursors to get the code out of here and over into the individual panels.
-
     def on_button_press(self, event):
         if event.button == 1:  # left button
             if self.cursor_mode == 'Zoom':
