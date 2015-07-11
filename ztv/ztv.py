@@ -240,10 +240,19 @@ class PrimaryImagePanel(wx.Panel):
         # TODO: figure out why keypresses are only recognized after a click in the matplotlib frame.
         if event.key in ['c', 'C', 'v', 'V', 'y', 'Y']:
             x = np.round(event.xdata)
-            wx.CallAfter(Publisher().sendMessage, "update_line_plot_points", ((x + 0.5, -9e9), (x + 0.5, 9e9)))
+            max_y = self.ztv_frame.display_image.shape[0] - 1
+            wx.CallAfter(Publisher().sendMessage, "update_line_plot_points", ((x + 0.5, max(0, self.ylim[0])), 
+                                                                              (x + 0.5, min(max_y, self.ylim[1]))))
         elif event.key in ['r', 'R', 'h', 'H', 'x', 'X']:
             y = np.round(event.ydata)
-            wx.CallAfter(Publisher().sendMessage, "update_line_plot_points", ((-9e9, y + 0.5), (9e9, y + 0.5)))
+            max_x = self.ztv_frame.display_image.shape[1] - 1
+            wx.CallAfter(Publisher().sendMessage, "update_line_plot_points", ((max(0, self.xlim[0]), y + 0.5), 
+                                                                              (min(max_x, self.xlim[1]), y + 0.5)))
+        # HEREIAM  implementing right/left arrow keys to 
+        elif event.key == 'right':
+            sys.stderr.write("right = {}\n".format(1))
+        elif event.key == 'left':
+            sys.stderr.write("left = {}\n".format(1))
 
     def set_xy_center(self, msg):
         if isinstance(msg, Message):
