@@ -3,7 +3,7 @@ import wx
 from wx.lib.pubsub import Publisher
 from matplotlib import cm
 import numpy as np
-from .ztv_lib import force_textctrl_color_update, set_textctrl_background_color, validate_textctrl_str
+from .ztv_wx_lib import force_textctrl_color_update, set_textctrl_background_color, validate_textctrl_str
 
 class ColorPanel(wx.Panel):
     def __init__(self, parent):

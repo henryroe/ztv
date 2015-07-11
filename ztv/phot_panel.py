@@ -19,7 +19,7 @@ try:
 except ImportError, e:
     scipy_install_is_ok = False
 from .quick_phot import centroid, aperture_phot
-from .ztv_lib import validate_textctrl_str
+from .ztv_wx_lib import validate_textctrl_str
 import numpy as np
 
 import sys

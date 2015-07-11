@@ -5,7 +5,7 @@ import glob
 import sys
 import subprocess
 import pdb
-from .ztv_lib import set_textctrl_background_color
+from .ztv_wx_lib import set_textctrl_background_color
 
 # TODO:  fix tab order through controls
 # TODO:  fix alignment in text field, ideally would be right aligned, but may not be able to do that on OSX

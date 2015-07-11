@@ -10,7 +10,7 @@ import glob
 import sys
 import time
 import threading
-from .ztv_lib import set_textctrl_background_color
+from .ztv_wx_lib import set_textctrl_background_color
 try:
     import stomp
     stomp_install_is_ok = True

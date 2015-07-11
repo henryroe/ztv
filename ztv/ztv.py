@@ -42,7 +42,8 @@ from .plot_panel import PlotPanel
 from .phot_panel import PhotPanel
 from .stats_panel import StatsPanel
 from .color_panel import ColorPanel
-from .ztv_lib import send_to_stream, StreamListener, StreamListenerTimeOut, set_textctrl_background_color, validate_textctrl_str
+from .ztv_lib import send_to_stream, StreamListener, StreamListenerTimeOut
+from .ztv_wx_lib import set_textctrl_background_color, validate_textctrl_str
 
 import pdb
 
