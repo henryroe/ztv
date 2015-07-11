@@ -248,11 +248,10 @@ class PrimaryImagePanel(wx.Panel):
             max_x = self.ztv_frame.display_image.shape[1] - 1
             wx.CallAfter(Publisher().sendMessage, "update_line_plot_points", ((max(0, self.xlim[0]), y + 0.5), 
                                                                               (min(max_x, self.xlim[1]), y + 0.5)))
-        # HEREIAM  implementing right/left arrow keys to 
         elif event.key == 'right':
-            sys.stderr.write("right = {}\n".format(1))
+            self.ztv_frame.set_cur_display_frame_num(1, relative=True)
         elif event.key == 'left':
-            sys.stderr.write("left = {}\n".format(1))
+            self.ztv_frame.set_cur_display_frame_num(-1, relative=True)
 
     def set_xy_center(self, msg):
         if isinstance(msg, Message):
