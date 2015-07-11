@@ -122,10 +122,10 @@ Our fake example data looks a lot better when we subtract the sky and divide the
 Installation and Dependencies
 =============================
 
-*ztv* uses several packages, including [wxPython](http://wxpython.org), [astropy](http://www.astropy.org). These should be automatically installed if you install *ztv* with:
+*ztv* uses several packages, including [wxPython](http://wxpython.org), [astropy](http://www.astropy.org). These should be automatically installed if you install *ztv* from [pypi](https://pypi.python.org/pypi/ztv) with:
 
     pip install ztv
-    
+
 You can also grab source code from [github](https://github.com/henryroe/ztv).
 
 Note that *ztv* was developed and tested on OS X. 
