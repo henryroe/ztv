@@ -122,7 +122,10 @@ class PlotPanel(wx.Panel):
         xs = np.linspace(self.start_pt.x, self.end_pt.x, n_pts)
         ys = np.linspace(self.start_pt.y, self.end_pt.y, n_pts)
         mask = ((xs >= min(xy_limits['xlim'])) & (xs <= max(xy_limits['xlim'])) & 
-                (ys >= min(xy_limits['ylim'])) & (ys <= max(xy_limits['ylim'])))
+                (ys >= min(xy_limits['ylim'])) & (ys <= max(xy_limits['ylim'])) &
+                (xs >= 0.) & (ys >= 0.) &
+                (xs < self.ztv_frame.display_image.shape[1]) & 
+                (ys < self.ztv_frame.display_image.shape[0]))
         xs = xs[mask]
         ys = ys[mask]
         if len(xs) > 0:
