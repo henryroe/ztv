@@ -18,6 +18,9 @@ class StatsPanel(wx.Panel):
         
         self.last_string_values = {'x0':'', 'xsize':'', 'x1':'', 'y0':'', 'ysize':'', 'y1':''}
         self.stats_rect = Rectangle((0, 0), 10, 10, color='magenta', fill=False, zorder=100)
+        # use self.stats_rect as where we store/retrieve the x0,y0,x1,y1
+        # x0,y0,x1,y1 should be limited to range of 0 to shape-1
+        # but, stats should be calculated over e.g. x0:x1+1  (so that have pixels to do stats on even if x0==x1)
 
         textentry_font = wx.Font(14, wx.FONTFAMILY_MODERN, wx.NORMAL, wx.FONTWEIGHT_LIGHT, False)
         
@@ -191,8 +194,6 @@ class StatsPanel(wx.Panel):
         self.SetSizer(v_sizer1)
         Publisher().subscribe(self.update_stats, "redraw_image")
 
-        # TODO: clean up in stats_box stuff whether ranges are pythonic or inclusive.  Might be that is pythonic behind scenes, but inclusive in some of the display of info?  There are trickinesses to getting this right, as sometimes need to flip x0/x1 and y0/y1 when range is negative
-
     def update_stats_box(self, x0=None, y0=None, x1=None, y1=None):
         if x0 is None:
             x0 = self.stats_rect.get_x()
@@ -202,10 +203,10 @@ class StatsPanel(wx.Panel):
             x1 = self.stats_rect.get_x() + self.stats_rect.get_width()
         if y1 is None:
             y1 = self.stats_rect.get_y() + self.stats_rect.get_height()
-        x0 = min(max(0, x0), self.ztv_frame.display_image.shape[1])
-        y0 = min(max(0, y0), self.ztv_frame.display_image.shape[0])
-        x1 = min(max(0, x1), self.ztv_frame.display_image.shape[1])
-        y1 = min(max(0, y1), self.ztv_frame.display_image.shape[0])
+        x0 = min(max(0, x0), self.ztv_frame.display_image.shape[1] - 1)
+        y0 = min(max(0, y0), self.ztv_frame.display_image.shape[0] - 1)
+        x1 = min(max(0, x1), self.ztv_frame.display_image.shape[1] - 1)
+        y1 = min(max(0, y1), self.ztv_frame.display_image.shape[0] - 1)
         self.stats_rect.set_bounds(x0, y0, x1 - x0, y1 - y0)
         self.ztv_frame.primary_image_panel.figure.canvas.draw()
         self.update_stats()
