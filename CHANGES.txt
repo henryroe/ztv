@@ -3,6 +3,13 @@ ztv Change Log
 ~~~~~~~~~~~~~~
 
 ------------------
+v0.1.3dev, 2015-07-12
+------------------
+
+- updated version number b/c realized had already released 0.1.2
+- fixed bug in plot_panel where doing slice beyond image size caused warnings.
+
+------------------
 v0.1.2, 2015-04-22
 ------------------
 
