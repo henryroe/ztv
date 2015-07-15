@@ -97,9 +97,12 @@ class StatsPanel(wx.Panel):
         self.y1_textctrl.Bind(wx.EVT_TEXT, self.y1_textctrl_changed)
         self.y1_textctrl.Bind(wx.EVT_TEXT_ENTER, self.y1_textctrl_entered)
         
+        output_only_background_color = (235, 235, 235)
+        
         self.npix_textctrl = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize,
                                          wx.TE_READONLY)
         self.npix_textctrl.SetFont(textentry_font)
+        self.npix_textctrl.SetBackgroundColour(output_only_background_color)
         values_sizer.Add(self.npix_textctrl, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT, 0)
   
         values_sizer.AddSpacer((0,15), 0, wx.EXPAND)
@@ -113,8 +116,9 @@ class StatsPanel(wx.Panel):
         self.median_static_text.Wrap( -1 )
         values_sizer.Add(self.median_static_text, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT, 0)
         self.median_textctrl = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize,
-                                       wx.TE_PROCESS_ENTER)
+                                       wx.TE_READONLY)
         self.median_textctrl.SetFont(textentry_font)
+        self.median_textctrl.SetBackgroundColour(output_only_background_color)
         values_sizer.Add(self.median_textctrl, 0, wx.ALL, 2)
         self.robust_static_text = wx.StaticText( self, wx.ID_ANY, u"Robust", wx.DefaultPosition, wx.DefaultSize, 0 )
         self.robust_static_text.Wrap( -1 )
@@ -126,12 +130,14 @@ class StatsPanel(wx.Panel):
         self.mean_static_text.Wrap( -1 )
         values_sizer.Add(self.mean_static_text, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT, 0)
         self.mean_textctrl = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize,
-                                       wx.TE_PROCESS_ENTER)
+                                       wx.TE_READONLY)
         self.mean_textctrl.SetFont(textentry_font)
+        self.mean_textctrl.SetBackgroundColour(output_only_background_color)
         values_sizer.Add(self.mean_textctrl, 0, wx.ALL, 2)
         self.robust_mean_textctrl = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize,
-                                       wx.TE_PROCESS_ENTER)
+                                       wx.TE_READONLY)
         self.robust_mean_textctrl.SetFont(textentry_font)
+        self.robust_mean_textctrl.SetBackgroundColour(output_only_background_color)
         values_sizer.Add(self.robust_mean_textctrl, 0, wx.ALL, 2)
         values_sizer.AddSpacer((0,0), 0, wx.EXPAND)
 
@@ -140,12 +146,14 @@ class StatsPanel(wx.Panel):
         self.stdev_static_text.Wrap( -1 )
         values_sizer.Add(self.stdev_static_text, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT, 0)
         self.stdev_textctrl = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize,
-                                       wx.TE_PROCESS_ENTER)
+                                       wx.TE_READONLY)
         self.stdev_textctrl.SetFont(textentry_font)
+        self.stdev_textctrl.SetBackgroundColour(output_only_background_color)
         values_sizer.Add(self.stdev_textctrl, 0, wx.ALL, 2)
         self.robust_stdev_textctrl = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize,
-                                       wx.TE_PROCESS_ENTER)
+                                       wx.TE_READONLY)
         self.robust_stdev_textctrl.SetFont(textentry_font)
+        self.robust_stdev_textctrl.SetBackgroundColour(output_only_background_color)
         values_sizer.Add(self.robust_stdev_textctrl, 0, wx.ALL, 2)
         values_sizer.AddSpacer((0,0), 0, wx.EXPAND)
 
@@ -160,12 +168,14 @@ class StatsPanel(wx.Panel):
         self.min_static_text.Wrap( -1 )
         values_sizer.Add(self.min_static_text, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT, 0)
         self.minval_textctrl = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize,
-                                           wx.TE_PROCESS_ENTER)
+                                           wx.TE_READONLY)
         self.minval_textctrl.SetFont(textentry_font)
+        self.minval_textctrl.SetBackgroundColour(output_only_background_color)
         values_sizer.Add(self.minval_textctrl, 0, wx.ALL, 2)
         self.minpos_textctrl = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize,
-                                           wx.TE_PROCESS_ENTER)
+                                           wx.TE_READONLY)
         self.minpos_textctrl.SetFont(textentry_font)
+        self.minpos_textctrl.SetBackgroundColour(output_only_background_color)
         values_sizer.Add(self.minpos_textctrl, 0, wx.ALL, 2)
         values_sizer.AddSpacer((0,0), 0, wx.EXPAND)
 
@@ -174,12 +184,14 @@ class StatsPanel(wx.Panel):
         self.max_static_text.Wrap( -1 )
         values_sizer.Add(self.max_static_text, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT, 0)
         self.maxval_textctrl = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize,
-                                           wx.TE_PROCESS_ENTER)
+                                           wx.TE_READONLY)
         self.maxval_textctrl.SetFont(textentry_font)
+        self.maxval_textctrl.SetBackgroundColour(output_only_background_color)
         values_sizer.Add(self.maxval_textctrl, 0, wx.ALL, 2)
         self.maxpos_textctrl = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize,
-                                           wx.TE_PROCESS_ENTER)
+                                           wx.TE_READONLY)
         self.maxpos_textctrl.SetFont(textentry_font)
+        self.maxpos_textctrl.SetBackgroundColour(output_only_background_color)
         values_sizer.Add(self.maxpos_textctrl, 0, wx.ALL, 2)
              
         self.hideshow_button = wx.Button(self, wx.ID_ANY, u"Show", wx.DefaultPosition, wx.DefaultSize, 0)
