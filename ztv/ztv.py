@@ -306,6 +306,7 @@ class PrimaryImagePanel(wx.Panel):
                 self.stats_start_timestamp = event.guiEvent.GetTimestamp()  # millisec
                 self.ztv_frame.stats_panel.update_stats_box(event.xdata, event.ydata, event.xdata, event.ydata)
                 self.ztv_frame.stats_panel.redraw_overplot_on_image()
+                self.cursor_stats_box_x0, self.cursor_stats_box_y0 = event.xdata, event.ydata
             elif self.cursor_mode == 'Phot':
                 self.ztv_frame.phot_panel.select_panel()
                 wx.CallAfter(Publisher().sendMessage, "new_phot_xy", (event.xdata, event.ydata))
@@ -325,8 +326,8 @@ class PrimaryImagePanel(wx.Panel):
                 self.zoom_rect.set_bounds(x0, y0, event.xdata - x0, event.ydata - y0)
                 self.figure.canvas.draw()
             elif self.cursor_mode == 'Stats box':
-                x0,y0 = self.ztv_frame.stats_panel.stats_rect.get_x(),self.ztv_frame.stats_panel.stats_rect.get_y()
-                self.ztv_frame.stats_panel.update_stats_box(x0, y0, event.xdata, event.ydata)
+                self.ztv_frame.stats_panel.update_stats_box(self.cursor_stats_box_x0, self.cursor_stats_box_y0, 
+                                                            event.xdata, event.ydata)
                 self.ztv_frame.stats_panel.redraw_overplot_on_image()
                 self.ztv_frame.stats_panel.update_stats()
             elif self.cursor_mode == 'Slice plot':
