@@ -28,9 +28,8 @@ class ImageProcessAction():
         self.math_function = math_function
         self.x2 = x2
     def __call__(self, x1):
-        if x1.shape != self.x2.shape:
-            # TODO: move this to a more useful python warning, displayed once and then not re-displayed...
-            sys.stderr.write("Warning: image process action not performed because shapes of arrays do not match\n")
+        if (x1.shape[-1] != self.x2.shape[-1]) or (x1.shape[-2] != self.x2.shape[-2]):
+            sys.stderr.write("Warning: image process action not performed because x/y shapes of arrays do not match\n")
             return x1
         return self.math_function(x1, self.x2)
 

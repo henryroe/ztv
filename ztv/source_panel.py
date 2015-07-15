@@ -88,6 +88,9 @@ class AutoloadFileMatchWatcherThread(threading.Thread):
                 self.keep_running = False
 
 
+class UnrecognizedNumberOfDimensions(Exception): pass
+
+
 class SourcePanel(wx.Panel):
     def __init__(self, parent):
         self.autoload_mode = None # other options are "file-match" and "activemq-stream"
@@ -139,7 +142,8 @@ class SourcePanel(wx.Panel):
         self.sky_checkbox = wx.CheckBox(self, -1, "")
         self.Bind(wx.EVT_CHECKBOX, self.on_sky_checkbox, self.sky_checkbox)
         self.sky_file_picker_sizer.Add(self.sky_checkbox, 0, wx.ALIGN_CENTER_VERTICAL)
-        self.skyfile_file_picker = FilePicker(self, title='Sky:', default_entry=self.ztv_frame.default_data_dir, maintain_default_entry_in_recents=0)
+        self.skyfile_file_picker = FilePicker(self, title='Sky:', default_entry=self.ztv_frame.default_data_dir, 
+                                              maintain_default_entry_in_recents=0)
         self.skyfile_file_picker.on_load = self.load_sky_frame
         self.sky_file_picker_sizer.Add(self.skyfile_file_picker, 1, wx.EXPAND)
         self.sky_header_button = wx.Button(self, wx.ID_ANY, u"hdr", wx.DefaultPosition, wx.DefaultSize,
@@ -152,7 +156,8 @@ class SourcePanel(wx.Panel):
         self.flat_checkbox = wx.CheckBox(self, -1, "")
         self.Bind(wx.EVT_CHECKBOX, self.on_flat_checkbox, self.flat_checkbox)
         self.flat_file_picker_sizer.Add(self.flat_checkbox, 0, wx.ALIGN_CENTER_VERTICAL)
-        self.flatfile_file_picker = FilePicker(self, title='Flat:', default_entry=self.ztv_frame.default_data_dir, maintain_default_entry_in_recents=0)
+        self.flatfile_file_picker = FilePicker(self, title='Flat:', default_entry=self.ztv_frame.default_data_dir, 
+                                               maintain_default_entry_in_recents=0)
         self.flatfile_file_picker.on_load = self.load_flat_frame
         self.flat_file_picker_sizer.Add(self.flatfile_file_picker, 1, wx.EXPAND)
         self.flat_header_button = wx.Button(self, wx.ID_ANY, u"hdr", wx.DefaultPosition, wx.DefaultSize,
@@ -181,7 +186,8 @@ class SourcePanel(wx.Panel):
         h_sizer.Add(wx.StaticText(self, -1, u"sec"), 0)
         self.autoload_sizer.Add(h_sizer, 0, wx.EXPAND)
         self.autoload_sizer.AddSpacer((0, 5), 0, wx.EXPAND)
-        self.autoload_curfile_file_picker = FilePicker(self, title='Filename Pattern:', allow_glob_matching=True, default_entry=self.ztv_frame.default_autoload_pattern)
+        self.autoload_curfile_file_picker = FilePicker(self, title='Filename Pattern:', allow_glob_matching=True, 
+                                                       default_entry=self.ztv_frame.default_autoload_pattern)
         if self.ztv_frame.default_autoload_pattern is not None:
             self.autoload_match_string = self.ztv_frame.default_autoload_pattern
         self.autoload_curfile_file_picker.on_load = self.autoload_curfile_file_picker_on_load
@@ -328,9 +334,20 @@ class SourcePanel(wx.Panel):
         self.sky_checkbox.SetValue(False)
 
     def load_sky_subtraction_to_process_stack(self):
+        """
+        Load sky subtraction into image processing stack
+        If sky image is 3-d ([n,x,y]), then collapse to 2-d ([x,y]) by doing a median on axis=0
+        """
         self.unload_sky_subtraction_from_process_stack()
         if self.sky_hdulist is not None:
-            process_fxn = ImageProcessAction(np.subtract, self.sky_hdulist[0].data)
+            if self.sky_hdulist[0].data.ndim == 2:
+                process_fxn = ImageProcessAction(np.subtract, self.sky_hdulist[0].data)
+            elif self.sky_hdulist[0].data.ndim == 3:
+                process_fxn = ImageProcessAction(np.subtract, np.median(self.sky_hdulist[0].data, axis=0))
+            else:
+                raise UnrecognizedNumberOfDimensions("Tried to load sky image with {} dimensions, " + 
+                                                     "when can only handle 2-d or 3-d".format(
+                                                     self.sky_hdulist[0].data.ndim))
             # assume that sky subtraction should always be first in processing stack.
             self.ztv_frame.image_process_functions_to_apply.insert(0, ('sky_subtraction', process_fxn))
             wx.CallAfter(Publisher().sendMessage, "image_process_functions_to_apply-changed", None)
@@ -338,6 +355,9 @@ class SourcePanel(wx.Panel):
         self.sky_checkbox.SetValue(True)
 
     def load_sky_frame(self, filename, start_sky_correction=True):
+        """
+        Load sky frame from fits file.
+        """
         if len(filename) == 0:
             self.sky_hdulist = None
             self.sky_header_button.Disable()
