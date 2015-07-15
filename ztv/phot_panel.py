@@ -20,6 +20,7 @@ except ImportError, e:
     scipy_install_is_ok = False
 from .quick_phot import centroid, aperture_phot
 from .ztv_wx_lib import validate_textctrl_str, textctrl_output_only_background_color
+from astropy import units
 
 import numpy as np
 
@@ -85,16 +86,18 @@ class PhotPanel(wx.Panel):
         self.aprad_static_text.Wrap( -1 )
         values_sizer.Add(self.aprad_static_text, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
         self.aprad_textctrl = wx.TextCtrl(self, wx.ID_ANY, str(self.aprad), wx.DefaultPosition, wx.DefaultSize,
-                                       wx.TE_PROCESS_ENTER)
+                                          wx.TE_PROCESS_ENTER)
         self.aprad_textctrl.SetFont(textentry_font)
-        values_sizer.Add(self.aprad_textctrl, 0, wx.ALL, 2)
+        values_sizer.Add(self.aprad_textctrl, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
         self.aprad_textctrl.Bind(wx.EVT_TEXT, self.aprad_textctrl_changed)
         self.aprad_textctrl.Bind(wx.EVT_TEXT_ENTER, self.aprad_textctrl_entered)
         values_sizer.AddSpacer((30,0), 0, wx.EXPAND)
-        self.x_static_text = wx.StaticText( self, wx.ID_ANY, u"x", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_CENTER_HORIZONTAL )
+        self.x_static_text = wx.StaticText(self, wx.ID_ANY, u"x", wx.DefaultPosition, wx.DefaultSize, 
+                                           wx.ALIGN_CENTER_HORIZONTAL )
         self.x_static_text.Wrap( -1 )
         values_sizer.Add(self.x_static_text, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_BOTTOM, 0)
-        self.y_static_text = wx.StaticText( self, wx.ID_ANY, u"y", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_CENTER_HORIZONTAL )
+        self.y_static_text = wx.StaticText(self, wx.ID_ANY, u"y", wx.DefaultPosition, wx.DefaultSize, 
+                                           wx.ALIGN_CENTER_HORIZONTAL )
         self.y_static_text.Wrap( -1 )
         values_sizer.Add(self.y_static_text, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_BOTTOM, 0)
 
@@ -105,7 +108,7 @@ class PhotPanel(wx.Panel):
         self.skyradin_textctrl = wx.TextCtrl(self, wx.ID_ANY, str(self.skyradin), wx.DefaultPosition, wx.DefaultSize,
                                        wx.TE_PROCESS_ENTER)
         self.skyradin_textctrl.SetFont(textentry_font)
-        values_sizer.Add(self.skyradin_textctrl, 0, wx.ALL, 2)
+        values_sizer.Add(self.skyradin_textctrl, 0, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 2)
         self.skyradin_textctrl.Bind(wx.EVT_TEXT, self.skyradin_textctrl_changed)
         self.skyradin_textctrl.Bind(wx.EVT_TEXT_ENTER, self.skyradin_textctrl_entered)
         self.clicked_static_text = wx.StaticText(self, wx.ID_ANY, u"Clicked", wx.DefaultPosition, 
@@ -113,15 +116,15 @@ class PhotPanel(wx.Panel):
         self.clicked_static_text.Wrap( -1 )
         values_sizer.Add(self.clicked_static_text, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
         self.xclick_textctrl = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize,
-                                             wx.TE_READONLY)
+                                           wx.TE_READONLY)
         self.xclick_textctrl.SetFont(textentry_font)
         self.xclick_textctrl.SetBackgroundColour(textctrl_output_only_background_color)
-        values_sizer.Add(self.xclick_textctrl, 0, wx.ALL, 2)
+        values_sizer.Add(self.xclick_textctrl, 0, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 2)
         self.yclick_textctrl = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize,
-                                             wx.TE_READONLY)
+                                           wx.TE_READONLY)
         self.yclick_textctrl.SetFont(textentry_font)
         self.yclick_textctrl.SetBackgroundColour(textctrl_output_only_background_color)
-        values_sizer.Add(self.yclick_textctrl, 0, wx.ALL, 2)
+        values_sizer.Add(self.yclick_textctrl, 0, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 2)
 
         self.skyradout_static_text = wx.StaticText(self, wx.ID_ANY, u"Sky outer radius", wx.DefaultPosition, 
                                                    wx.DefaultSize, wx.ALIGN_RIGHT )
@@ -131,7 +134,7 @@ class PhotPanel(wx.Panel):
                                               wx.TE_PROCESS_ENTER)
         self.skyradout_textctrl.SetFont(textentry_font)
         self.skyradout_textctrl.SetBackgroundColour(textctrl_output_only_background_color)
-        values_sizer.Add(self.skyradout_textctrl, 0, wx.ALL, 2)
+        values_sizer.Add(self.skyradout_textctrl, 0, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 2)
         self.skyradout_textctrl.Bind(wx.EVT_TEXT, self.skyradout_textctrl_changed)
         self.skyradout_textctrl.Bind(wx.EVT_TEXT_ENTER, self.skyradout_textctrl_entered)
         self.centroid_static_text = wx.StaticText(self, wx.ID_ANY, u"Centroid", wx.DefaultPosition, 
@@ -142,12 +145,12 @@ class PhotPanel(wx.Panel):
                                               wx.TE_READONLY)
         self.xcentroid_textctrl.SetFont(textentry_font)
         self.xcentroid_textctrl.SetBackgroundColour(textctrl_output_only_background_color)
-        values_sizer.Add(self.xcentroid_textctrl, 0, wx.ALL, 2)
+        values_sizer.Add(self.xcentroid_textctrl, 0, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 2)
         self.ycentroid_textctrl = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize,
                                               wx.TE_READONLY)
         self.ycentroid_textctrl.SetFont(textentry_font)
         self.ycentroid_textctrl.SetBackgroundColour(textctrl_output_only_background_color)
-        values_sizer.Add(self.ycentroid_textctrl, 0, wx.ALL, 2)
+        values_sizer.Add(self.ycentroid_textctrl, 0, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 2)
 
 
         v_sizer1 = wx.BoxSizer(wx.VERTICAL)
@@ -164,7 +167,7 @@ class PhotPanel(wx.Panel):
                                         wx.TE_READONLY)
         self.sky_textctrl.SetFont(textentry_font)
         self.sky_textctrl.SetBackgroundColour(textctrl_output_only_background_color)
-        h_sizer1.Add(self.sky_textctrl, 0, wx.ALL, 2)
+        h_sizer1.Add(self.sky_textctrl, 0, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 2)
         # TODO: look up how to do nice plus/minus symbol
         self.pm_static_text = wx.StaticText( self, wx.ID_ANY, u"+-", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_RIGHT )
         self.pm_static_text.Wrap( -1 )
@@ -173,21 +176,21 @@ class PhotPanel(wx.Panel):
                                            wx.TE_READONLY)
         self.skyerr_textctrl.SetFont(textentry_font)
         self.skyerr_textctrl.SetBackgroundColour(textctrl_output_only_background_color)
-        h_sizer1.Add(self.skyerr_textctrl, 0, wx.ALL, 2)
-        self.perpixel_static_text = wx.StaticText( self, wx.ID_ANY, u"/pixel", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_RIGHT )
+        h_sizer1.Add(self.skyerr_textctrl, 0, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 2)
+        self.perpixel_static_text = wx.StaticText( self, wx.ID_ANY, u"cts/pixel", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_RIGHT )
         self.perpixel_static_text.Wrap( -1 )
         h_sizer1.Add(self.perpixel_static_text, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
         v_sizer1.Add(h_sizer1, 0, wx.ALIGN_LEFT)
         
         h_sizer2 = wx.BoxSizer(wx.HORIZONTAL)
-        self.object_static_text = wx.StaticText( self, wx.ID_ANY, u"Object", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_RIGHT )
-        self.object_static_text.Wrap( -1 )
-        h_sizer2.Add(self.object_static_text, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
+        self.flux_static_text = wx.StaticText( self, wx.ID_ANY, u"Flux", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_RIGHT )
+        self.flux_static_text.Wrap( -1 )
+        h_sizer2.Add(self.flux_static_text, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
         self.flux_textctrl = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize,
                                          wx.TE_READONLY)
         self.flux_textctrl.SetFont(textentry_font)
         self.flux_textctrl.SetBackgroundColour(textctrl_output_only_background_color)
-        h_sizer2.Add(self.flux_textctrl, 0, wx.ALL, 2)
+        h_sizer2.Add(self.flux_textctrl, 0, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 2)
         self.cts_static_text = wx.StaticText( self, wx.ID_ANY, u"cts with FWHM", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_RIGHT )
         self.cts_static_text.Wrap( -1 )
         h_sizer2.Add(self.cts_static_text, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
@@ -195,16 +198,26 @@ class PhotPanel(wx.Panel):
                                          wx.TE_READONLY)
         self.fwhm_textctrl.SetFont(textentry_font)
         self.fwhm_textctrl.SetBackgroundColour(textctrl_output_only_background_color)
-        h_sizer2.Add(self.fwhm_textctrl, 0, wx.ALL, 2)
+        h_sizer2.Add(self.fwhm_textctrl, 0, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 2)
         self.pix_static_text = wx.StaticText( self, wx.ID_ANY, u"pix", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_RIGHT )
         self.pix_static_text.Wrap( -1 )
         h_sizer2.Add(self.pix_static_text, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
-        h_sizer2.AddSpacer([30, 0], 0, 1)
-        self.hideshow_button = wx.Button(self, wx.ID_ANY, u"Hide", wx.DefaultPosition, wx.DefaultSize, 0)
-        h_sizer2.Add(self.hideshow_button, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 2)
-        self.hideshow_button.Bind(wx.EVT_BUTTON, self.on_hideshow_button)
-
         v_sizer1.Add(h_sizer2, 0, wx.ALIGN_LEFT)
+
+        h_sizer3 = wx.BoxSizer(wx.HORIZONTAL)
+        self.radec_static_text = wx.StaticText( self, wx.ID_ANY, u"RADec", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_RIGHT )
+        self.radec_static_text.Wrap( -1 )
+        h_sizer3.Add(self.radec_static_text, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
+        self.radec_textctrl = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize,
+                                          wx.TE_READONLY)
+        self.radec_textctrl.SetFont(textentry_font)
+        self.radec_textctrl.SetBackgroundColour(textctrl_output_only_background_color)
+        h_sizer3.Add(self.radec_textctrl, 1, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 2)
+        h_sizer3.AddSpacer([30, 0], 0, 1)
+        self.hideshow_button = wx.Button(self, wx.ID_ANY, u"Hide", wx.DefaultPosition, wx.DefaultSize, 0)
+        h_sizer3.Add(self.hideshow_button, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 2)
+        self.hideshow_button.Bind(wx.EVT_BUTTON, self.on_hideshow_button)
+        v_sizer1.Add(h_sizer3, 0, wx.ALIGN_LEFT)
 
         self.plot_panel = PhotPlotPanel(self)
         v_sizer1.Add(self.plot_panel, 1, wx.LEFT | wx.TOP | wx.EXPAND)
@@ -273,6 +286,13 @@ class PhotPanel(wx.Panel):
         self.flux_textctrl.SetValue("{:0.6g}".format(self.phot_info['flux']))
         self.sky_textctrl.SetValue("{:0.6g}".format(self.phot_info['sky_per_pixel']))
         self.skyerr_textctrl.SetValue("{:0.6g}".format(self.phot_info['sky_per_pixel_err']))
+        if self.ztv_frame.image_radec is not None:
+            c = self.ztv_frame.image_radec[self.ycentroid, self.xcentroid]
+            radec_string = "{0} {1}".format(c.ra.to_string(units.hour, sep=':', precision=2, pad=True),
+                                            c.dec.to_string(sep=':', precision=2, alwayssign=True, pad=True))
+            self.radec_textctrl.SetValue(radec_string)
+        else:
+            self.radec_textctrl.SetValue(' ')
         self.plot_panel.axes.cla()
         if len(self.phot_info['distances']) > 5:
             unrounded_xmax = self.skyradout + 0.2 * (self.skyradout - self.skyradin)
