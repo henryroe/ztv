@@ -2,7 +2,7 @@ from __future__ import absolute_import
 import wx
 from wx.lib.pubsub import Publisher
 from wx.lib.pubsub.core.datamsg import Message
-import  wx.lib.layoutf as layoutf
+import wx.lib.layoutf as layoutf
 import numpy as np
 import threading
 import warnings
@@ -21,7 +21,6 @@ from astropy.stats import sigma_clipped_stats
  
 import matplotlib
 matplotlib.interactive(True)
-matplotlib.use('WXAgg')
 try:
     from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg
 except IOError:

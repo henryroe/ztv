@@ -3,8 +3,6 @@ import wx
 from wx.lib.pubsub import Publisher
 from wx.lib.pubsub.core.datamsg import Message
 import matplotlib
-matplotlib.interactive(True)
-matplotlib.use('WXAgg')
 from matplotlib.figure import Figure
 try:
     from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg
