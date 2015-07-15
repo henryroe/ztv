@@ -54,7 +54,7 @@ def fixed_gauss(x, fwhm, peakval):
 
 class PhotPanel(wx.Panel):
     def __init__(self, parent):
-        wx.Panel.__init__(self, parent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL)
+        wx.Panel.__init__(self, parent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize)
         self.ztv_frame = self.GetTopLevelParent()
         self.SetSizeHintsSz( wx.Size( 1024,512 ), wx.DefaultSize )
         self.star_center_patch = None

@@ -4,10 +4,11 @@ from wx.lib.pubsub import Publisher
 from matplotlib import cm
 import numpy as np
 from .ztv_wx_lib import force_textctrl_color_update, set_textctrl_background_color, validate_textctrl_str
+import sys
 
 class ColorPanel(wx.Panel):
     def __init__(self, parent):
-        wx.Panel.__init__(self, parent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL)
+        wx.Panel.__init__(self, parent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize)
         self.ztv_frame = self.GetTopLevelParent()
         self.SetSizeHintsSz( wx.Size( 1024,512 ), wx.DefaultSize )
         self.eventID_to_cmap = {wx.NewId(): x for x in self.ztv_frame.available_cmaps}
@@ -129,7 +130,7 @@ class ColorPanel(wx.Panel):
         Publisher().subscribe(self.on_cmap_changed, "cmap-changed")
         Publisher().subscribe(self.on_is_cmap_inverted_changed, "is_cmap_inverted-changed")
         Publisher().subscribe(self.on_scaling_changed, "scaling-changed")
-        self.Bind(wx.EVT_NAVIGATION_KEY, self.on_navigation_key)
+#         self.Bind(wx.EVT_NAVIGATION_KEY, self.on_navigation_key)
 
     def on_choose_scaling(self, evt):
         wx.CallAfter(Publisher().sendMessage, "set_scaling", evt.GetString())
@@ -161,25 +162,6 @@ class ColorPanel(wx.Panel):
 
     def on_change_cmap_event(self, event):
         wx.CallAfter(Publisher().sendMessage, "set_cmap", self.eventID_to_cmap[event.GetId()])
-
-    def on_navigation_key(self, evt):
-        tab_order = [self.minval_textctrl, self.maxval_textctrl,
-                     self.auto_set_minmax_button,
-                     self.set_min_button, self.set_minmax_button, self.set_max_button,
-                     self.choose_min_value_mode_on_new_image,
-                     self.choose_minmax_value_mode_on_new_image,
-                     self.choose_max_value_mode_on_new_image]
-        if evt.GetCurrentFocus() not in tab_order:
-            new_focus = tab_order[0]
-        else:
-            if evt.GetDirection():
-                direction = 1
-            else:
-                direction = -1
-            new_focus = tab_order[(tab_order.index(evt.GetCurrentFocus()) + direction) % len(tab_order)]
-        # following debugging line demonstrates that on_navigation_key is only being called when focus is on a textctrl, not when on a button or dropdown menu
-#         sys.stderr.write("\n\nnew_focus = {}\n\n".format(new_focus))
-        new_focus.SetFocus()
 
     def on_is_cmap_inverted_checkbox(self, evt):
         wx.CallAfter(Publisher().sendMessage, "set_cmap_inverted", evt.IsChecked())

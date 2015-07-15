@@ -40,7 +40,7 @@ class PlotPlotPanel(wx.Panel):
 
 class PlotPanel(wx.Panel):
     def __init__(self, parent):
-        wx.Panel.__init__(self, parent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL)
+        wx.Panel.__init__(self, parent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize)
         self.ztv_frame = self.GetTopLevelParent()
         self.primary_image_patch = None
 

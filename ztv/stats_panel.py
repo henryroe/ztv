@@ -10,7 +10,7 @@ from .ztv_wx_lib import set_textctrl_background_color, validate_textctrl_str
 
 class StatsPanel(wx.Panel):
     def __init__(self, parent):
-        wx.Panel.__init__(self, parent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL)
+        wx.Panel.__init__(self, parent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize)
         self.ztv_frame = self.GetTopLevelParent()
         self.SetSizeHintsSz( wx.Size( 1024,512 ), wx.DefaultSize )
         self.stats_info = None
@@ -308,21 +308,6 @@ class StatsPanel(wx.Panel):
         set_textctrl_background_color(self.y1_textctrl, 'ok')
         set_textctrl_background_color(self.ysize_textctrl, 'ok')
         
-    def on_navigation_key(self, evt):
-        tab_order = [self.x0_textctrl, self.xsize_textctrl, self.x1_textctrl,
-                     self.y0_textctrl, self.ysize_textctrl, self.y1_textctrl]
-        if evt.GetCurrentFocus() not in tab_order:
-            new_focus = tab_order[0]
-        else:
-            if evt.GetDirection():
-                direction = 1
-            else:
-                direction = -1
-            new_focus = tab_order[(tab_order.index(evt.GetCurrentFocus()) + direction) % len(tab_order)]
-        # following debugging line demonstrates that on_navigation_key is only being called when focus is on a textctrl, not when on a button or dropdown menu
-#         sys.stderr.write("\n\nnew_focus = {}\n\n".format(new_focus))
-        new_focus.SetFocus()
-
     def x0_textctrl_changed(self, evt):
         validate_textctrl_str(self.x0_textctrl, int, self.last_string_values['x0'])
 

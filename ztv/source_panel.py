@@ -111,7 +111,7 @@ class SourcePanel(wx.Panel):
         self.flat_hdulist = None
         self.sky_file_fullname = ''
         self.flat_file_fullname = ''
-        wx.Panel.__init__(self, parent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL)
+        wx.Panel.__init__(self, parent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize)
         self.ztv_frame = self.GetTopLevelParent()
         Publisher().subscribe(self.on_fitsfile_loaded, "fitsfile-loaded")
         self.max_items_in_curfile_history = 20
