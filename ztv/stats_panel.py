@@ -297,7 +297,6 @@ class StatsPanel(wx.Panel):
         set_textctrl_background_color(self.ysize_textctrl, 'ok')
         
     def on_navigation_key(self, evt):
-        # TODO: figure out how to make tab order work the way I want.  Currently the following code works partly, but is ignored by some tabs.  Weird. Looks like it's an issue that tab is triggering some *other* event when it's a button that has focus.  Might have to play around with catching all key-presses inside of ColorControlPanel & passing along the non-tab keypresses???
         tab_order = [self.x0_textctrl, self.xsize_textctrl, self.x1_textctrl,
                      self.y0_textctrl, self.ysize_textctrl, self.y1_textctrl]
         if evt.GetCurrentFocus() not in tab_order:

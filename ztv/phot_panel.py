@@ -56,7 +56,6 @@ class PhotPanel(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL)
         self.ztv_frame = self.GetTopLevelParent()
-        # TODO: figure out why min size is not being respected by comparing with the framebuilder example
         self.SetSizeHintsSz( wx.Size( 1024,512 ), wx.DefaultSize )
         self.star_center_patch = None
         self.star_aperture_patch = None

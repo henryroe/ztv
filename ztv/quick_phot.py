@@ -2,9 +2,6 @@ import numpy as np
 from astropy.stats import sigma_clipped_stats
 import sys
 
-# TODO: once astropy photometry is released and stable everything in this file should most likely be removed and replaced with calls to the astropy phot package. 
-#  (but needed something quick-and-dirty)
-
 class Error(Exception):
     pass
 

@@ -9,7 +9,6 @@ class ColorPanel(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL)
         self.ztv_frame = self.GetTopLevelParent()
-        # TODO: figure out why min size is not being respected by comparing with the framebuilder example
         self.SetSizeHintsSz( wx.Size( 1024,512 ), wx.DefaultSize )
         self.eventID_to_cmap = {wx.NewId(): x for x in self.ztv_frame.available_cmaps}
         self.cmap_to_eventID = {self.eventID_to_cmap[x]: x for x in self.eventID_to_cmap}
@@ -38,7 +37,6 @@ class ColorPanel(wx.Panel):
         self.set_min_button = wx.Button(self, wx.ID_ANY, u"Min", wx.DefaultPosition, wx.DefaultSize, 0)
         values_sizer.Add(self.set_min_button, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL, 2)
         self.set_min_button.Bind(wx.EVT_BUTTON, self.on_set_min_button)
-        # TODO: italicize "min" text on button if limits are at Auto
         values_sizer.AddSpacer((0,0), 0, wx.EXPAND)
         temp_list = self.ztv_frame.available_value_modes_on_new_image[:]
         temp_list[temp_list.index('data-min/max')] = 'min'
@@ -54,12 +52,10 @@ class ColorPanel(wx.Panel):
         self.auto_set_minmax_button = wx.Button(self, wx.ID_ANY, u"Auto", wx.DefaultPosition, wx.DefaultSize, 0)
         values_sizer.Add(self.auto_set_minmax_button, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL, 2)
         self.auto_set_minmax_button.Bind(wx.EVT_BUTTON, self.on_auto_set_minmax_button)
-        # TODO: italicize "auto" text on button if limits are at Auto
 
         self.set_minmax_button = wx.Button(self, wx.ID_ANY, u"Min/Max", wx.DefaultPosition, wx.DefaultSize, 0)
         values_sizer.Add(self.set_minmax_button, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL, 2)
         self.set_minmax_button.Bind(wx.EVT_BUTTON, self.on_set_minmax_button)
-        # TODO: italicize "min/max" text on button if limits are at Auto
 
         self.minval_static_text = wx.StaticText(self, wx.ID_ANY, u"On load image:",
                                                 wx.DefaultPosition, wx.DefaultSize, 0 )
@@ -90,7 +86,6 @@ class ColorPanel(wx.Panel):
         self.set_max_button = wx.Button(self, wx.ID_ANY, u"Max", wx.DefaultPosition, wx.DefaultSize, 0)
         values_sizer.Add(self.set_max_button, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL, 2)
         self.set_max_button.Bind(wx.EVT_BUTTON, self.on_set_max_button)
-        # TODO: italicize "max" text on button if limits are at Auto
         values_sizer.AddSpacer((0,0), 0, wx.EXPAND)
         temp_list = self.ztv_frame.available_value_modes_on_new_image[:]
         temp_list[temp_list.index('data-min/max')] = 'max'
@@ -168,7 +163,6 @@ class ColorPanel(wx.Panel):
         wx.CallAfter(Publisher().sendMessage, "set_cmap", self.eventID_to_cmap[event.GetId()])
 
     def on_navigation_key(self, evt):
-        # TODO: figure out how to make tab order work the way I want.  Currently the following code works partly, but is ignored by some tabs.  Weird. Looks like it's an issue that tab is triggering some *other* event when it's a button that has focus.  Might have to play around with catching all key-presses inside of ColorPanel & passing along the non-tab keypresses???
         tab_order = [self.minval_textctrl, self.maxval_textctrl,
                      self.auto_set_minmax_button,
                      self.set_min_button, self.set_minmax_button, self.set_max_button,

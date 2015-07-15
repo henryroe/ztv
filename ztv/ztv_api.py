@@ -62,7 +62,6 @@ class ZTV():
         Shutdown this instance of ZTV
         """
         self._send_to_ztv("kill_ztv")
-        # self._subproc.terminate()   # TODO: neither .terminate() nor .kill() seem to close out the subprocess, something must be holding it up.
 
     def _request_return_value_from_ztv(self, request_message, expected_return_message_title=None, timeout=10.):
         """

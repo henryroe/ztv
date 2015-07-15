@@ -6,7 +6,6 @@ def set_textctrl_background_color(textctrl, mode, tooltip=None):
     elif mode == 'enter-needed':
         color = (200,255,200)
     elif mode == 'invalid':
-        # TODO:  implement: escape key brings up last valid value??
         color = (255,200,200)
     textctrl.SetBackgroundColour(color)
     textctrl.Refresh()
