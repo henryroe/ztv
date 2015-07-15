@@ -12,7 +12,6 @@ class StatsPanel(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL)
         self.ztv_frame = self.GetTopLevelParent()
-        # TODO: figure out why min size is not being respected by comparing with the framebuilder example
         self.SetSizeHintsSz( wx.Size( 1024,512 ), wx.DefaultSize )
         self.stats_info = None
         
@@ -333,7 +332,7 @@ class StatsPanel(wx.Panel):
             x0,y0,x1,y1 = self.get_x0y0x1y1_from_stats_rect()
             xc = int((x0 + x1)/2)
             x0 = int(xc - xsize/2)
-            x1 = x0 + xsize  # TODO: as part of ensuring pythonic ranges behind scenes, but sensible ranges in GUI, need to re-examine this
+            x1 = x0 + xsize 
             self.update_stats_box(x0, y0, x1, y1)
             self.xsize_textctrl.SetSelection(-1, -1)
             self.redraw_overplot_on_image()
@@ -368,7 +367,7 @@ class StatsPanel(wx.Panel):
             x0,y0,x1,y1 = self.get_x0y0x1y1_from_stats_rect()
             yc = int((y0 + y1)/2)
             y0 = int(yc - ysize/2)
-            y1 = y0 + ysize  # TODO: as part of ensuring pythonic ranges behind scenes, but sensible ranges in GUI, need to re-examine this
+            y1 = y0 + ysize 
             self.update_stats_box(x0, y0, x1, y1)
             self.ysize_textctrl.SetSelection(-1, -1)
             self.redraw_overplot_on_image()
