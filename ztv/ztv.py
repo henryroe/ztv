@@ -603,7 +603,6 @@ class ControlsNotebook(wx.Notebook):
 
             
 class ZTVFrame(wx.Frame):
-    # TODO: create __init__ input parameters for essentially every adjustable parameter
     def __init__(self, title=None, launch_listen_thread=False, control_panels_to_load=None,
                  default_data_dir=None, default_autoload_pattern=None):
         self.__version__ = version=about["__version__"]
@@ -864,12 +863,10 @@ class ZTVFrame(wx.Frame):
         return (robust_mean - n_sigma_below * robust_stdev, robust_mean + n_sigma_above * robust_stdev)
 
     def set_clim_to_auto_stats_box(self, *args):
-        # TODO: need to add calling this from ztv_api
         auto_clim = self.get_auto_stats_box_clim_values()
         self.set_clim([auto_clim[0], auto_clim[1]])
 
     def set_clim_to_auto(self, *args):
-        # TODO: need to add calling this from ztv_api
         auto_clim = self.get_auto_clim_values()
         self.set_clim([auto_clim[0], auto_clim[1]])
 
@@ -1044,7 +1041,8 @@ class ZTVFrame(wx.Frame):
                     self.cur_fits_hdulist = self.load_hdulist_from_fitsfile(filename)
                     # TODO: be more flexible about hdulist where image data is NOT just [0].data
                     # TODO also, in case of extended fits files need to deal with additional header info
-                    # following try/except code is to more gracefully handle the situation when autoloading files and you try to autoload a file before it's been fully written to disk.
+                    # following try/except handles situation when autoloading files tries to autoload a file 
+                    #     before it's been fully written to disk.
                     max_n_tries = 5
                     pause_time_between_tries_sec = 1.
                     cur_try = 0
