@@ -39,6 +39,7 @@ def aperture_phot(im, x, y, star_radius, sky_inner_radius, sky_outer_radius,
     x,y - coordinates of center of star
     star_radius - radius of photometry circle
     sky_inner_radius, sky_outer_radius - defines annulus for determining sky
+            (if sky_inner_radius > sky_outer_radius, aperture_phot flips them)
     ----
     Note that this is a very quick-and-dirty aperture photometry routine.
     No error checking.
@@ -65,6 +66,8 @@ def aperture_phot(im, x, y, star_radius, sky_inner_radius, sky_outer_radius,
                 'sky_inner_radius': sky_inner_radius, 'sky_outer_radius': sky_outer_radius,
                 'n_star_pix':0, 'n_sky_pix':0, 'sky_per_pixel':np.nan, 'sky_per_pixel_err':np.nan,
                 'flux':np.nan, 'sky_err':np.nan, 'distances':[]}
+    if sky_inner_radius > sky_outer_radius:
+        sky_inner_radius, sky_outer_radius = sky_outer_radius, sky_inner_radius
     output = {'x': x, 'y': y, 'star_radius': star_radius,
               'sky_inner_radius': sky_inner_radius, 'sky_outer_radius': sky_outer_radius}
     xdist = np.outer(np.ones(im.shape[0]), np.arange(im.shape[1]) - x)
@@ -72,6 +75,7 @@ def aperture_phot(im, x, y, star_radius, sky_inner_radius, sky_outer_radius,
     dist = np.sqrt(xdist**2 + ydist**2)
     star_mask = dist <= star_radius
     star_pixels = im[star_mask]
+    
     sky_pixels = im[(dist >= sky_inner_radius) & (dist <= sky_outer_radius)]
     output['n_star_pix'] = star_pixels.size
     output['n_sky_pix'] = sky_pixels.size
