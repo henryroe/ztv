@@ -4,6 +4,7 @@ from wx.lib.pubsub import Publisher
 from wx.lib.pubsub.core.datamsg import Message
 import matplotlib
 from matplotlib.figure import Figure
+from matplotlib.widgets import AxesWidget
 try:
     from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg
 except IOError:
@@ -17,12 +18,11 @@ try:
 except ImportError, e:
     scipy_install_is_ok = False
 from .quick_phot import centroid, aperture_phot
-from .ztv_wx_lib import validate_textctrl_str, textctrl_output_only_background_color
+from .ztv_wx_lib import validate_textctrl_str, textctrl_output_only_background_color, set_textctrl_background_color
 from astropy import units
-
 import numpy as np
-
 import sys
+
 
 class PhotPlotPanel(wx.Panel):
     def __init__(self, parent, dpi=None, **kwargs):
@@ -32,6 +32,91 @@ class PhotPlotPanel(wx.Panel):
         self.axes = self.figure.add_subplot(111)
         self.canvas = FigureCanvasWxAgg(self, -1, self.figure)
         self.Bind(wx.EVT_SIZE, self._onSize)
+        self.axes_widget = AxesWidget(self.figure.gca())
+        self.axes_widget.connect_event('motion_notify_event', self.on_motion)
+        self.axes_widget.connect_event('button_press_event', self.on_button_press)
+        self.axes_widget.connect_event('button_release_event', self.on_button_release)
+        self.axes_widget.connect_event('figure_leave_event', self.on_cursor_leave)
+        self.button_down = False
+        
+    def on_button_press(self, event):
+        self.aper_names = ['aprad', 'skyradin', 'skyradout']
+        self.aper_last_radii = np.array([self.ztv_frame.phot_panel.aprad, 
+                                         self.ztv_frame.phot_panel.skyradin,
+                                         self.ztv_frame.phot_panel.skyradout])
+        self.button_press_xdata = event.xdata
+        self.cur_aper_index = np.abs(self.aper_last_radii - event.xdata).argmin()
+        self.cur_aper_name = self.aper_names[self.cur_aper_index]
+        # but, click must be within +-N pix to be valid
+        if np.abs(event.xdata - self.aper_last_radii[self.cur_aper_index]) <= 20:
+            self.button_down = True
+
+    def on_motion(self, event):
+        if self.button_down:
+            if event.xdata is not None:
+                if self.cur_aper_name == 'aprad':
+                    self.ztv_frame.phot_panel.aprad = (self.aper_last_radii[self.cur_aper_index] +
+                                                       (event.xdata - self.button_press_xdata))
+                    self.ztv_frame.phot_panel.aprad_textctrl.SetValue('{0:.2f}'.format(self.ztv_frame.phot_panel.aprad))
+                    set_textctrl_background_color(self.ztv_frame.phot_panel.aprad_textctrl, 'ok')
+                elif self.cur_aper_name == 'skyradin':
+                    self.ztv_frame.phot_panel.skyradin = (self.aper_last_radii[self.cur_aper_index] +
+                                                          (event.xdata - self.button_press_xdata))
+                    self.ztv_frame.phot_panel.skyradin_textctrl.SetValue('{0:.2f}'.format( 
+                                                                       self.ztv_frame.phot_panel.skyradin))
+                    set_textctrl_background_color(self.ztv_frame.phot_panel.skyradin_textctrl, 'ok')
+                elif self.cur_aper_name == 'skyradout':
+                    self.ztv_frame.phot_panel.skyradout = (self.aper_last_radii[self.cur_aper_index] +
+                                                           (event.xdata - self.button_press_xdata))
+                    self.ztv_frame.phot_panel.skyradout_textctrl.SetValue('{0:.2f}'.format( 
+                                                                       self.ztv_frame.phot_panel.skyradout))
+                    set_textctrl_background_color(self.ztv_frame.phot_panel.skyradout_textctrl, 'ok')
+                self.ztv_frame.phot_panel.recalc_phot()
+                self.ztv_frame.phot_panel.redraw_overplot_on_image()
+
+    def on_button_release(self, event):
+        if self.button_down:
+            if event.xdata is not None:
+                if self.cur_aper_name == 'aprad':
+                    self.ztv_frame.phot_panel.aprad = (self.aper_last_radii[self.cur_aper_index] +
+                                                       (event.xdata - self.button_press_xdata))
+                    self.ztv_frame.phot_panel.aprad_textctrl.SetValue('{0:.2f}'.format(self.ztv_frame.phot_panel.aprad))
+                    set_textctrl_background_color(self.ztv_frame.phot_panel.aprad_textctrl, 'ok')
+                elif self.cur_aper_name == 'skyradin':
+                    self.ztv_frame.phot_panel.skyradin = (self.aper_last_radii[self.cur_aper_index] +
+                                                          (event.xdata - self.button_press_xdata))
+                    self.ztv_frame.phot_panel.skyradin_textctrl.SetValue('{0:.2f}'.format( 
+                                                                       self.ztv_frame.phot_panel.skyradin))
+                    set_textctrl_background_color(self.ztv_frame.phot_panel.skyradin_textctrl, 'ok')
+                elif self.cur_aper_name == 'skyradout':
+                    self.ztv_frame.phot_panel.skyradout = (self.aper_last_radii[self.cur_aper_index] +
+                                                           (event.xdata - self.button_press_xdata))
+                    self.ztv_frame.phot_panel.skyradout_textctrl.SetValue('{0:.2f}'.format( 
+                                                                       self.ztv_frame.phot_panel.skyradout))
+                    set_textctrl_background_color(self.ztv_frame.phot_panel.skyradout_textctrl, 'ok')
+                self.ztv_frame.phot_panel.recalc_phot()
+                self.ztv_frame.phot_panel.redraw_overplot_on_image()
+        self.button_down = False
+    
+    def on_cursor_leave(self, event):
+        if self.button_down:
+            if self.cur_aper_name == 'aprad':
+                self.ztv_frame.phot_panel.aprad = self.aper_last_radii[self.cur_aper_index]
+                self.ztv_frame.phot_panel.aprad_textctrl.SetValue('{0:.2f}'.format(self.ztv_frame.phot_panel.aprad))
+                set_textctrl_background_color(self.ztv_frame.phot_panel.aprad_textctrl, 'ok')
+            elif self.cur_aper_name == 'skyradin':
+                self.ztv_frame.phot_panel.skyradin = self.aper_last_radii[self.cur_aper_index]
+                self.ztv_frame.phot_panel.skyradin_textctrl.SetValue('{0:.2f}'.format( 
+                                                                   self.ztv_frame.phot_panel.skyradin))
+                set_textctrl_background_color(self.ztv_frame.phot_panel.skyradin_textctrl, 'ok')
+            elif self.cur_aper_name == 'skyradout':
+                self.ztv_frame.phot_panel.skyradout = self.aper_last_radii[self.cur_aper_index]
+                self.ztv_frame.phot_panel.skyradout_textctrl.SetValue('{0:.2f}'.format( 
+                                                                   self.ztv_frame.phot_panel.skyradout))
+                set_textctrl_background_color(self.ztv_frame.phot_panel.skyradout_textctrl, 'ok')
+            self.ztv_frame.phot_panel.recalc_phot()
+            self.ztv_frame.phot_panel.redraw_overplot_on_image()
+        self.button_down=False
 
     def _onSize(self, event):
         self._SetSize()
@@ -131,7 +216,6 @@ class PhotPanel(wx.Panel):
         self.skyradout_textctrl = wx.TextCtrl(self, wx.ID_ANY, str(self.skyradout), wx.DefaultPosition, wx.DefaultSize,
                                               wx.TE_PROCESS_ENTER)
         self.skyradout_textctrl.SetFont(textentry_font)
-        self.skyradout_textctrl.SetBackgroundColour(textctrl_output_only_background_color)
         values_sizer.Add(self.skyradout_textctrl, 0, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 2)
         self.skyradout_textctrl.Bind(wx.EVT_TEXT, self.skyradout_textctrl_changed)
         self.skyradout_textctrl.Bind(wx.EVT_TEXT_ENTER, self.skyradout_textctrl_entered)
