@@ -213,7 +213,7 @@ class PhotPanel(wx.Panel):
         self.radec_textctrl.SetFont(textentry_font)
         self.radec_textctrl.SetBackgroundColour(textctrl_output_only_background_color)
         h_sizer3.Add(self.radec_textctrl, 1, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 2)
-        h_sizer3.AddSpacer([30, 0], 0, 1)
+        h_sizer3.AddSpacer([30, 0], 0, 0)
         self.hideshow_button = wx.Button(self, wx.ID_ANY, u"Hide", wx.DefaultPosition, wx.DefaultSize, 0)
         h_sizer3.Add(self.hideshow_button, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 2)
         self.hideshow_button.Bind(wx.EVT_BUTTON, self.on_hideshow_button)
