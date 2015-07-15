@@ -20,6 +20,7 @@ class StatsPanel(wx.Panel):
         # use self.stats_rect as where we store/retrieve the x0,y0,x1,y1
         # x0,y0,x1,y1 should be limited to range of 0 to shape-1
         # but, stats should be calculated over e.g. x0:x1+1  (so that have pixels to do stats on even if x0==x1)
+        # and, width/height of stats_rect should always be >= 0
 
         textentry_font = wx.Font(14, wx.FONTFAMILY_MODERN, wx.NORMAL, wx.FONTWEIGHT_LIGHT, False)
         
@@ -212,6 +213,10 @@ class StatsPanel(wx.Panel):
             x1 = self.stats_rect.get_x() + self.stats_rect.get_width()
         if y1 is None:
             y1 = self.stats_rect.get_y() + self.stats_rect.get_height()
+        if x0 > x1:
+            x0, x1 = x1, x0
+        if y0 > y1:
+            y0, y1 = y1, y0
         x0 = min(max(0, x0), self.ztv_frame.display_image.shape[1] - 1)
         y0 = min(max(0, y0), self.ztv_frame.display_image.shape[0] - 1)
         x1 = min(max(0, x1), self.ztv_frame.display_image.shape[1] - 1)
@@ -247,10 +252,6 @@ class StatsPanel(wx.Panel):
         
     def update_stats(self, *args):
         x0,y0,x1,y1 = self.get_x0y0x1y1_from_stats_rect()
-        if x0 > x1:
-            x0,x1 = x1,x0
-        if y0 > y1:
-            y0,y1 = y1,y0
         x0, y0 = int(np.round(x0)), int(np.round(y0))
         x1, y1 = int(np.round(x1)), int(np.round(y1))
         self.last_string_values['x0'] = str(int(x0))
@@ -323,10 +324,14 @@ class StatsPanel(wx.Panel):
         if validate_textctrl_str(self.xsize_textctrl, int, self.last_string_values['xsize']):
             self.last_string_values['xsize'] = self.xsize_textctrl.GetValue()
             xsize = int(self.last_string_values['xsize'])
+            sys.stderr.write("\n\nxsize = {}\n\n".format(xsize))
             x0,y0,x1,y1 = self.get_x0y0x1y1_from_stats_rect()
-            xc = int((x0 + x1)/2)
-            x0 = int(xc - xsize/2)
-            x1 = x0 + xsize 
+            xc = (x0 + x1) / 2.
+            x0 = max(0, int(xc - xsize / 2.))
+            x1 = x0 + xsize - 1
+            x1 = min(x1, self.ztv_frame.display_image.shape[1] - 1)
+            x0 = x1 - xsize + 1
+            x0 = max(0, int(xc - xsize / 2.))
             self.update_stats_box(x0, y0, x1, y1)
             self.xsize_textctrl.SetSelection(-1, -1)
             self.redraw_overplot_on_image()
@@ -359,9 +364,12 @@ class StatsPanel(wx.Panel):
             self.last_string_values['ysize'] = self.ysize_textctrl.GetValue()
             ysize = int(self.last_string_values['ysize'])
             x0,y0,x1,y1 = self.get_x0y0x1y1_from_stats_rect()
-            yc = int((y0 + y1)/2)
-            y0 = int(yc - ysize/2)
-            y1 = y0 + ysize 
+            yc = (y0 + y1) / 2.
+            y0 = max(0, int(yc - ysize / 2.))
+            y1 = y0 + ysize - 1
+            y1 = min(y1, self.ztv_frame.display_image.shape[0] - 1)
+            y0 = y1 - ysize + 1
+            y0 = max(0, int(yc - ysize / 2.))
             self.update_stats_box(x0, y0, x1, y1)
             self.ysize_textctrl.SetSelection(-1, -1)
             self.redraw_overplot_on_image()
