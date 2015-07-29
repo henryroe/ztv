@@ -3,9 +3,13 @@ ztv Change Log
 ~~~~~~~~~~~~~~
 
 ------------------
-v0.1.3dev, 
+v0.1.3dev
 ------------------
 
+2015-07-29:
+- implemented that z-key on primary image activates a plot in z-dim of image stack in plot_panel 
+
+pre-2015-07-29:
 - updated version number b/c realized had already released 0.1.2
 - fixed bug in plot_panel where doing slice beyond image size caused warnings.
 - implemented click-and-drag to aperture radii on profile plot in phot_panel
