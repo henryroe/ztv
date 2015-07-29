@@ -368,7 +368,8 @@ class PhotPanel(wx.Panel):
         self.flux_textctrl.SetValue("{:0.6g}".format(self.phot_info['flux']))
         self.sky_textctrl.SetValue("{:0.6g}".format(self.phot_info['sky_per_pixel']))
         self.skyerr_textctrl.SetValue("{:0.6g}".format(self.phot_info['sky_per_pixel_err']))
-        if self.ztv_frame.image_radec is not None:
+        if (self.ztv_frame.image_radec is not None and
+            np.isfinite(self.xcentroid) and np.isfinite(self.ycentroid)):
             c = self.ztv_frame.image_radec[self.ycentroid, self.xcentroid]
             radec_string = "{0} {1}".format(c.ra.to_string(units.hour, sep=':', precision=2, pad=True),
                                             c.dec.to_string(sep=':', precision=2, alwayssign=True, pad=True))
