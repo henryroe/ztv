@@ -92,7 +92,15 @@ class PlotPanel(wx.Panel):
     def redraw_overplot_on_image(self):
         if self.primary_image_patch is not None:
             self.ztv_frame.primary_image_panel.axes.patches.remove(self.primary_image_patch)
-        path = Path([self.start_pt, self.end_pt], [Path.MOVETO, Path.LINETO])
+        if self.start_pt == self.end_pt:
+            path = Path([self.start_pt, self.start_pt + (0.5, 0.),
+                         self.start_pt, self.start_pt + (-0.5, 0.), 
+                         self.start_pt, self.start_pt + (0., 0.5), 
+                         self.start_pt, self.start_pt + (0., -0.5), self.start_pt], 
+                        [Path.MOVETO, Path.LINETO, Path.LINETO, Path.LINETO, Path.LINETO, 
+                         Path.LINETO, Path.LINETO, Path.LINETO, Path.LINETO])
+        else:
+            path = Path([self.start_pt, self.end_pt], [Path.MOVETO, Path.LINETO])
         self.primary_image_patch = PathPatch(path, color='magenta', lw=1)
         self.ztv_frame.primary_image_panel.axes.add_patch(self.primary_image_patch)
         self.ztv_frame.primary_image_panel.figure.canvas.draw()
@@ -114,42 +122,61 @@ class PlotPanel(wx.Panel):
             self.redraw_overplot_on_image()
             
     def redraw(self, *args):
-        xy_limits = self.ztv_frame.primary_image_panel.set_and_get_xy_limits()
-        oversample_factor = 10.
-        n_pts = oversample_factor*np.max(self.ztv_frame.display_image.shape)
-        xs = np.linspace(self.start_pt.x, self.end_pt.x, n_pts)
-        ys = np.linspace(self.start_pt.y, self.end_pt.y, n_pts)
-        mask = ((xs >= min(xy_limits['xlim'])) & (xs <= max(xy_limits['xlim'])) & 
-                (ys >= min(xy_limits['ylim'])) & (ys <= max(xy_limits['ylim'])) &
-                (xs >= 0.) & (ys >= 0.) &
-                (xs < self.ztv_frame.display_image.shape[1]) & 
-                (ys < self.ztv_frame.display_image.shape[0]))
-        xs = xs[mask]
-        ys = ys[mask]
-        if len(xs) > 0:
-            if (ys.max() - ys.min()) > (xs.max() - xs.min()):   # dominantly a vertical slice
-                if ys[0] > ys[1]:
-                    xs = xs[-1::-1]
-                    ys = ys[-1::-1]
+        if self.start_pt == self.end_pt:
+            if self.ztv_frame.proc_image.ndim == 2:
+                positions = np.array([-0.5, 0.5])
+                im_values = np.array([self.ztv_frame.proc_image[self.start_pt.y, self.start_pt.x]] * 2)
+                cur_im_num = 0
+                cur_im_value = self.ztv_frame.proc_image[self.start_pt.y, self.start_pt.x]
             else:
-                if xs[0] > xs[1]:
-                    xs = xs[-1::-1]
-                    ys = ys[-1::-1]
-            if np.min(np.round(xs)) == np.max(np.round(xs)):
-                positions = ys
-            elif np.min(np.round(ys)) == np.max(np.round(ys)):
-                positions = xs
-            else:
-                positions = np.sqrt( (xs - xs[0])**2 + (ys - ys[0])**2 )
-            xs = xs.astype(np.int)
-            ys = ys.astype(np.int)
-            im_values = self.ztv_frame.display_image[ys, xs]
+                positions = np.array([np.arange(-0.5, self.ztv_frame.proc_image.shape[0] - 1), 
+                                      np.arange(0.5, self.ztv_frame.proc_image.shape[0])]).transpose().ravel()
+                im_values = np.array([self.ztv_frame.proc_image[:, self.start_pt.y, self.start_pt.x],
+                                      self.ztv_frame.proc_image[:, self.start_pt.y, self.start_pt.x]]).transpose().ravel()
+                cur_im_num = self.ztv_frame.cur_display_frame_num
+                cur_im_value = self.ztv_frame.proc_image[cur_im_num, self.start_pt.y, self.start_pt.x]
             self.plot_panel.axes.clear()
-            if positions.min() != positions.max():
-                self.line_plot = self.plot_panel.axes.plot(positions, im_values)
-                self.plot_panel.axes.set_xlim([positions[0], positions[-1]])
+            self.line_plot = self.plot_panel.axes.plot(positions, im_values)
+            self.plot_panel.axes.plot([cur_im_num], [cur_im_value], 'xm')
+            self.plot_panel.axes.set_xlim([positions[0], positions[-1]])
             self.plot_panel.figure.canvas.draw()
         else:
-            self.plot_panel.axes.clear()
-            self.plot_panel.figure.canvas.draw()
+            xy_limits = self.ztv_frame.primary_image_panel.set_and_get_xy_limits()
+            oversample_factor = 10.
+            n_pts = oversample_factor*np.max(self.ztv_frame.display_image.shape)
+            xs = np.linspace(self.start_pt.x, self.end_pt.x, n_pts)
+            ys = np.linspace(self.start_pt.y, self.end_pt.y, n_pts)
+            mask = ((xs >= min(xy_limits['xlim'])) & (xs <= max(xy_limits['xlim'])) & 
+                    (ys >= min(xy_limits['ylim'])) & (ys <= max(xy_limits['ylim'])) &
+                    (xs >= 0.) & (ys >= 0.) &
+                    (xs < self.ztv_frame.display_image.shape[1]) & 
+                    (ys < self.ztv_frame.display_image.shape[0]))
+            xs = xs[mask]
+            ys = ys[mask]
+            if len(xs) > 0:
+                if (ys.max() - ys.min()) > (xs.max() - xs.min()):   # dominantly a vertical slice
+                    if ys[0] > ys[1]:
+                        xs = xs[-1::-1]
+                        ys = ys[-1::-1]
+                else:
+                    if xs[0] > xs[1]:
+                        xs = xs[-1::-1]
+                        ys = ys[-1::-1]
+                if np.min(np.round(xs)) == np.max(np.round(xs)):
+                    positions = ys
+                elif np.min(np.round(ys)) == np.max(np.round(ys)):
+                    positions = xs
+                else:
+                    positions = np.sqrt( (xs - xs[0])**2 + (ys - ys[0])**2 )
+                xs = xs.astype(np.int)
+                ys = ys.astype(np.int)
+                im_values = self.ztv_frame.display_image[ys, xs]
+                self.plot_panel.axes.clear()
+                if positions.min() != positions.max():
+                    self.line_plot = self.plot_panel.axes.plot(positions, im_values)
+                    self.plot_panel.axes.set_xlim([positions[0], positions[-1]])
+                self.plot_panel.figure.canvas.draw()
+            else:
+                self.plot_panel.axes.clear()
+                self.plot_panel.figure.canvas.draw()
         

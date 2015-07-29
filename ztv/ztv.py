@@ -247,6 +247,10 @@ class PrimaryImagePanel(wx.Panel):
             max_x = self.ztv_frame.display_image.shape[1] - 1
             wx.CallAfter(Publisher().sendMessage, "update_line_plot_points", ((max(0, self.xlim[0]), y + 0.5), 
                                                                               (min(max_x, self.xlim[1]), y + 0.5)))
+        elif event.key in ['z', 'Z']:
+            x = np.round(event.xdata)
+            y = np.round(event.ydata)
+            wx.CallAfter(Publisher().sendMessage, "update_line_plot_points", ((x, y), (x, y)))
         elif event.key == 'right':
             self.ztv_frame.set_cur_display_frame_num(1, relative=True)
         elif event.key == 'left':
@@ -629,7 +633,7 @@ class ZTVFrame(wx.Frame):
         self.proc_image = self.raw_image.copy()     # raw_image processed with currently selected flat/sky/etc
         self.cur_display_frame_num = 0              # ignored if raw_image/proc_image is 2-d, otherwise 
                                                     # display_image is proc_image[self.cur_display_frame_num,:,:]
-        self.display_image = self.raw_image.copy()  # 2-d array of what is currently displayed on-screen
+        self.display_image = self.proc_image.copy()  # 2-d array of what is currently displayed on-screen
         self.available_cmaps = ColorMaps().basic()
         self.cmap = 'jet'  # will go back to gray later
         self.is_cmap_inverted = False
