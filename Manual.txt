@@ -1,0 +1,117 @@
+As of v0.1.0, this manual is not being distributed as it still needs a good bit of work and most everything essential is described in README.md and/or pretty discoverable.
+
+# ztv - intro
+
+This document will form the basis for a manual for `ztv` at some point in the future.  At this time it should be more viewed as a description of features, useful for testing that the intended functionality is working.
+
+# Global keyboard short cuts
+
+- cmd Q - close & quit ztv instance
+- cmd W - close & quit ztv instance
+- cmd [/] - navigate tabbed panels
+
+# Image display panels:
+
+- all should use same color conversion (scaling, color map, limits, etc) & update automatically/simultaneously
+
+## `PrimaryImagePanel` - the main image display
+
+- current cursor position:
+    - shown in status bar at bottom of ztv window
+    - keep center of LoupeImagePanel updated
+- Left click (depends on cursor mode)
+- Right click -> popup menu
+    - select cursor mode (also selectable with cmd-# of menu item)
+        - None -> left click does nothing
+        - Zoom 
+            - click-and-drag -> draw box to zoom to upon release
+            - double-click -> zoom out by 2x centered on click
+        - Pan 
+            - click -> re-center to click
+            - double-click (acts as 2 clicks; TODO: consider should double-click re-center?)
+        - Stats box
+            - click-and-drag -> draw box & calculate basic statistics inside that box
+            - when selected auto-changes the notebook page to the stats page, although user can then switch away
+        - Phot
+            - do aperture photometry at clicked point
+            - when selected auto-changes the notebook page to the phot page, although user can then switch away
+    - select color map from list
+    - invert color map
+    - set color map scaling
+    - Display FITS header (if available)
+
+## `OverviewImagePanel` - small panel that shows full extent of image
+
+- Shows full image, filling with blank space on sides or top/bottom in order to respect aspect ratio of image
+- Shows a box of the currently visible region in `PrimaryImagePanel`, updates in real-time
+- (any) click-and-drag within box -> moves visible region around in `PrimaryImagePanel`
+- (any) double-click -> reset zoom-and-center of `PrimaryImagePanel` to display full extent of image
+
+## `LoupeImagePanel` - small panel shows zoom of area under cursor within `PrimaryImagePanel`
+
+- no interaction, just updates automatically to show zoomed region around cursor, if cursor is within `PrimaryImagePanel`
+
+
+# Control panels 
+
+These are grouped into a Notebook.
+
+## Source panel
+
+Current FITS File:
+- Text field can type directly into
+    - has error checking (turns pink background if doesn't exist, green if exists & not loaded, white if loaded)
+    - tab to complete (tab to cycle through completions, looping through options; shift-Tab to go backwards)
+    - has dropdown recents menu
+    - has OS file picker button (ellipsis)
+- Show header button (greyed out if not fits file loaded)
+
+Auto-load file:
+- Directory to search:
+    - has error checking (turns pink background if doesn't exist, green if exists & not loaded, white if loaded)
+    - tab to complete (tab to cycle through completions, looping through options; shift-Tab to go backwards)
+    - has dropdown recents menu
+    - has OS file picker button (ellipsis)
+
+ActiveMQ:
+TK
+
+## Photometry (Phot):
+
+TK
+
+## Statistics (Stats):
+
+For currently selected stats box (all should be selectable for copying)
+- x-range, y-range, x-size, y-size  (all adjustable)
+- N-pixels
+- min-value and location(s)
+- max-value and location(s)
+- Mean, median, stdev
+- robust mean, robust stdev
+
+## Plot
+
+TK
+
+Vertical slice at current cursor position in Primary Image Panel is activated with a keypress of one of ['c', 'C', 'v', 'V', 'y', 'Y'].   Similarly, a horizontal slice is activated with a keypress of one of ['r', 'R', 'h', 'H', 'x', 'X'].  If a 3-d image stack is loaded, then one of ['z', 'Z'] will activate a plot through the stack at the currently selected pixel.
+
+## Color:
+
+Min/Max control:
+- Text field for each
+    - background: white if current, green if OK but need to press Return, pink if error (typically not a number)
+    - if max<min, then invert numbers and change inversion
+- Buttons:
+    - Auto (set min/max to automatically determined values)
+    - Min, Max, Min/Max.  Set min to min, max to max, or both min/min and max/max
+- Dropdown menus for what to do when a new image is loaded.
+    - one menu for Min, one for Max, one that controls both (and will update both individual menus)
+    - choices are: Min/Max, Auto, Constant  (or for the middle 'both' menu: -, in the case that Min/Max choices are not identical)
+Color Control:
+- Dropdown menu to select color map
+- inverted checkbox
+- Scaling:
+    - Linear
+    - Log
+    
