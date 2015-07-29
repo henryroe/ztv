@@ -365,6 +365,15 @@ class SourcePanel(wx.Panel):
         else:
             self.sky_hdulist = self.ztv_frame.load_hdulist_from_fitsfile(filename)
             self.sky_file_fullname = filename
+            raw_header_str = self.sky_hdulist[0].header.tostring()
+            header_str = (('\n'.join([raw_header_str[i:i+80] for i in np.arange(0, len(raw_header_str), 80)
+                                      if raw_header_str[i:i+80] != " "*80])) + '\n')
+            new_title = "Sky: " + os.path.basename(self.sky_file_fullname)
+            if hasattr(self, 'sky_fits_header_dialog') and self.sky_fits_header_dialog.is_dialog_still_open:
+                self.sky_fits_header_dialog.SetTitle(new_title)
+                self.sky_fits_header_dialog.text.SetValue(header_str)
+                self.sky_fits_header_dialog.last_find_index = 0
+                self.sky_fits_header_dialog.on_search(None)
             self.sky_header_button.Enable()
             if start_sky_correction:
                 self.load_sky_subtraction_to_process_stack()
@@ -408,7 +417,16 @@ class SourcePanel(wx.Panel):
             self.flat_checkbox.SetValue(False)
         else:
             self.flat_hdulist = self.ztv_frame.load_hdulist_from_fitsfile(filename)
-            self.flat_file_fullname = os.path.basename(filename)
+            self.flat_file_fullname = filename
+            raw_header_str = self.flat_hdulist[0].header.tostring()
+            header_str = (('\n'.join([raw_header_str[i:i+80] for i in np.arange(0, len(raw_header_str), 80)
+                                      if raw_header_str[i:i+80] != " "*80])) + '\n')
+            new_title = "Flat: " + os.path.basename(self.flat_file_fullname)
+            if hasattr(self, 'flat_fits_header_dialog') and self.flat_fits_header_dialog.is_dialog_still_open:
+                self.flat_fits_header_dialog.SetTitle(new_title)
+                self.flat_fits_header_dialog.text.SetValue(header_str)
+                self.flat_fits_header_dialog.last_find_index = 0
+                self.flat_fits_header_dialog.on_search(None)
             self.flat_header_button.Enable()
             if start_flat_correction:
                 self.load_flat_division_to_process_stack()

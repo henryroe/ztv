@@ -8,7 +8,7 @@ v0.1.3dev
 
 2015-07-29:
 - implemented that z-key on primary image activates a plot in z-dim of image stack in plot_panel 
-- FITS header is updated in fits header window when a new file is loaded
+- FITS header is updated in fits header window when a new file is loaded (or header for sky file or header for flat file)
 - misc bug fixes
 
 pre-2015-07-29:
