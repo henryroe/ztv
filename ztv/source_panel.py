@@ -240,7 +240,6 @@ class SourcePanel(wx.Panel):
 # 2015-04-22 13:15MST:  comment out next two lines and add one stderr while debugging github issue #1
 #         wx.CallAfter(self.settings_menu_activemq_item.Check, False)
 #         wx.CallAfter(self.activemq_sizer.ShowItems, False)
-  # HEREIAM
   
     def init_settings_popup_menu(self):
         menu = wx.Menu()

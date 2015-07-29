@@ -1042,7 +1042,6 @@ class ZTVFrame(wx.Frame):
         if isinstance(filename, str) or isinstance(filename, unicode):
             if filename.lower().endswith('.fits') or filename.lower().endswith('.fits.gz'):
                 if os.path.isfile(filename):
-                    self.cur_fits_hdulist = self.load_hdulist_from_fitsfile(filename)
                     # TODO: be more flexible about hdulist where image data is NOT just [0].data
                     # TODO also, in case of extended fits files need to deal with additional header info
                     # following try/except handles situation when autoloading files tries to autoload a file 
@@ -1053,6 +1052,7 @@ class ZTVFrame(wx.Frame):
                     not_yet_successful = True
                     while (cur_try < max_n_tries) and not_yet_successful:
                         try:
+                            self.cur_fits_hdulist = self.load_hdulist_from_fitsfile(filename)
                             self.load_numpy_array(self.cur_fits_hdulist[0].data, is_fits_file=True)
                             not_yet_successful = False
                         except:  # I've only seen ValueError, but might as well catch for all errors and re-try
@@ -1061,6 +1061,15 @@ class ZTVFrame(wx.Frame):
                     self.cur_fitsfile_basename = os.path.basename(filename)
                     self.cur_fitsfile_path = os.path.abspath(os.path.dirname(filename))
                     self.set_window_title()
+                    if (hasattr(self.primary_image_panel, 'cur_fits_header_dialog') and 
+                        self.primary_image_panel.cur_fits_header_dialog.is_dialog_still_open):
+                        raw_header_str = self.cur_fits_hdulist[0].header.tostring()
+                        header_str = (('\n'.join([raw_header_str[i:i+80] for i in np.arange(0, len(raw_header_str), 80)
+                                                  if raw_header_str[i:i+80] != " "*80])) + '\n')
+                        self.primary_image_panel.cur_fits_header_dialog.SetTitle(self.cur_fitsfile_basename)
+                        self.primary_image_panel.cur_fits_header_dialog.text.SetValue(header_str)
+                        self.primary_image_panel.cur_fits_header_dialog.last_find_index = 0
+                        self.primary_image_panel.cur_fits_header_dialog.on_search(None)
                     # TODO: better error handling for if WCS not available or partially available
                     try:
                         w = wcs.WCS(self.cur_fits_hdulist[0].header)
