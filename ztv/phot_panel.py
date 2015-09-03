@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 import wx
-from wx.lib.pubsub import Publisher
+from wx.lib.pubsub import pub
 from wx.lib.pubsub.core.datamsg import Message
 import matplotlib
 from matplotlib.figure import Figure
@@ -305,8 +305,8 @@ class PhotPanel(wx.Panel):
         v_sizer1.Add(self.plot_panel, 1, wx.LEFT | wx.TOP | wx.EXPAND)
 
         self.SetSizer(v_sizer1)
-        Publisher().subscribe(self.update_phot_xy, "new_phot_xy")
-        Publisher().subscribe(self.recalc_phot, "redraw_image")
+        pub.subscribe(self.update_phot_xy, "new_phot_xy")
+        pub.subscribe(self.recalc_phot, "redraw_image")
 
     def on_hideshow_button(self, evt):
         if self.hideshow_button.GetLabel() == 'Hide':

@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 import wx
-from wx.lib.pubsub import Publisher
+from wx.lib.pubsub import pub
 from matplotlib.patches import Rectangle
 from matplotlib import cm
 import numpy as np
@@ -202,7 +202,7 @@ class StatsPanel(wx.Panel):
         v_sizer1.Add(values_sizer, 0, wx.ALIGN_CENTER_HORIZONTAL)
         v_sizer1.AddStretchSpacer(1.0)
         self.SetSizer(v_sizer1)
-        Publisher().subscribe(self.update_stats, "redraw_image")
+        pub.subscribe(self.update_stats, "redraw_image")
 
     def update_stats_box(self, x0=None, y0=None, x1=None, y1=None):
         if x0 is None:
