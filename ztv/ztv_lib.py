@@ -4,7 +4,7 @@ from threading import Thread
 from Queue import Queue, Empty
 
 
-# point is to make improbably that would ever happen to appear inside a pickled image and be mistaken
+# point is to make improbable that would ever happen to appear inside a pickled image and be mistaken
 end_of_message_message = ("---EndOfMessage---"*10) + "\n"   
 
 def send_to_stream(stream, msg): 
