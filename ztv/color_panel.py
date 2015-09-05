@@ -10,7 +10,6 @@ class ColorPanel(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize)
         self.ztv_frame = self.GetTopLevelParent()
-        self.SetSizeHintsSz( wx.Size( 1024,512 ), wx.DefaultSize )
         self.eventID_to_cmap = {wx.NewId(): x for x in self.ztv_frame.available_cmaps}
         self.cmap_to_eventID = {self.eventID_to_cmap[x]: x for x in self.eventID_to_cmap}
         self.last_string_values = {'minval':'', 'maxval':''}

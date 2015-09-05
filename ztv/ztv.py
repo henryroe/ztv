@@ -409,7 +409,6 @@ class PrimaryImagePanel(wx.Panel):
 
     def _SetSize(self):
         pixels = tuple(self.GetClientSize())
-        sys.stderr.write("\n\npixels = {}\n\n".format(pixels))
         self.SetSize(pixels)
         self.canvas.SetSize(pixels)
         self.figure.set_size_inches(float(pixels[0])/self.figure.get_dpi(),

@@ -12,7 +12,6 @@ class StatsPanel(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize)
         self.ztv_frame = self.GetTopLevelParent()
-        self.SetSizeHintsSz( wx.Size( 1024,512 ), wx.DefaultSize )
         self.stats_info = None
         
         self.last_string_values = {'x0':'', 'xsize':'', 'x1':'', 'y0':'', 'ysize':'', 'y1':''}

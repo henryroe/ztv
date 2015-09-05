@@ -140,7 +140,6 @@ class PhotPanel(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize)
         self.ztv_frame = self.GetTopLevelParent()
-        self.SetSizeHintsSz( wx.Size( 1024,512 ), wx.DefaultSize )
         self.star_center_patch = None
         self.star_aperture_patch = None
         self.sky_aperture_patch = None
