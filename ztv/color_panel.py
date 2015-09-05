@@ -134,7 +134,7 @@ class ColorPanel(wx.Panel):
         wx.CallAfter(pub.sendMessage, "set_scaling", msg=evt.GetString())
 
     def init_cmap_popup_menu(self):
-        cmap_button_bitmap_height = 30
+        cmap_button_bitmap_height = 10
         cmap_button_bitmap_width = 200
         cmap_menu_bitmap_height = 20
         cmap_menu_bitmap_width = 200
