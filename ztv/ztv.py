@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 import wx
 from wx.lib.pubsub import pub
-from wx.lib.pubsub.core.datamsg import Message
 import wx.lib.layoutf as layoutf
 import numpy as np
 import threading
@@ -129,7 +128,7 @@ class PrimaryImagePanel(wx.Panel):
         self.axes_widget.connect_event('button_release_event', self.on_button_release)
         self.axes_widget.connect_event('key_press_event', self.on_key_press)
         wx.EVT_RIGHT_DOWN(self.figure.canvas, self.on_right_down)  # supercedes the above button_press_event
-        pub.subscribe(self.redraw_image, "redraw_image")
+        pub.subscribe(self.redraw_image, "redraw_image")   
         pub.subscribe(self.reset_zoom_and_center, "reset_zoom_and_center")
         pub.subscribe(self.set_zoom_factor, "set_zoom_factor")
         pub.subscribe(self.set_xy_center, "set_xy_center")
@@ -205,7 +204,7 @@ class PrimaryImagePanel(wx.Panel):
             send_change_message = False
         self.xlim, self.ylim = xlim, ylim
         if send_change_message:
-            wx.CallAfter(pub.sendMessage, "primary_xy_limits-changed", None)
+            wx.CallAfter(pub.sendMessage, "primary_xy_limits-changed", msg=None)
         return {'xlim':xlim, 'ylim':ylim}
 
     def set_cursor_to_none_mode(self, event):
@@ -240,43 +239,36 @@ class PrimaryImagePanel(wx.Panel):
         if event.key in ['c', 'C', 'v', 'V', 'y', 'Y']:
             x = np.round(event.xdata)
             max_y = self.ztv_frame.display_image.shape[0] - 1
-            wx.CallAfter(pub.sendMessage, "update_line_plot_points", ((x + 0.5, max(0, self.ylim[0])), 
-                                                                              (x + 0.5, min(max_y, self.ylim[1]))))
+            wx.CallAfter(pub.sendMessage, "update_line_plot_points", msg=((x + 0.5, max(0, self.ylim[0])), 
+                                                                          (x + 0.5, min(max_y, self.ylim[1]))))
         elif event.key in ['r', 'R', 'h', 'H', 'x', 'X']:
             y = np.round(event.ydata)
             max_x = self.ztv_frame.display_image.shape[1] - 1
-            wx.CallAfter(pub.sendMessage, "update_line_plot_points", ((max(0, self.xlim[0]), y + 0.5), 
-                                                                              (min(max_x, self.xlim[1]), y + 0.5)))
+            wx.CallAfter(pub.sendMessage, "update_line_plot_points", msg=((max(0, self.xlim[0]), y + 0.5), 
+                                                                          (min(max_x, self.xlim[1]), y + 0.5)))
         elif event.key in ['z', 'Z']:
             x = np.round(event.xdata)
             y = np.round(event.ydata)
-            wx.CallAfter(pub.sendMessage, "update_line_plot_points", ((x, y), (x, y)))
+            wx.CallAfter(pub.sendMessage, "update_line_plot_points", msg=((x, y), (x, y)))
         elif event.key == 'right':
             self.ztv_frame.set_cur_display_frame_num(1, relative=True)
         elif event.key == 'left':
             self.ztv_frame.set_cur_display_frame_num(-1, relative=True)
 
     def set_xy_center(self, msg):
-        if isinstance(msg, Message):
-            xy = msg.data
-        else:
-            xy = msg
-        self.center.x = xy[0]
-        self.center.y = xy[1]
+        self.center.x = msg[0]
+        self.center.y = msg[1]
         self.set_and_get_xy_limits()
 
     def set_zoom_factor(self, msg):
-        if isinstance(msg, Message):
-            zoom_factor = msg.data
-        else:
-            zoom_factor = msg
+        zoom_factor = msg
         old_zoom_factor = self.ztv_frame.zoom_factor
         if zoom_factor > 0.0:
             self.ztv_frame.zoom_factor = zoom_factor
         if old_zoom_factor != self.ztv_frame.zoom_factor:
             self.set_and_get_xy_limits()
 
-    def reset_zoom_and_center(self, *args, **kwargs):
+    def reset_zoom_and_center(self, msg=None):
         self.center.x = (self.ztv_frame.display_image.shape[1] / 2.) - 0.5
         self.center.y = (self.ztv_frame.display_image.shape[0] / 2.) - 0.5
         max_zoom_x = self.canvas.GetSize().x / float(self.ztv_frame.display_image.shape[1])
@@ -285,10 +277,10 @@ class PrimaryImagePanel(wx.Panel):
         self.set_and_get_xy_limits()
 
     def on_change_cmap_event(self, event):
-        wx.CallAfter(pub.sendMessage, "set_cmap", self.eventID_to_cmap[event.GetId()])
+        wx.CallAfter(pub.sendMessage, "set_cmap", msg=self.eventID_to_cmap[event.GetId()])
 
     def on_change_scaling_event(self, event):
-        wx.CallAfter(pub.sendMessage, "set_scaling", self.eventID_to_scaling[event.GetId()])
+        wx.CallAfter(pub.sendMessage, "set_scaling", msg=self.eventID_to_scaling[event.GetId()])
 
     def on_button_press(self, event):
         if event.button == 1:  # left button
@@ -313,11 +305,11 @@ class PrimaryImagePanel(wx.Panel):
                 self.cursor_stats_box_x0, self.cursor_stats_box_y0 = event.xdata, event.ydata
             elif self.cursor_mode == 'Phot':
                 self.ztv_frame.phot_panel.select_panel()
-                wx.CallAfter(pub.sendMessage, "new_phot_xy", (event.xdata, event.ydata))
+                wx.CallAfter(pub.sendMessage, "new_phot_xy", msg=(event.xdata, event.ydata))
             elif self.cursor_mode == 'Slice plot':
                 self.ztv_frame.plot_panel.select_panel()
-                wx.CallAfter(pub.sendMessage, "new_slice_plot_xy0", (event.xdata, event.ydata))
-                wx.CallAfter(pub.sendMessage, "new_slice_plot_xy1", (event.xdata, event.ydata))
+                wx.CallAfter(pub.sendMessage, "new_slice_plot_xy0", msg=(event.xdata, event.ydata))
+                wx.CallAfter(pub.sendMessage, "new_slice_plot_xy1", msg=(event.xdata, event.ydata))
 
     def on_motion(self, event):
         if event.xdata is None or event.ydata is None:
@@ -335,7 +327,7 @@ class PrimaryImagePanel(wx.Panel):
                 self.ztv_frame.stats_panel.redraw_overplot_on_image()
                 self.ztv_frame.stats_panel.update_stats()
             elif self.cursor_mode == 'Slice plot':
-                wx.CallAfter(pub.sendMessage, "new_slice_plot_xy1", (event.xdata, event.ydata))
+                wx.CallAfter(pub.sendMessage, "new_slice_plot_xy1", msg=(event.xdata, event.ydata))
         if ((x >= 0) and (x < self.ztv_frame.display_image.shape[1]) and
             (y >= 0) and (y < self.ztv_frame.display_image.shape[0])):
             imval = self.ztv_frame.display_image[y, x]
@@ -383,7 +375,7 @@ class PrimaryImagePanel(wx.Panel):
                 self.ztv_frame.stats_panel.redraw_overplot_on_image()
                 self.ztv_frame.stats_panel.update_stats()
             elif self.cursor_mode == 'Slice plot':
-                wx.CallAfter(pub.sendMessage, "new_slice_plot_xy1", (event.xdata, event.ydata))
+                wx.CallAfter(pub.sendMessage, "new_slice_plot_xy1", msg=(event.xdata, event.ydata))
 
     def on_right_down(self, event):
         for cursor_mode in self.cursor_mode_to_eventID:
@@ -417,13 +409,14 @@ class PrimaryImagePanel(wx.Panel):
 
     def _SetSize(self):
         pixels = tuple(self.GetClientSize())
+        sys.stderr.write("\n\npixels = {}\n\n".format(pixels))
         self.SetSize(pixels)
         self.canvas.SetSize(pixels)
         self.figure.set_size_inches(float(pixels[0])/self.figure.get_dpi(),
                                     float(pixels[1])/self.figure.get_dpi())
         self.set_and_get_xy_limits()
 
-    def redraw_image(self, *args):
+    def redraw_image(self, msg=None):
         if hasattr(self, 'axes_image'):
             if self.axes_image in self.axes.images:
                 self.axes.images.remove(self.axes_image)
@@ -455,10 +448,10 @@ class OverviewImagePanel(wx.Panel):
         self.axes_widget.connect_event('button_press_event', self.on_button_press)
         self.axes_widget.connect_event('button_release_event', self.on_button_release)
         self.axes_widget.connect_event('motion_notify_event', self.on_motion)
-        pub.subscribe(self.redraw_image, "redraw_image")
+        pub.subscribe(self.redraw_image, "redraw_image")   
         pub.subscribe(self.redraw_box, "primary_xy_limits-changed")
 
-    def redraw_box(self, *args):
+    def redraw_box(self, msg=None):
         xlim = self.ztv_frame.primary_image_panel.xlim
         ylim = self.ztv_frame.primary_image_panel.ylim
         self.curview_rectangle.set_bounds(xlim[0], ylim[0], xlim[1] - xlim[0], ylim[1] - ylim[0])
@@ -522,7 +515,7 @@ class OverviewImagePanel(wx.Panel):
         self.axes.set_xlim(self.xlim)
         self.axes.set_ylim(self.ylim)
 
-    def redraw_image(self, *args):
+    def redraw_image(self, msg=None):
         if hasattr(self, 'axes_image'):
             if self.axes_image in self.axes.images:
                 self.axes.images.remove(self.axes_image)
@@ -545,7 +538,7 @@ class LoupeImagePanel(wx.Panel):
         self.canvas = FigureCanvasWxAgg(self, -1, self.figure)
         self._SetSize()
         self.set_xy_limits()
-        pub.subscribe(self.redraw_image, "redraw_image")
+        pub.subscribe(self.redraw_image, "redraw_image") 
 
     def _SetSize(self):
         self.SetSize(tuple(self.size))
@@ -562,7 +555,7 @@ class LoupeImagePanel(wx.Panel):
             self.crosshair[0].set_data([center[0]], [center[1]])
         self.figure.canvas.draw()
 
-    def redraw_image(self, *args):
+    def redraw_image(self, msg=None):
         if hasattr(self, 'axes_image'):
             if self.axes_image in self.axes.images:
                 self.axes.images.remove(self.axes_image)
@@ -651,7 +644,7 @@ class ZTVFrame(wx.Frame):
         pub.subscribe(self.set_norm, "clim-changed")
         pub.subscribe(self.set_norm, "scaling-changed")
         pub.subscribe(self.recalc_proc_image, "image_process_functions_to_apply-changed")
-        pub.subscribe(self.set_cur_display_frame_num, "set_cur_display_frame_num")
+        pub.subscribe(self.set_cur_display_frame_num, "set_cur_display_frame_num") 
         pub.subscribe(self.set_window_title, "set_window_title")
         self.scaling = 'Linear'
         self.available_scalings = ['Linear', 'Asinh', 'Log', 'PowerDist', 'Sinh', 'Sqrt', 'Squared']
@@ -753,7 +746,7 @@ class ZTVFrame(wx.Frame):
                 pass  # if this page # doesn't exist...
         return on_cmd_alt_number
 
-    def kill_ztv(self, *args):
+    def kill_ztv(self, msg=None):
         self.Close()
 
     def on_cmd_left_arrow(self, evt):
@@ -773,25 +766,19 @@ class ZTVFrame(wx.Frame):
 
     def set_cmap_inverted(self, msg):
         old_is_cmap_inverted = self.is_cmap_inverted
-        if isinstance(msg, Message):
-            self.is_cmap_inverted = msg.data
-        else:
-            self.is_cmap_inverted = msg
+        self.is_cmap_inverted = msg
         if old_is_cmap_inverted != self.is_cmap_inverted:
-            wx.CallAfter(pub.sendMessage, "is_cmap_inverted-changed", None)
-            wx.CallAfter(pub.sendMessage, "redraw_image", None)
+            wx.CallAfter(pub.sendMessage, "is_cmap_inverted-changed", msg=None)
+            wx.CallAfter(pub.sendMessage, "redraw_image", msg=None)
 
-    def invert_cmap(self, *args):
+    def invert_cmap(self, msg=None):
         self.set_cmap_inverted(not self.is_cmap_inverted)
 
     def set_cmap(self, msg):
         """
         Verify that requested cmap is in the list (or it's reversed equivalent) and set it
         """
-        if isinstance(msg, Message):
-            new_cmap = msg.data
-        else:
-            new_cmap = msg
+        new_cmap = msg
         old_cmap = self.cmap
         lower_available_cmaps = [a.lower() for a in self.available_cmaps]
         if new_cmap.lower() in lower_available_cmaps:
@@ -806,14 +793,11 @@ class ZTVFrame(wx.Frame):
         else:
             sys.stderr.write("unrecognized cmap ({}) requested\n".format(new_cmap))
         if self.cmap != old_cmap:
-            wx.CallAfter(pub.sendMessage, "cmap-changed", None)
-            wx.CallAfter(pub.sendMessage, "redraw_image", None)
+            wx.CallAfter(pub.sendMessage, "cmap-changed", msg=None)
+            wx.CallAfter(pub.sendMessage, "redraw_image", msg=None)
             
     def set_clim(self, msg):
-        if isinstance(msg, Message):
-            clim = msg.data
-        else:
-            clim = msg
+        clim = msg
         old_clim = self.clim
         if clim[0] is None:
             clim[0] = self.clim[0]
@@ -825,10 +809,10 @@ class ZTVFrame(wx.Frame):
         else:
             self.clim = clim
         if old_clim != self.clim:
-            wx.CallAfter(pub.sendMessage, "clim-changed", None)
-            wx.CallAfter(pub.sendMessage, "redraw_image", None)
+            wx.CallAfter(pub.sendMessage, "clim-changed", msg=None)
+            wx.CallAfter(pub.sendMessage, "redraw_image", msg=None)
 
-    def set_clim_to_minmax(self, *args):
+    def set_clim_to_minmax(self, msg=None):
         self.set_clim([self.display_image.min(), self.display_image.max()])
 
     def get_auto_clim_values(self, *args):
@@ -866,31 +850,28 @@ class ZTVFrame(wx.Frame):
         n_sigma_above = 6.
         return (robust_mean - n_sigma_below * robust_stdev, robust_mean + n_sigma_above * robust_stdev)
 
-    def set_clim_to_auto_stats_box(self, *args):
+    def set_clim_to_auto_stats_box(self, msg=None):
         auto_clim = self.get_auto_stats_box_clim_values()
         self.set_clim([auto_clim[0], auto_clim[1]])
 
-    def set_clim_to_auto(self, *args):
+    def set_clim_to_auto(self, msg=None):
         auto_clim = self.get_auto_clim_values()
         self.set_clim([auto_clim[0], auto_clim[1]])
 
-    def set_norm(self, *args):
+    def set_norm(self, msg=None):
         self._norm = Normalize(vmin=self.clim[0], vmax=self.clim[1])
         self._scaling = eval('astropy.visualization.' + self.scaling + 'Stretch()')
-        wx.CallAfter(pub.sendMessage, "redraw_image", None)
+        wx.CallAfter(pub.sendMessage, "redraw_image", msg=None)
 
     def normalize(self, im):
         return self._scaling(self._norm(self.display_image))
 
     def set_scaling(self, msg):
-        if isinstance(msg, Message):
-            scaling = msg.data
-        else:
-            scaling = msg
+        scaling = msg
         available_scalings_lowercase = [a.lower() for a in self.available_scalings]
         if scaling.lower() in available_scalings_lowercase:
             self.scaling = self.available_scalings[available_scalings_lowercase.index(scaling.lower())]
-            wx.CallAfter(pub.sendMessage, "scaling-changed", None)
+            wx.CallAfter(pub.sendMessage, "scaling-changed", msg=None)
         else:
             sys.stderr.write("unrecognized scaling ({}) requested\n".format(scaling))
 
@@ -902,7 +883,7 @@ class ZTVFrame(wx.Frame):
             self.set_cur_display_frame_num(int(self.frame_number_textctrl.GetValue()))
             self.frame_number_textctrl.SetSelection(-1, -1)
         
-    def set_cur_display_frame_num(self, n, relative=False):
+    def set_cur_display_frame_num(self, msg, relative=False):
         """
         sets self.cur_display_frame_num to n  (with -1 meaning last, -2 second to last, etc)
         if relative=True, then increments by n.
@@ -911,12 +892,14 @@ class ZTVFrame(wx.Frame):
         To ensure proper error checking & notifications, *all* changes to self.cur_display_frame_num
         should come through this method
         """
-        if isinstance(n, Message):
-            n, flag = n.data
+        if len(msg) == 2:
+            n, flag = msg
             if flag == 'relative':
                 relative = True
             elif flag == 'absolute':
                 relative = False
+        else:
+            n = msg
         if self.proc_image.ndim == 2:
             cur_total_frames = 1
         else:
@@ -970,10 +953,7 @@ class ZTVFrame(wx.Frame):
         # don't need to send a separate "redraw_image" message because set_clim sends one
   
     def load_numpy_array(self, msg, is_fits_file=False):
-        if isinstance(msg, Message):
-            image = msg.data
-        else:
-            image = msg
+        image = msg
         if not is_fits_file:
             self.cur_fits_hdulist = None
         if (image.ndim != 2) and (image.ndim != 3):
@@ -1035,10 +1015,7 @@ class ZTVFrame(wx.Frame):
         self.SetTitle(new_title)
 
     def load_fits_file(self, msg):
-        if isinstance(msg, Message):
-            filename = msg.data
-        else:
-            filename = msg
+        filename = msg
         if isinstance(filename, str) or isinstance(filename, unicode):
             if filename.lower().endswith('.fits') or filename.lower().endswith('.fits.gz'):
                 if os.path.isfile(filename):
@@ -1083,7 +1060,7 @@ class ZTVFrame(wx.Frame):
                         self.image_radec = ICRS(a[0]*units.degree, a[1]*units.degree)
                     except:  # just ignore radec if anything at all goes wrong.
                         self.image_radec = None
-                    wx.CallAfter(pub.sendMessage, "fitsfile-loaded", filename)
+                    wx.CallAfter(pub.sendMessage, "fitsfile-loaded", msg=filename)
                 else:
                     raise Error("Cannot find file: {}".format(filename))
             else:
@@ -1100,7 +1077,7 @@ class ZTVFrame(wx.Frame):
         im *= np.angle(np.fft.fft2(np.sin(np.outer(np.arange(imsize_y), np.arange(imsize_x)) * 12*np.pi / min(imsize_x, imsize_y))))
         return im
 
-    def load_default_image(self, *args):
+    def load_default_image(self, msg=None):
         self.load_numpy_array(self.get_default_image())
         self.primary_image_panel.reset_zoom_and_center()
 
@@ -1117,7 +1094,7 @@ class WatchMasterPIDThread(threading.Thread):
         while psutil.pid_exists(self.masterPID):
             time.sleep(2)
         sys.stderr.write("\n\n----\nlooks like python session that owned this instance of the ZTV gui is gone, so disposing of the window\n----\n")
-        wx.CallAfter(pub.sendMessage, "kill_ztv", None)
+        wx.CallAfter(pub.sendMessage, "kill_ztv", msg=None)
 
 
 class CommandListenerThread(threading.Thread):
@@ -1231,10 +1208,10 @@ class CommandListenerThread(threading.Thread):
                         send_to_stream(sys.stdout, (x[0][4:], 'source_panel not available'))
                 elif x[0] == 'set_new_slice_plot_xy0':
                     if hasattr(self.ztv_frame, 'plot_panel'):
-                        wx.CallAfter(pub.sendMessage, 'new_slice_plot_xy0', *x[1:])
+                        wx.CallAfter(pub.sendMessage, 'new_slice_plot_xy0', msg=x[1])
                 elif x[0] == 'set_new_slice_plot_xy1':
                     if hasattr(self.ztv_frame, 'plot_panel'):
-                        wx.CallAfter(pub.sendMessage, 'new_slice_plot_xy1', *x[1:])
+                        wx.CallAfter(pub.sendMessage, 'new_slice_plot_xy1', msg=x[1])
                 elif x[0] == 'get_slice_plot_coords':
                     if hasattr(self.ztv_frame, 'plot_panel'):
                         wx.CallAfter(send_to_stream, sys.stdout, 
@@ -1302,7 +1279,7 @@ class CommandListenerThread(threading.Thread):
                     if name_lower in display_names_lower:
                         self.ztv_frame.control_panels[display_names_lower.index(name_lower)].select_panel()
                 else:
-                    wx.CallAfter(pub.sendMessage, x[0], *x[1:])
+                    wx.CallAfter(pub.sendMessage, x[0], msg=x[1])
 
 
 class ZTVMain():

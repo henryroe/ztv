@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 import wx
 from wx.lib.pubsub import pub
-from wx.lib.pubsub.core.datamsg import Message
 import matplotlib
 from matplotlib.figure import Figure
 from matplotlib.widgets import AxesWidget
@@ -345,11 +344,7 @@ class PhotPanel(wx.Panel):
         self.hideshow_button.SetLabel(u"Hide")
 
     def update_phot_xy(self, msg):
-        if isinstance(msg, Message):
-            x,y = msg.data
-        else:
-            x,y = msg
-        self.xclick, self.yclick = x,y
+        self.xclick, self.yclick = msg
         self.recalc_phot()
         self.redraw_overplot_on_image()
         

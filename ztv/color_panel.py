@@ -126,14 +126,14 @@ class ColorPanel(wx.Panel):
         v_sizer1.Add(cmap_sizer, 0)
         v_sizer1.AddSpacer((0, 0), 1, wx.EXPAND)
         self.SetSizer(v_sizer1)
-        pub.subscribe(self.on_clim_changed, "clim-changed")
+        pub.subscribe(self.on_clim_changed, "clim-changed")   
         pub.subscribe(self.on_cmap_changed, "cmap-changed")
         pub.subscribe(self.on_is_cmap_inverted_changed, "is_cmap_inverted-changed")
         pub.subscribe(self.on_scaling_changed, "scaling-changed")
 #         self.Bind(wx.EVT_NAVIGATION_KEY, self.on_navigation_key)
 
     def on_choose_scaling(self, evt):
-        wx.CallAfter(pub.sendMessage, "set_scaling", evt.GetString())
+        wx.CallAfter(pub.sendMessage, "set_scaling", msg=evt.GetString())
 
     def init_cmap_popup_menu(self):
         cmap_button_bitmap_height = 30
@@ -161,15 +161,15 @@ class ColorPanel(wx.Panel):
         self.cmap_popup_menu = menu
 
     def on_change_cmap_event(self, event):
-        wx.CallAfter(pub.sendMessage, "set_cmap", self.eventID_to_cmap[event.GetId()])
+        wx.CallAfter(pub.sendMessage, "set_cmap", msg=self.eventID_to_cmap[event.GetId()])
 
     def on_is_cmap_inverted_checkbox(self, evt):
-        wx.CallAfter(pub.sendMessage, "set_cmap_inverted", evt.IsChecked())
+        wx.CallAfter(pub.sendMessage, "set_cmap_inverted", msg=evt.IsChecked())
 
-    def on_is_cmap_inverted_changed(self, *args):
+    def on_is_cmap_inverted_changed(self, msg=None):
         self.is_cmap_inverted_checkbox.SetValue(self.ztv_frame.is_cmap_inverted)
 
-    def on_scaling_changed(self, *args):
+    def on_scaling_changed(self, msg=None):
         self.choose_scaling.SetSelection(self.ztv_frame.available_scalings.index(self.ztv_frame.scaling))
 
     def on_cmap_button(self, evt):
@@ -227,7 +227,7 @@ class ColorPanel(wx.Panel):
         if self.FindFocus() == self.maxval_textctrl:
             self.maxval_textctrl.SetSelection(-1, -1)
 
-    def on_clim_changed(self, *args):
+    def on_clim_changed(self, msg=None):
         new_minval_str = "{: .9g}".format(self.ztv_frame.clim[0])
         new_maxval_str = "{: .9g}".format(self.ztv_frame.clim[1])
         if new_minval_str != self.last_string_values['minval']:
@@ -241,7 +241,7 @@ class ColorPanel(wx.Panel):
             self.last_string_values['maxval'] = new_maxval_str
             force_textctrl_color_update(self.maxval_textctrl)
 
-    def on_cmap_changed(self, *args):
+    def on_cmap_changed(self, msg=None):
         if hasattr(self.cmap_button, 'SetBitmap'):
             self.cmap_button.SetBitmap(self.cmap_button_bitmaps[self.ztv_frame.cmap])
         self.cmap_button.SetLabel(self.ztv_frame.cmap)

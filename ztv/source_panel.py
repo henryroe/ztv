@@ -27,7 +27,7 @@ class ActiveMQListener(object):
         try:
             msg = pickle.loads(message)
             if msg.has_key('image_data'):
-                wx.CallAfter(pub.sendMessage, "load_numpy_array", msg['image_data'])
+                wx.CallAfter(pub.sendMessage, "load_numpy_array", msg=msg['image_data'])
         except UnpicklingError:
             sys.stderr.write('received an unhandled message ({})\n'.format(message))
 
@@ -82,7 +82,7 @@ class AutoloadFileMatchWatcherThread(threading.Thread):
                         filename_to_open = cur_match
                         latest_mtime = cur_match_mtime
                 if filename_to_open is not None:
-                    wx.CallAfter(pub.sendMessage, "load_fits_file", filename_to_open)
+                    wx.CallAfter(pub.sendMessage, "load_fits_file", msg=filename_to_open)
             time.sleep(self.source_panel.autoload_pausetime)
             if self.source_panel.autoload_mode != 'file-match':
                 self.keep_running = False
@@ -318,7 +318,7 @@ class SourcePanel(wx.Panel):
             self.flat_fits_header_dialog = FITSHeaderDialog(self, header_str, new_title)
             self.flat_fits_header_dialog.Show()
 
-    def update_cur_header_button_status(self, msg):
+    def update_cur_header_button_status(self, msg=None):
         if self.ztv_frame.cur_fits_hdulist is not None:
             self.cur_header_button.Enable()
         else:
@@ -328,8 +328,8 @@ class SourcePanel(wx.Panel):
         proc_labels = [x[0] for x in self.ztv_frame.image_process_functions_to_apply]
         if 'sky_subtraction' in proc_labels:
             self.ztv_frame.image_process_functions_to_apply.pop(proc_labels.index('sky_subtraction'))
-            wx.CallAfter(pub.sendMessage, "image_process_functions_to_apply-changed", None)
-            wx.CallAfter(pub.sendMessage, "set_window_title", None)
+            wx.CallAfter(pub.sendMessage, "image_process_functions_to_apply-changed", msg=None)
+            wx.CallAfter(pub.sendMessage, "set_window_title", msg=None)
         self.sky_checkbox.SetValue(False)
 
     def load_sky_subtraction_to_process_stack(self):
@@ -349,8 +349,8 @@ class SourcePanel(wx.Panel):
                                                      self.sky_hdulist[0].data.ndim))
             # assume that sky subtraction should always be first in processing stack.
             self.ztv_frame.image_process_functions_to_apply.insert(0, ('sky_subtraction', process_fxn))
-            wx.CallAfter(pub.sendMessage, "image_process_functions_to_apply-changed", None)
-            wx.CallAfter(pub.sendMessage, "set_window_title", None)
+            wx.CallAfter(pub.sendMessage, "image_process_functions_to_apply-changed", msg=None)
+            wx.CallAfter(pub.sendMessage, "set_window_title", msg=None)
         self.sky_checkbox.SetValue(True)
 
     def load_sky_frame(self, filename, start_sky_correction=True):
@@ -395,8 +395,8 @@ class SourcePanel(wx.Panel):
         proc_labels = [x[0] for x in self.ztv_frame.image_process_functions_to_apply]
         if 'flat_division' in proc_labels:
             self.ztv_frame.image_process_functions_to_apply.pop(proc_labels.index('flat_division'))
-            wx.CallAfter(pub.sendMessage, "image_process_functions_to_apply-changed", None)
-            wx.CallAfter(pub.sendMessage, "set_window_title", None)
+            wx.CallAfter(pub.sendMessage, "image_process_functions_to_apply-changed", msg=None)
+            wx.CallAfter(pub.sendMessage, "set_window_title", msg=None)
         self.flat_checkbox.SetValue(False)
 
     def load_flat_division_to_process_stack(self):
@@ -405,8 +405,8 @@ class SourcePanel(wx.Panel):
             process_fxn = ImageProcessAction(np.divide, self.flat_hdulist[0].data)
             # assume that flat division should always be last in processing stack.
             self.ztv_frame.image_process_functions_to_apply.insert(99999, ('flat_division', process_fxn))
-            wx.CallAfter(pub.sendMessage, "image_process_functions_to_apply-changed", None)
-            wx.CallAfter(pub.sendMessage, "set_window_title", None)
+            wx.CallAfter(pub.sendMessage, "image_process_functions_to_apply-changed", msg=None)
+            wx.CallAfter(pub.sendMessage, "set_window_title", msg=None)
         self.flat_checkbox.SetValue(True)
 
     def load_flat_frame(self, filename, start_flat_correction=True):
@@ -441,7 +441,7 @@ class SourcePanel(wx.Panel):
         else:
             self.unload_flat_division_from_process_stack()
 
-    def on_activemq_instances_info_changed(self, msg):
+    def on_activemq_instances_info_changed(self, msg=None):
         self.message_queue_choice.Clear()
         new_keys = sorted(self.activemq_instances_info.keys())
         self.activemq_instances_available = new_keys
@@ -498,7 +498,7 @@ class SourcePanel(wx.Panel):
             self.autoload_mode = None
             self.kill_activemq_listener_thread()
 
-    def on_fitsfile_loaded(self, msg):
+    def on_fitsfile_loaded(self, msg=None):
         self.curfile_file_picker.pause_on_current_textctrl_changed = True
         self.curfile_file_picker.set_current_entry(os.path.join(self.ztv_frame.cur_fitsfile_path,
                                                                 self.ztv_frame.cur_fitsfile_basename))
@@ -526,8 +526,8 @@ class SourcePanel(wx.Panel):
             sys.stderr.write("ztv warning: stomp not installed OK, ActiveMQ functionality not available\n")
 
     def _add_activemq_instance(self, msg):
-        server, port, destination = msg.data
+        server, port, destination = msg
         new_key = str(server) + ':' + str(port) + ':' + str(destination)
         self.activemq_instances_info[new_key] = {'server':server, 'port':port, 'destination':destination}
-        wx.CallAfter(pub.sendMessage, "activemq_instances_info-changed", None)
+        wx.CallAfter(pub.sendMessage, "activemq_instances_info-changed", msg=None)
         

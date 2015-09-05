@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 import wx
 from wx.lib.pubsub import pub
-from wx.lib.pubsub.core.datamsg import Message
 import matplotlib
 from matplotlib.figure import Figure
 try:
@@ -62,30 +61,19 @@ class PlotPanel(wx.Panel):
         pub.subscribe(self.redraw, "redraw_image")
 
     def update_line_plot_points(self, msg):
-        if isinstance(msg, Message):
-            xy0, xy1 = msg.data
-        else:
-            xy0, xy1 = msg
+        xy0, xy1 = msg
         self.start_pt.x, self.start_pt.y = xy0[0], xy0[1]
         self.end_pt.x, self.end_pt.y = xy1[0], xy1[1]
         self.redraw_overplot_on_image()
         self.redraw()
 
     def on_new_xy0(self, msg):
-        if isinstance(msg, Message):
-            x,y = msg.data
-        else:
-            x,y = msg
-        self.start_pt.x, self.start_pt.y = x, y
+        self.start_pt.x, self.start_pt.y = msg
         self.redraw_overplot_on_image()
         self.redraw()
 
     def on_new_xy1(self, msg):   
-        if isinstance(msg, Message):
-            x,y = msg.data
-        else:
-            x,y = msg
-        self.end_pt.x, self.end_pt.y = x, y
+        self.end_pt.x, self.end_pt.y = msg
         self.redraw_overplot_on_image()
         self.redraw()
 
@@ -121,7 +109,7 @@ class PlotPanel(wx.Panel):
             self.hideshow_button.SetLabel(u"Hide")        
             self.redraw_overplot_on_image()
             
-    def redraw(self, *args):
+    def redraw(self, msg=None):
         if self.start_pt == self.end_pt:
             if self.ztv_frame.proc_image.ndim == 2:
                 positions = np.array([-0.5, 0.5])

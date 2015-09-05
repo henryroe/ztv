@@ -250,7 +250,7 @@ class StatsPanel(wx.Panel):
         y1 = y0 + self.stats_rect.get_height()
         return x0,y0,x1,y1
         
-    def update_stats(self, *args):
+    def update_stats(self, msg=None):
         x0,y0,x1,y1 = self.get_x0y0x1y1_from_stats_rect()
         x0, y0 = int(np.round(x0)), int(np.round(y0))
         x1, y1 = int(np.round(x1)), int(np.round(y1))
