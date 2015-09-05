@@ -104,7 +104,6 @@ class ColorPanel(wx.Panel):
         self.init_cmap_popup_menu()
         self.cmap_button = wx.Button(self, wx.ID_ANY, 'X'*max([len(a) for a in self.ztv_frame.available_cmaps]),
                                      wx.DefaultPosition, wx.DefaultSize, 0)
-  # HEREIAM commented out next line in trying to get working on ubuntu
         if hasattr(self.cmap_button, 'SetBitmap'):
             self.cmap_button.SetBitmap(self.cmap_button_bitmaps[self.ztv_frame.cmap])
         cmap_sizer.Add(self.cmap_button, 0, wx.ALL|wx.ALIGN_LEFT|wx.ALIGN_CENTER_VERTICAL, 2)
