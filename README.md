@@ -1,5 +1,4 @@
-*ztv* - astronomical image viewer
-===============================
+# *ztv* - astronomical image viewer
 
 *ztv* is an astronomical image viewer designed to be used from a python command line for display and analysis. 
 
@@ -16,8 +15,7 @@ Additional panels can be written and added, for e.g. controlling a camera. (One 
 
 If proper FITS header keywords are available, *ztv* will display the ra/dec of the cursor point.
 
-Examples of usage
-=================
+# Examples of usage
 
 To launch:
 
@@ -100,8 +98,7 @@ or larger:
 ![](screenshots/eagle-large.png)
 
 
-Example of an Add-on Control Panel 
-----------------------------------
+## Example of an Add-on Control Panel 
 
 One of the motivating use cases for *ztv* was real-time quick-look of incoming images and the ability to extend the basic installation, including instrumentat control. An example of this is that *ztv* will be used to both control and inspect the images from a slit viewing camera on a spectrograph of mine. To demonstrate this extensibility, there's a simple example in `ztv_examples/fits_faker_panel/`:
 
@@ -119,8 +116,7 @@ Our fake example data looks a lot better when we subtract the sky and divide the
 
 ![](screenshots/faker2.png)
 
-Installation and Dependencies
-=============================
+# Installation and Dependencies
 
 *ztv* uses several packages, including [wxPython](http://wxpython.org), [astropy](http://www.astropy.org). These should be automatically installed if you install *ztv* from [pypi](https://pypi.python.org/pypi/ztv) with:
 
@@ -130,10 +126,39 @@ You can also grab source code from [github](https://github.com/henryroe/ztv).
 
 Note that *ztv* was developed and tested on OS X. 
 
-**Linux/Ubuntu:** I tested briefly on Ubuntu 14.04. *ztv* basically works, although the pulldown colormap menus will not have bitmaps of the colormaps.  Also, (at least on my testing virtual machine) the performance of *ztv* was much laggier than on my main OS X laptop. For the colormaps you could try looking at [this link](http://askubuntu.com/questions/464146/how-to-enable-icons-in-menus-in-ubuntu-14-04), but it didn't work on my test system.
+## Example of installation using Mac OS X's included Python
 
-Background
-==========
+The following steps worked on a fresh install of OS X Yosemite 10.10.5 on 2015-09-06:
+
+* Install Xcode from the App Store
+* Launch Xcode one time to accept licenses
+* Install pip and other necessary python packages
+
+Run following command lines in a terminal:
+
+    curl -o ~/Downloads/get-pip.py https://bootstrap.pypa.io/get-pip.py
+    sudo -H python ~/Downloads/get-pip.py
+    sudo -H pip install matplotlib
+    sudo -H pip install astropy
+    sudo -H pip install astropy-helpers
+
+* Install wxPython version 3
+    * Download [OS X cocoa version of wxPython version 3 from here](http://wxpython.org/download.php#osx) (was *wxPython3.0-osx-docs-demos-3.0.2.0-cocoa-py2.7.dmg* at time of writing)
+    * Open disk image and install with the following command line command:
+
+(This is necessary because package isn't properly signed & is an old-style package, see [here](http://stackoverflow.com/questions/21223717/install-wxpython-on-mac-os-mavericks).  Obviously may need to update exact file path to the pkg.)
+
+    sudo installer -pkg /Volumes/wxPython3.0-osx-3.0.2.0-cocoa-py2.7/wxPython3.0-osx-cocoa-py2.7.pkg -target /
+
+Finally, install *ztv*:
+
+    sudo -H pip install ztv
+
+## Linux/Ubuntu
+
+I tested briefly on Ubuntu 14.04. *ztv* basically works, although the pulldown colormap menus will not have bitmaps of the colormaps.  Also, (at least on my testing virtual machine) the performance of *ztv* was much laggier than on my main OS X laptop. For the colormaps you could try looking at [this link](http://askubuntu.com/questions/464146/how-to-enable-icons-in-menus-in-ubuntu-14-04), but it didn't work on my test system.
+
+# Background
 
 In graduate school in the late 1990's I learned [IDL](http://en.wikipedia.org/wiki/IDL_(programming_language)) and used [Aaron Barth's ATV](http://www.physics.uci.edu/~barth/atv/) extensively. I even contributed a little to a now-outdated version of [ATV](http://www.physics.uci.edu/~barth/atv/), adding 3-d image stack capability. [ATV](http://www.physics.uci.edu/~barth/atv/) was and is incredibly useful for quick-looks at image data, analysis, and all the things you want when working with typical astronomical image data.
 
@@ -143,8 +168,7 @@ In python there are already a multitude of possible image viewers. Many of which
 
 The name *ztv* is an obvious play off of [ATV](http://www.physics.uci.edu/~barth/atv/). And, "z" is my daughter's middle initial. 
 
-Other Image Viewers You Should Check Out
-========================================
+# Other Image Viewers You Should Check Out
 
 - If you're using IDL, check out [ATV](http://www.physics.uci.edu/~barth/atv/) of course!
 - [SAOImage DS9](http://ds9.si.edu/site/Home.html)
@@ -154,15 +178,14 @@ Other Image Viewers You Should Check Out
 
 (If your favorite isn't on this list, please email hroe@hroe.me to get it added.)
 
-Acknowledgements
-================
+# Acknowledgements
 
 Thank you to Aaron Barth for his original [ATV](http://www.physics.uci.edu/~barth/atv/). Thank you to all the numerous people who have put so much effort in to all the packages that make my work not only easier but possible. I especially thank the developers of [astropy](http://www.astropy.org) and its associated packages.  e.g. It's an amazing thing to do correct FITS coordinate conversions in one line of code.
 
-Author
-======
+# Author
+
 Henry Roe (hroe@hroe.me) 
 
-License
-=======
+# License
+
 *ztv* is licensed under the MIT License, see ``LICENSE.txt``. Basically, feel free to use any or all of this code in any way. But, no warranties, guarantees, etc etc..

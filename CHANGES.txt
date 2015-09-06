@@ -3,6 +3,14 @@ ztv Change Log
 ~~~~~~~~~~~~~~
 
 ------------------
+v0.2.0
+------------------
+
+- now requiring wxPython version >= 3.0.0  (This is the reason for the larger bump in version number)
+- fixed a number of GUI bugs that wxPython upgrade introduced. (More likely than bugs with wxPython 3 is that the wxPython 2 had bugs that had been worked-around and/or other issues.)
+- added instructions for install on a fresh OS X Yosemite 10.10 system to README.md
+
+------------------
 v0.1.3dev
 ------------------
 
