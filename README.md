@@ -154,6 +154,19 @@ Finally, install *ztv*:
 
     sudo -H pip install ztv
 
+## Example of installation into anaconda python distribution
+
+The following was tested on a fresh install of OS X 10.10.5 on 2015-09-08.
+
+Install Xcode from the App Store and launch Xcode one time to accept its licenses.
+
+Download [Anaconda-2.3.0-MacOSX-x86_64.sh](http://continuum.io/downloads) from here.
+
+    bash Anaconda-2.3.0-MacOSX-x86_64.sh
+    conda create --name ztv-test wxpython
+    source activate ztv-test
+    pip install ztv
+
 ## Example of installation into a Homebrew python distribution
 
 The following was tested on a fresh install of OS X 10.10.5 on 2015-09-07.

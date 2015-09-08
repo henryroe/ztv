@@ -2,7 +2,13 @@
 ztv Change Log
 ~~~~~~~~~~~~~~
 
+--------------------
+0.2.1-2   2015-09-08
+--------------------
+
 - added instructions for install on a fresh OS X Yosemite 10.10 system using Homebrew Python distribution to README.md
+- added instructions for install on a fresh OS X Yosemite 10.10 system using Anaconda Python distribution to README.md
+- in ztv_api.py: for launching ztv in a separate python process, made `pythonw` the default python executable, reverting to `python` only if `pythonw` is not available.  This gets around some of the Frameworks/wxPython issues that crop up when running in a virtual environment, particularly, e.g., anaconda python distro.
 
 ------------------
 0.2.1-1
