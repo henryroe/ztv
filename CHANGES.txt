@@ -2,6 +2,8 @@
 ztv Change Log
 ~~~~~~~~~~~~~~
 
+- added instructions for install on a fresh OS X Yosemite 10.10 system using Homebrew Python distribution to README.md
+
 ------------------
 0.2.1-1
 ------------------
@@ -14,7 +16,7 @@ v0.2.1, 0.2.0
 
 - now requiring wxPython version >= 3.0.0  (This is the reason for the larger bump in version number)
 - fixed a number of GUI bugs that wxPython upgrade introduced. (More likely than bugs with wxPython 3 is that the wxPython 2 had bugs that had been worked-around and/or other issues.)
-- added instructions for install on a fresh OS X Yosemite 10.10 system to README.md
+- added instructions for install on a fresh OS X Yosemite 10.10 system using system's Python distribution to README.md
 - (No difference between v0.2.0 and v0.2.1 in git repository, except that had messed up uploading to pypi & couldn't rewrite the same filename, so had to increment version number to fix formatting of README.md on pypi webpage.  Issue was pypandoc install was broken first time I built.)
 
 ------------------
