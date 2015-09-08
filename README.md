@@ -163,6 +163,7 @@ Install Xcode from the App Store and launch Xcode one time to accept its license
 Download [Anaconda-2.3.0-MacOSX-x86_64.sh](http://continuum.io/downloads) from here.
 
     bash Anaconda-2.3.0-MacOSX-x86_64.sh
+    source ~/.bash_profile
     conda create --name ztv-test wxpython
     source activate ztv-test
     pip install ztv
