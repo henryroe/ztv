@@ -37,10 +37,14 @@ class ZTV():
     def __init__(self, title=None, control_panels_module_path=None, default_data_dir=None,
                  default_autoload_pattern=None):
         self.__version__ = about["__version__"]
+        # Note: prefer pythonw vs. python for launching in on OS X because in some cases
+        # python will not connect correctly with Frameworks necessary for wxPython, while
+        # pythonw will.  But, pythonw not available on all systems.
+        find_python_str = "`echo \`which pythonw\` \`which python\` | awk '{print $1}'`"
         if control_panels_module_path is None:
-            cmd = "python -c 'from ztv.ztv import ZTVMain ; ZTVMain(launch_listen_thread=True,"
+            cmd = find_python_str + " -c 'from ztv.ztv import ZTVMain ; ZTVMain(launch_listen_thread=True,"
         else:
-            cmd = ("python -c 'from ztv.ztv import ZTVMain ; import importlib ; " + 
+            cmd = (find_python_str + "python -c 'from ztv.ztv import ZTVMain ; import importlib ; " + 
                    "control_panels_module = importlib.import_module(\"" + 
                    control_panels_module_path + "\") ; ZTVMain(launch_listen_thread=True, " +
                    "control_panels_to_load=control_panels_module.control_panels_to_load,")
