@@ -154,6 +154,19 @@ Finally, install *ztv*:
 
     sudo -H pip install ztv
 
+## Example of installation into a Homebrew python distribution
+
+Install [Homebrew](http://brew.sh/) with the one-line ruby command on [Homebrew's home page](http://brew.sh/)
+
+Install python & other necessary bits with the following commands. 
+
+    brew install python
+    brew install wxpython
+    pip install numpy
+    pip install ztv
+    
+Note that `numpy` is explicitly installed first using `pip install numpy` before `ztv` is installed.  During testing on OS X 10.10.5 on 2015-09-07 allowing the numpy dependency to be automatically filled by `pip install ztv` resulted in an installation error that does not appear if you follow the above sequence.
+
 ## Linux/Ubuntu
 
 I tested briefly on Ubuntu 14.04. *ztv* basically works, although the pulldown colormap menus will not have bitmaps of the colormaps.  Also, (at least on my testing virtual machine) the performance of *ztv* was much laggier than on my main OS X laptop. For the colormaps you could try looking at [this link](http://askubuntu.com/questions/464146/how-to-enable-icons-in-menus-in-ubuntu-14-04), but it didn't work on my test system.
