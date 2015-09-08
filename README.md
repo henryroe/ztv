@@ -156,6 +156,10 @@ Finally, install *ztv*:
 
 ## Example of installation into a Homebrew python distribution
 
+The following was tested on a fresh install of OS X 10.10.5 on 2015-09-07.
+
+Install Xcode from the App Store and launch Xcode one time to accept its licenses.
+
 Install [Homebrew](http://brew.sh/) with the one-line ruby command on [Homebrew's home page](http://brew.sh/)
 
 Install python & other necessary bits with the following commands. 
@@ -165,7 +169,7 @@ Install python & other necessary bits with the following commands.
     pip install numpy
     pip install ztv
     
-Note that `numpy` is explicitly installed first using `pip install numpy` before `ztv` is installed.  During testing on OS X 10.10.5 on 2015-09-07 allowing the numpy dependency to be automatically filled by `pip install ztv` resulted in an installation error that does not appear if you follow the above sequence.
+Note that `numpy` is explicitly installed first using `pip install numpy` before `ztv` is installed.  During testing on OS X 10.10.5 on 2015-09-07 allowing the numpy dependency to be automatically filled by `pip install ztv` resulted in an installation error that does not occur if you follow the above sequence.
 
 ## Linux/Ubuntu
 
