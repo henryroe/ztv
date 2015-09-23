@@ -1090,6 +1090,7 @@ class WatchMasterPIDThread(threading.Thread):
             self.start()
 
     def run(self):
+        time.sleep(60)  # wait a full minute for launch before beginning to check for PID
         while psutil.pid_exists(self.masterPID):
             time.sleep(2)
         sys.stderr.write("\n\n----\nlooks like python session that owned this instance of the ZTV gui is gone, so disposing of the window\n----\n")
