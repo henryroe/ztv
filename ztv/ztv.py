@@ -607,6 +607,10 @@ class ZTVFrame(wx.Frame):
             self.base_title = 'ztv'
         else:
             self.base_title = title
+        if default_data_dir is None:
+            default_data_dir = os.getcwd()
+        if default_autoload_pattern is None:
+            default_autoload_pattern = os.getcwd()        
         self.default_data_dir = default_data_dir
         self.default_autoload_pattern = default_autoload_pattern
         if control_panels_to_load is None:

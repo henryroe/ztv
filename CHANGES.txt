@@ -3,6 +3,12 @@ ztv Change Log
 ~~~~~~~~~~~~~~
 
 --------------------
+0.2.1-6   2015-09-23
+--------------------
+
+- Made default datadir and auto-load pattern be the current working directory (rather than just user's home dir)
+
+--------------------
 0.2.1-5   2015-09-22
 --------------------
 
