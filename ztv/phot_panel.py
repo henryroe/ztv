@@ -145,8 +145,8 @@ class PhotPanel(wx.Panel):
         self.sky_aperture_patch = None
 
         self.last_string_values = {'aprad':'', 'skyradin':'', 'skyradout':''}
-        self.xclick = 0.
-        self.yclick = 0.
+        self.xclick = None
+        self.yclick = None
         self.xcentroid = 0.
         self.ycentroid = 0.
         self.aprad = 10.
@@ -348,6 +348,10 @@ class PhotPanel(wx.Panel):
         self.redraw_overplot_on_image()
         
     def recalc_phot(self, msg=None):
+        if self.xclick is None or self.yclick is None:
+            self.xclick_textctrl.SetValue('None')
+            self.yclick_textctrl.SetValue('None')
+            return
         self.xclick_textctrl.SetValue("{:8.2f}".format(self.xclick))
         self.yclick_textctrl.SetValue("{:8.2f}".format(self.yclick))
         self.xcentroid,self.ycentroid = centroid(self.ztv_frame.display_image, self.xclick, self.yclick)
