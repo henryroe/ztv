@@ -570,6 +570,7 @@ class ControlsNotebook(wx.Notebook):
     def __init__(self, parent):
         wx.Notebook.__init__(self, parent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0)  
         self.highlight_char = unichr(0x2022)
+        self._prior_notebook_page_change = (None, None)
         self.ztv_frame = self.GetTopLevelParent()
         self.ztv_frame.control_panels = []  # list of currently loaded/visible control panels, in order of display
         for cur_title, cur_panel in self.ztv_frame.control_panels_to_load:
@@ -583,8 +584,19 @@ class ControlsNotebook(wx.Notebook):
         setattr(panel, 'highlight_panel', lambda : self._highlight_page(panel))
         setattr(panel, 'select_panel', lambda : self.SetSelection(panel.ztv_page_id))
         setattr(self.ztv_frame, text.lower() + '_panel', panel)
+        self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.notebook_page_changed)
         self.AddPage(panel, text)
         self.ztv_frame.control_panels.append(panel)
+    
+    def notebook_page_changed(self, evt):
+        oldnew = (evt.GetOldSelection(), evt.GetSelection())
+        # EVT_NOTEBOOK_PAGE_CHANGED seems to be called 4-5 or more times per actual change, with identical
+        #     OldSelection,Selection; so, need to filter those additional calls out after first one
+        if oldnew != self._prior_notebook_page_change:
+            if hasattr(self.ztv_frame.control_panels[oldnew[1]], 'on_activate'):
+                self.ztv_frame.control_panels[oldnew[1]].on_activate()
+            self._prior_notebook_page_change = oldnew
+        evt.Skip()
     
     def clear_highlights(self):
         for cur_id in range(len(self.ztv_frame.control_panels)):
@@ -923,7 +935,8 @@ class ZTVFrame(wx.Frame):
         for cur_imageproc_label, cur_imageproc_fxn in self.image_process_functions_to_apply:
             self.proc_image = cur_imageproc_fxn(self.proc_image)
         self.recalc_display_image()
-        
+        wx.CallAfter(pub.sendMessage, "recalc-proc-image-called", msg=None)
+
     def recalc_display_image(self, msg=None):
         if self.proc_image.ndim == 2:
             self.display_image = self.proc_image.copy()

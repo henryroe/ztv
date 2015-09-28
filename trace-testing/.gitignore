@@ -1,1 +1,3 @@
+*.fits
+*.fits.gz
 trace-autoload.txt

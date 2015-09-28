@@ -34,7 +34,7 @@ def tracefunc(frame, event, arg, indent=[0], start_times={}):
 
 def main():
     from ztv.ztv import ZTVMain
-    z = ZTVMain()
+    z = ZTVMain(default_autoload_pattern='/Users/hroe/Dropbox/py/ztv/trace-testing/*fits*')
     
     
 sys.settrace(tracefunc)

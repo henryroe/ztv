@@ -71,7 +71,6 @@ class PhotPlotPanel(wx.Panel):
                                                                        self.ztv_frame.phot_panel.skyradout))
                     set_textctrl_background_color(self.ztv_frame.phot_panel.skyradout_textctrl, 'ok')
                 self.ztv_frame.phot_panel.recalc_phot()
-                self.ztv_frame.phot_panel.redraw_overplot_on_image()
 
     def on_button_release(self, event):
         if self.button_down:
@@ -94,7 +93,6 @@ class PhotPlotPanel(wx.Panel):
                                                                        self.ztv_frame.phot_panel.skyradout))
                     set_textctrl_background_color(self.ztv_frame.phot_panel.skyradout_textctrl, 'ok')
                 self.ztv_frame.phot_panel.recalc_phot()
-                self.ztv_frame.phot_panel.redraw_overplot_on_image()
         self.button_down = False
     
     def on_cursor_leave(self, event):
@@ -114,7 +112,6 @@ class PhotPlotPanel(wx.Panel):
                                                                    self.ztv_frame.phot_panel.skyradout))
                 set_textctrl_background_color(self.ztv_frame.phot_panel.skyradout_textctrl, 'ok')
             self.ztv_frame.phot_panel.recalc_phot()
-            self.ztv_frame.phot_panel.redraw_overplot_on_image()
         self.button_down=False
 
     def _onSize(self, event):
@@ -158,6 +155,8 @@ class PhotPanel(wx.Panel):
         self.skyrad_color = 'red'
         self.alpha = 0.25
         
+        self._need_to_recalc_phot_on_next_activation = False
+                
         textentry_font = wx.Font(14, wx.FONTFAMILY_MODERN, wx.NORMAL, wx.FONTWEIGHT_LIGHT, False)
         values_sizer = wx.FlexGridSizer( 3, 5, 0, 0 )
         values_sizer.SetFlexibleDirection( wx.BOTH )
@@ -304,7 +303,7 @@ class PhotPanel(wx.Panel):
 
         self.SetSizer(v_sizer1)
         pub.subscribe(self.update_phot_xy, "new_phot_xy")
-        pub.subscribe(self.recalc_phot, "redraw_image")
+        pub.subscribe(self.recalc_phot, "recalc-proc-image-called")
 
     def on_hideshow_button(self, evt):
         if self.hideshow_button.GetLabel() == 'Hide':
@@ -345,13 +344,21 @@ class PhotPanel(wx.Panel):
     def update_phot_xy(self, msg):
         self.xclick, self.yclick = msg
         self.recalc_phot()
-        self.redraw_overplot_on_image()
-        
+    
+    def on_activate(self, msg=None):
+        wx.CallAfter(self.recalc_phot, 'called-from-on_activate')
+            
     def recalc_phot(self, msg=None):
         if self.xclick is None or self.yclick is None:
             self.xclick_textctrl.SetValue('None')
             self.yclick_textctrl.SetValue('None')
             return
+        if not isinstance(self.ztv_frame.control_panels[self.ztv_frame.controls_notebook.GetSelection()], PhotPanel):
+            self._need_to_recalc_phot_on_next_activation = True
+            return    # do not recalculate if phot_panel is not visible
+        if msg == 'called-from-on_activate':
+            if not self._need_to_recalc_phot_on_next_activation:
+                return
         self.xclick_textctrl.SetValue("{:8.2f}".format(self.xclick))
         self.yclick_textctrl.SetValue("{:8.2f}".format(self.yclick))
         self.xcentroid,self.ycentroid = centroid(self.ztv_frame.display_image, self.xclick, self.yclick)
@@ -421,6 +428,8 @@ class PhotPanel(wx.Panel):
                 sys.stderr.write("ztv.phot_panel warning: scipy not installed OK. " + 
                                  "Gaussfit to PSF radial profile unavailable\n")
         self.plot_panel.figure.canvas.draw()
+        self.redraw_overplot_on_image()
+        self._need_to_recalc_phot_on_next_activation = False
 
     def aprad_textctrl_changed(self, evt):
         validate_textctrl_str(self.aprad_textctrl, lambda x: float(x) if float(x) > 0 else float('x'), 
@@ -432,7 +441,6 @@ class PhotPanel(wx.Panel):
             self.last_string_values['aprad'] = self.aprad_textctrl.GetValue()
             self.aprad = float(self.last_string_values['aprad'])
             self.recalc_phot()
-            self.redraw_overplot_on_image()
             validate_textctrl_str(self.aprad_textctrl, lambda x: float(x) if float(x) > 0 else float('x'), 
                                   self.last_string_values['aprad'])
             self.aprad_textctrl.SetSelection(-1, -1)
@@ -447,7 +455,6 @@ class PhotPanel(wx.Panel):
             self.last_string_values['skyradin'] = self.skyradin_textctrl.GetValue()
             self.skyradin = float(self.last_string_values['skyradin'])
             self.recalc_phot()
-            self.redraw_overplot_on_image()
             validate_textctrl_str(self.skyradin_textctrl, lambda x: float(x) if float(x) > 0 else float('x'), 
                                   self.last_string_values['skyradin'])
             self.skyradin_textctrl.SetSelection(-1, -1)
@@ -462,7 +469,6 @@ class PhotPanel(wx.Panel):
             self.last_string_values['skyradout'] = self.skyradout_textctrl.GetValue()
             self.skyradout = float(self.last_string_values['skyradout'])
             self.recalc_phot()
-            self.redraw_overplot_on_image()
             validate_textctrl_str(self.skyradout_textctrl, lambda x: float(x) if float(x) > 0 else float('x'), 
                                   self.last_string_values['skyradout'])
             self.skyradout_textctrl.SetSelection(-1, -1)
