@@ -128,7 +128,7 @@ class PrimaryImagePanel(wx.Panel):
         self.axes_widget.connect_event('button_release_event', self.on_button_release)
         self.axes_widget.connect_event('key_press_event', self.on_key_press)
         wx.EVT_RIGHT_DOWN(self.figure.canvas, self.on_right_down)  # supercedes the above button_press_event
-        pub.subscribe(self.redraw_image, "redraw_image")   
+        pub.subscribe(self.redraw_primary_image, "redraw_image")   
         pub.subscribe(self.reset_zoom_and_center, "reset_zoom_and_center")
         pub.subscribe(self.set_zoom_factor, "set_zoom_factor")
         pub.subscribe(self.set_xy_center, "set_xy_center")
@@ -277,7 +277,8 @@ class PrimaryImagePanel(wx.Panel):
         self.set_and_get_xy_limits()
 
     def on_change_cmap_event(self, event):
-        wx.CallAfter(pub.sendMessage, "set_cmap", msg=self.eventID_to_cmap[event.GetId()])
+        wx.CallAfter(pub.sendMessage, "set_cmap", msg=(self.eventID_to_cmap[event.GetId()], 
+                                                       self.ztv_frame._pause_redraw_image))
 
     def on_change_scaling_event(self, event):
         wx.CallAfter(pub.sendMessage, "set_scaling", msg=self.eventID_to_scaling[event.GetId()])
@@ -415,7 +416,9 @@ class PrimaryImagePanel(wx.Panel):
                                     float(pixels[1])/self.figure.get_dpi())
         self.set_and_get_xy_limits()
 
-    def redraw_image(self, msg=None):
+    def redraw_primary_image(self, msg=None):
+        if msg is True or self.ztv_frame._pause_redraw_image:
+            return
         if hasattr(self, 'axes_image'):
             if self.axes_image in self.axes.images:
                 self.axes.images.remove(self.axes_image)
@@ -447,7 +450,7 @@ class OverviewImagePanel(wx.Panel):
         self.axes_widget.connect_event('button_press_event', self.on_button_press)
         self.axes_widget.connect_event('button_release_event', self.on_button_release)
         self.axes_widget.connect_event('motion_notify_event', self.on_motion)
-        pub.subscribe(self.redraw_image, "redraw_image")   
+        pub.subscribe(self.redraw_overview_image, "redraw_image")   
         pub.subscribe(self.redraw_box, "primary_xy_limits-changed")
 
     def redraw_box(self, msg=None):
@@ -514,7 +517,9 @@ class OverviewImagePanel(wx.Panel):
         self.axes.set_xlim(self.xlim)
         self.axes.set_ylim(self.ylim)
 
-    def redraw_image(self, msg=None):
+    def redraw_overview_image(self, msg=None):
+        if msg is True or self.ztv_frame._pause_redraw_image:
+            return
         if hasattr(self, 'axes_image'):
             if self.axes_image in self.axes.images:
                 self.axes.images.remove(self.axes_image)
@@ -537,7 +542,7 @@ class LoupeImagePanel(wx.Panel):
         self.canvas = FigureCanvasWxAgg(self, -1, self.figure)
         self._SetSize()
         self.set_xy_limits()
-        pub.subscribe(self.redraw_image, "redraw_image") 
+        pub.subscribe(self.redraw_loupe_image, "redraw_image") 
 
     def _SetSize(self):
         self.SetSize(tuple(self.size))
@@ -554,7 +559,9 @@ class LoupeImagePanel(wx.Panel):
             self.crosshair[0].set_data([center[0]], [center[1]])
         self.figure.canvas.draw()
 
-    def redraw_image(self, msg=None):
+    def redraw_loupe_image(self, msg=None):
+        if msg is True or self.ztv_frame._pause_redraw_image:
+            return
         if hasattr(self, 'axes_image'):
             if self.axes_image in self.axes.images:
                 self.axes.images.remove(self.axes_image)
@@ -634,6 +641,7 @@ class ZTVFrame(wx.Frame):
         pub.subscribe(self.load_numpy_array, "load_numpy_array")
         pub.subscribe(self.load_fits_file, "load_fits_file")
         pub.subscribe(self.load_default_image, "load_default_image")
+        self._pause_redraw_image = False
         self.cur_fitsfile_basename = ''
         self.cur_fitsfile_path = ''
         self.image_process_functions_to_apply = []  # list of tuples of ('NameOrLabelIdentifier', fxn), where fxn must accept the image and return the processed image
@@ -735,7 +743,7 @@ class ZTVFrame(wx.Frame):
         self.cur_fits_hdulist = None
         if launch_listen_thread:
             self.command_listener_thread = CommandListenerThread(self)
-        self.set_cmap('gray')
+        self.set_cmap(('gray', False))
         temp_id = wx.NewId()
         self.Bind(wx.EVT_MENU, self.kill_ztv, id=temp_id)
         self.accelerator_table.append((wx.ACCEL_CMD, ord('Q'), temp_id))
@@ -780,39 +788,47 @@ class ZTVFrame(wx.Frame):
             return self.cmap
 
     def set_cmap_inverted(self, msg):
+        """
+        msg is tuple of two booleans:  (is_cmap_inverted, pause_redraw_image)
+        """
         old_is_cmap_inverted = self.is_cmap_inverted
-        self.is_cmap_inverted = msg
+        self.is_cmap_inverted = msg[0]
         if old_is_cmap_inverted != self.is_cmap_inverted:
             wx.CallAfter(pub.sendMessage, "is_cmap_inverted-changed", msg=None)
-            wx.CallAfter(pub.sendMessage, "redraw_image", msg=None)
+            wx.CallAfter(pub.sendMessage, "redraw_image", msg=(msg[1] or self._pause_redraw_image))
 
     def invert_cmap(self, msg=None):
-        self.set_cmap_inverted(not self.is_cmap_inverted)
+        self.set_cmap_inverted((not self.is_cmap_inverted, self._pause_redraw_image))
 
     def set_cmap(self, msg):
         """
         Verify that requested cmap is in the list (or it's reversed equivalent) and set it
+
+        msg is tuple:  (new_cmap, pause_redraw_image)
         """
-        new_cmap = msg
+        new_cmap, pause_redraw_image = msg
         old_cmap = self.cmap
         lower_available_cmaps = [a.lower() for a in self.available_cmaps]
         if new_cmap.lower() in lower_available_cmaps:
             self.cmap = self.available_cmaps[lower_available_cmaps.index(new_cmap.lower())]
-            self.set_cmap_inverted(False)
+            self.set_cmap_inverted((False, pause_redraw_image))
         elif new_cmap.replace('_r', '').lower() in lower_available_cmaps:
             self.cmap = self.available_cmaps[lower_available_cmaps.index(new_cmap.lower().replace('_r', ''))]
-            self.set_cmap_inverted(True)
+            self.set_cmap_inverted((True, pause_redraw_image))
         elif (new_cmap.lower() + '_r') in lower_available_cmaps:
             self.cmap = self.available_cmaps[lower_available_cmaps.index(new_cmap.lower() + '_r')]
-            self.set_cmap_inverted(True)
+            self.set_cmap_inverted((True, pause_redraw_image))
         else:
             sys.stderr.write("unrecognized cmap ({}) requested\n".format(new_cmap))
         if self.cmap != old_cmap:
             wx.CallAfter(pub.sendMessage, "cmap-changed", msg=None)
-            wx.CallAfter(pub.sendMessage, "redraw_image", msg=None)
+            wx.CallAfter(pub.sendMessage, "redraw_image", msg=(pause_redraw_image or self._pause_redraw_image))
             
     def set_clim(self, msg):
-        clim = msg
+        """
+        msg is tuple:  ((clim[0], clim[1]), pause_redraw_image)
+        """
+        clim, pause_redraw_image = msg
         old_clim = self.clim
         if clim[0] is None:
             clim[0] = self.clim[0]
@@ -820,15 +836,14 @@ class ZTVFrame(wx.Frame):
             clim[1] = self.clim[1]
         if clim[0] > clim[1]:
             self.clim = [clim[1], clim[0]]
-            self.set_cmap_inverted(not self.is_cmap_inverted)
+            self.set_cmap_inverted((not self.is_cmap_inverted, pause_redraw_image))
         else:
             self.clim = clim
         if old_clim != self.clim:
-            wx.CallAfter(pub.sendMessage, "clim-changed", msg=None)
-        wx.CallAfter(pub.sendMessage, "redraw_image", msg=None)
+            wx.CallAfter(pub.sendMessage, "clim-changed", msg=(pause_redraw_image or self._pause_redraw_image))
 
-    def set_clim_to_minmax(self, msg=None):
-        self.set_clim([self.display_image.min(), self.display_image.max()])
+    def set_clim_to_minmax(self, msg=False):
+        self.set_clim(([self.display_image.min(), self.display_image.max()], msg))
 
     def get_auto_clim_values(self, *args):
         """
@@ -865,18 +880,21 @@ class ZTVFrame(wx.Frame):
         n_sigma_above = 6.
         return (robust_mean - n_sigma_below * robust_stdev, robust_mean + n_sigma_above * robust_stdev)
 
-    def set_clim_to_auto_stats_box(self, msg=None):
+    def set_clim_to_auto_stats_box(self, msg=False):
         auto_clim = self.get_auto_stats_box_clim_values()
-        self.set_clim([auto_clim[0], auto_clim[1]])
+        self.set_clim(([auto_clim[0], auto_clim[1]], msg))
 
-    def set_clim_to_auto(self, msg=None):
+    def set_clim_to_auto(self, msg=False):
         auto_clim = self.get_auto_clim_values()
-        self.set_clim([auto_clim[0], auto_clim[1]])
+        self.set_clim(([auto_clim[0], auto_clim[1]], msg))
 
-    def set_norm(self, msg=None):
+    def set_norm(self, msg=False):
+        """
+        msg is pause_redraw_image
+        """
         self._norm = Normalize(vmin=self.clim[0], vmax=self.clim[1])
         self._scaling = eval('astropy.visualization.' + self.scaling + 'Stretch()')
-        wx.CallAfter(pub.sendMessage, "redraw_image", msg=None)
+        wx.CallAfter(pub.sendMessage, "redraw_image", msg=(msg or self._pause_redraw_image))
 
     def normalize(self, im):
         return self._scaling(self._norm(self.display_image))
@@ -965,10 +983,11 @@ class ZTVFrame(wx.Frame):
             if self.min_value_mode_on_new_image != 'auto-stats-box':  # only calculate if didn't already calculate above
                 auto_stats_box_clim_values = self.get_auto_stats_box_clim_values()
             new_max = auto_stats_box_clim_values[1]
-        self.set_clim([new_min, new_max])  
+        self.set_clim(([new_min, new_max], self._pause_redraw_image))
         # don't need to send a separate "redraw_image" message because set_clim sends one
   
     def load_numpy_array(self, msg, is_fits_file=False):
+        self._pause_redraw_image = True  # pause redrawing during loading so that don't redraw for every step of the way
         image = msg
         if not is_fits_file:
             self.cur_fits_hdulist = None
@@ -994,6 +1013,8 @@ class ZTVFrame(wx.Frame):
                 self.frame_number_sizer.ShowItems(True)
                 self.frame_number_textctrl.SetValue('0')
                 self.total_frame_numbers_text.SetLabel('of {}'.format(self.raw_image.shape[0]))
+        self._pause_redraw_image = False
+        wx.CallAfter(pub.sendMessage, "redraw_image", msg=self._pause_redraw_image)
 
     def load_hdulist_from_fitsfile(self, filename):
         """

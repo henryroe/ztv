@@ -158,7 +158,7 @@ class ZTV():
         returns the current (new) colormap
         """
         if isinstance(cmap, str):
-            self._send_to_ztv(('set_cmap', cmap))
+            self._send_to_ztv(('set_cmap', (cmap, False)))
         return self._request_return_value_from_ztv('get_cmap')
         
     def cmaps_list(self):
@@ -175,7 +175,7 @@ class ZTV():
         Returns the current inversion state
         """
         if state is not None:
-            self._send_to_ztv(('set_cmap_inverted', state))
+            self._send_to_ztv(('set_cmap_inverted', (state, False)))
         return self._request_return_value_from_ztv('get_is_cmap_inverted')
 
     def scaling(self, scaling=None):
@@ -228,7 +228,7 @@ class ZTV():
         returns current (new) min/max range
         """
         if minval is not None and maxval is not None:
-            self._send_to_ztv(('set_clim', (minval, maxval)))
+            self._send_to_ztv(('set_clim', ((minval, maxval), False)))
         return self._request_return_value_from_ztv('get_clim')
 
     def reset_zoom_and_center(self):

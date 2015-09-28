@@ -159,10 +159,11 @@ class ColorPanel(wx.Panel):
         self.cmap_popup_menu = menu
 
     def on_change_cmap_event(self, event):
-        wx.CallAfter(pub.sendMessage, "set_cmap", msg=self.eventID_to_cmap[event.GetId()])
+        wx.CallAfter(pub.sendMessage, "set_cmap", msg=(self.eventID_to_cmap[event.GetId()],
+                                                       self.ztv_frame._pause_redraw_image))
 
     def on_is_cmap_inverted_checkbox(self, evt):
-        wx.CallAfter(pub.sendMessage, "set_cmap_inverted", msg=evt.IsChecked())
+        wx.CallAfter(pub.sendMessage, "set_cmap_inverted", msg=(evt.IsChecked(), self.ztv_frame._pause_redraw_image))
 
     def on_is_cmap_inverted_changed(self, msg=None):
         self.is_cmap_inverted_checkbox.SetValue(self.ztv_frame.is_cmap_inverted)
@@ -216,12 +217,12 @@ class ColorPanel(wx.Panel):
         self.ztv_frame.set_clim_to_minmax()
 
     def on_set_min_button(self, evt):
-        self.ztv_frame.set_clim([self.ztv_frame.display_image.min(), None])
+        self.ztv_frame.set_clim(([self.ztv_frame.display_image.min(), None], self.ztv_frame._pause_redraw_image))
         if self.FindFocus() == self.minval_textctrl:
             self.minval_textctrl.SetSelection(-1, -1)
 
     def on_set_max_button(self, evt):
-        self.ztv_frame.set_clim([None, self.ztv_frame.display_image.max()])
+        self.ztv_frame.set_clim(([None, self.ztv_frame.display_image.max()], self.ztv_frame._pause_redraw_image))
         if self.FindFocus() == self.maxval_textctrl:
             self.maxval_textctrl.SetSelection(-1, -1)
 
@@ -250,7 +251,8 @@ class ColorPanel(wx.Panel):
     def minval_textctrl_entered(self, evt):
         if validate_textctrl_str(self.minval_textctrl, float, self.last_string_values['minval']):
             self.last_string_values['minval'] = self.minval_textctrl.GetValue()
-            self.ztv_frame.set_clim([float(self.minval_textctrl.GetValue()), None])
+            self.ztv_frame.set_clim(([float(self.minval_textctrl.GetValue()), None], 
+                                     self.ztv_frame._pause_redraw_image))
             self.minval_textctrl.SetSelection(-1, -1)
 
     def maxval_textctrl_changed(self, evt):
@@ -259,7 +261,8 @@ class ColorPanel(wx.Panel):
     def maxval_textctrl_entered(self, evt):
         if validate_textctrl_str(self.maxval_textctrl, float, self.last_string_values['maxval']):
             self.last_string_values['maxval'] = self.maxval_textctrl.GetValue()
-            self.ztv_frame.set_clim([None, float(self.maxval_textctrl.GetValue())])
+            self.ztv_frame.set_clim(([None, float(self.maxval_textctrl.GetValue())],
+                                     self.ztv_frame._pause_redraw_image))
             self.maxval_textctrl.SetSelection(-1, -1)
 
 
