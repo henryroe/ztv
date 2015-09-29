@@ -302,8 +302,8 @@ class PhotPanel(wx.Panel):
         v_sizer1.Add(self.plot_panel, 1, wx.LEFT | wx.TOP | wx.EXPAND)
 
         self.SetSizer(v_sizer1)
-        pub.subscribe(self.update_phot_xy, "new_phot_xy")
-        pub.subscribe(self.recalc_phot, "recalc-proc-image-called")
+        pub.subscribe(self.update_phot_xy, 'new-phot-xy')
+        pub.subscribe(self.recalc_phot, 'recalc-proc-image-called')
 
     def on_hideshow_button(self, evt):
         if self.hideshow_button.GetLabel() == 'Hide':
@@ -346,7 +346,7 @@ class PhotPanel(wx.Panel):
         self.recalc_phot()
     
     def on_activate(self, msg=None):
-        wx.CallAfter(self.recalc_phot, 'called-from-on_activate')
+        wx.CallAfter(self.recalc_phot, 'called-from-on-activate')
             
     def recalc_phot(self, msg=None):
         if self.xclick is None or self.yclick is None:
@@ -356,7 +356,7 @@ class PhotPanel(wx.Panel):
         if not isinstance(self.ztv_frame.control_panels[self.ztv_frame.controls_notebook.GetSelection()], PhotPanel):
             self._need_to_recalc_phot_on_next_activation = True
             return    # do not recalculate if phot_panel is not visible
-        if msg == 'called-from-on_activate':
+        if msg == 'called-from-on-activate':
             if not self._need_to_recalc_phot_on_next_activation:
                 return
         self.xclick_textctrl.SetValue("{:8.2f}".format(self.xclick))

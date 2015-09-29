@@ -5,6 +5,8 @@ from Queue import Queue, Empty
 
 
 # point is to make improbable that would ever happen to appear inside a pickled image and be mistaken
+# Note that because you may be loading image data and random strings will occur... best to have a big
+# *10 on this message string.  *1 or *2 might not be enough....
 end_of_message_message = ("---EndOfMessage---"*10) + "\n"   
 
 def send_to_stream(stream, msg): 

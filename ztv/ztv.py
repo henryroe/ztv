@@ -128,10 +128,10 @@ class PrimaryImagePanel(wx.Panel):
         self.axes_widget.connect_event('button_release_event', self.on_button_release)
         self.axes_widget.connect_event('key_press_event', self.on_key_press)
         wx.EVT_RIGHT_DOWN(self.figure.canvas, self.on_right_down)  # supercedes the above button_press_event
-        pub.subscribe(self.redraw_primary_image, "redraw_image")   
-        pub.subscribe(self.reset_zoom_and_center, "reset_zoom_and_center")
-        pub.subscribe(self.set_zoom_factor, "set_zoom_factor")
-        pub.subscribe(self.set_xy_center, "set_xy_center")
+        pub.subscribe(self.redraw_primary_image, 'redraw-image')   
+        pub.subscribe(self.reset_zoom_and_center, 'reset-zoom-and-center')
+        pub.subscribe(self.set_zoom_factor, 'set-zoom-factor')
+        pub.subscribe(self.set_xy_center, 'set-xy-center')
         self.SetAcceleratorTable(wx.AcceleratorTable(self.accelerator_table))
 
     def _append_menu_item(self, menu, wx_id, title, fxn):
@@ -204,7 +204,7 @@ class PrimaryImagePanel(wx.Panel):
             send_change_message = False
         self.xlim, self.ylim = xlim, ylim
         if send_change_message:
-            wx.CallAfter(pub.sendMessage, "primary_xy_limits-changed", msg=None)
+            wx.CallAfter(pub.sendMessage, 'primary-xy-limits-changed', msg=None)
         return {'xlim':xlim, 'ylim':ylim}
 
     def set_cursor_to_none_mode(self, event):
@@ -239,17 +239,17 @@ class PrimaryImagePanel(wx.Panel):
         if event.key in ['c', 'C', 'v', 'V', 'y', 'Y']:
             x = np.round(event.xdata)
             max_y = self.ztv_frame.display_image.shape[0] - 1
-            wx.CallAfter(pub.sendMessage, "update_line_plot_points", msg=((x + 0.5, max(0, self.ylim[0])), 
+            wx.CallAfter(pub.sendMessage, 'update-line-plot-points', msg=((x + 0.5, max(0, self.ylim[0])), 
                                                                           (x + 0.5, min(max_y, self.ylim[1]))))
         elif event.key in ['r', 'R', 'h', 'H', 'x', 'X']:
             y = np.round(event.ydata)
             max_x = self.ztv_frame.display_image.shape[1] - 1
-            wx.CallAfter(pub.sendMessage, "update_line_plot_points", msg=((max(0, self.xlim[0]), y + 0.5), 
+            wx.CallAfter(pub.sendMessage, 'update-line-plot-points', msg=((max(0, self.xlim[0]), y + 0.5), 
                                                                           (min(max_x, self.xlim[1]), y + 0.5)))
         elif event.key in ['z', 'Z']:
             x = np.round(event.xdata)
             y = np.round(event.ydata)
-            wx.CallAfter(pub.sendMessage, "update_line_plot_points", msg=((x, y), (x, y)))
+            wx.CallAfter(pub.sendMessage, 'update-line-plot-points', msg=((x, y), (x, y)))
         elif event.key == 'right':
             self.ztv_frame.set_cur_display_frame_num(1, relative=True)
         elif event.key == 'left':
@@ -277,11 +277,12 @@ class PrimaryImagePanel(wx.Panel):
         self.set_and_get_xy_limits()
 
     def on_change_cmap_event(self, event):
-        wx.CallAfter(pub.sendMessage, "set_cmap", msg=(self.eventID_to_cmap[event.GetId()], 
-                                                       self.ztv_frame._pause_redraw_image))
+        wx.CallAfter(pub.sendMessage, 'set-cmap', msg=(self.ztv_frame._pause_redraw_image,
+                                                       self.eventID_to_cmap[event.GetId()]))
 
     def on_change_scaling_event(self, event):
-        wx.CallAfter(pub.sendMessage, "set_scaling", msg=self.eventID_to_scaling[event.GetId()])
+        wx.CallAfter(pub.sendMessage, 'set-scaling', msg=(self.ztv_frame._pause_redraw_image,
+                                                          self.eventID_to_scaling[event.GetId()]))
 
     def on_button_press(self, event):
         if event.button == 1:  # left button
@@ -306,11 +307,11 @@ class PrimaryImagePanel(wx.Panel):
                 self.cursor_stats_box_x0, self.cursor_stats_box_y0 = event.xdata, event.ydata
             elif self.cursor_mode == 'Phot':
                 self.ztv_frame.phot_panel.select_panel()
-                wx.CallAfter(pub.sendMessage, "new_phot_xy", msg=(event.xdata, event.ydata))
+                wx.CallAfter(pub.sendMessage, 'new-phot-xy', msg=(event.xdata, event.ydata))
             elif self.cursor_mode == 'Slice plot':
                 self.ztv_frame.plot_panel.select_panel()
-                wx.CallAfter(pub.sendMessage, "new_slice_plot_xy0", msg=(event.xdata, event.ydata))
-                wx.CallAfter(pub.sendMessage, "new_slice_plot_xy1", msg=(event.xdata, event.ydata))
+                wx.CallAfter(pub.sendMessage, 'new-slice-plot-xy0', msg=(event.xdata, event.ydata))
+                wx.CallAfter(pub.sendMessage, 'new-slice-plot-xy1', msg=(event.xdata, event.ydata))
 
     def on_motion(self, event):
         if event.xdata is None or event.ydata is None:
@@ -328,7 +329,7 @@ class PrimaryImagePanel(wx.Panel):
                 self.ztv_frame.stats_panel.redraw_overplot_on_image()
                 self.ztv_frame.stats_panel.update_stats()
             elif self.cursor_mode == 'Slice plot':
-                wx.CallAfter(pub.sendMessage, "new_slice_plot_xy1", msg=(event.xdata, event.ydata))
+                wx.CallAfter(pub.sendMessage, 'new-slice-plot-xy1', msg=(event.xdata, event.ydata))
         if ((x >= 0) and (x < self.ztv_frame.display_image.shape[1]) and
             (y >= 0) and (y < self.ztv_frame.display_image.shape[0])):
             imval = self.ztv_frame.display_image[y, x]
@@ -376,7 +377,7 @@ class PrimaryImagePanel(wx.Panel):
                 self.ztv_frame.stats_panel.redraw_overplot_on_image()
                 self.ztv_frame.stats_panel.update_stats()
             elif self.cursor_mode == 'Slice plot':
-                wx.CallAfter(pub.sendMessage, "new_slice_plot_xy1", msg=(event.xdata, event.ydata))
+                wx.CallAfter(pub.sendMessage, 'new-slice-plot-xy1', msg=(event.xdata, event.ydata))
 
     def on_right_down(self, event):
         for cursor_mode in self.cursor_mode_to_eventID:
@@ -450,8 +451,8 @@ class OverviewImagePanel(wx.Panel):
         self.axes_widget.connect_event('button_press_event', self.on_button_press)
         self.axes_widget.connect_event('button_release_event', self.on_button_release)
         self.axes_widget.connect_event('motion_notify_event', self.on_motion)
-        pub.subscribe(self.redraw_overview_image, "redraw_image")   
-        pub.subscribe(self.redraw_box, "primary_xy_limits-changed")
+        pub.subscribe(self.redraw_overview_image, 'redraw-image')   
+        pub.subscribe(self.redraw_box, 'primary-xy-limits-changed')
 
     def redraw_box(self, msg=None):
         xlim = self.ztv_frame.primary_image_panel.xlim
@@ -542,7 +543,7 @@ class LoupeImagePanel(wx.Panel):
         self.canvas = FigureCanvasWxAgg(self, -1, self.figure)
         self._SetSize()
         self.set_xy_limits()
-        pub.subscribe(self.redraw_loupe_image, "redraw_image") 
+        pub.subscribe(self.redraw_loupe_image, 'redraw-image') 
 
     def _SetSize(self):
         self.SetSize(tuple(self.size))
@@ -637,10 +638,10 @@ class ZTVFrame(wx.Frame):
         self.control_panels_to_load = control_panels_to_load
         wx.Frame.__init__(self, None, title=self.base_title, pos=wx.DefaultPosition, size=wx.Size(1024,512),
                           style = wx.DEFAULT_FRAME_STYLE)
-        pub.subscribe(self.kill_ztv, 'kill_ztv')
-        pub.subscribe(self.load_numpy_array, "load_numpy_array")
-        pub.subscribe(self.load_fits_file, "load_fits_file")
-        pub.subscribe(self.load_default_image, "load_default_image")
+        pub.subscribe(self.kill_ztv, 'kill-ztv')
+        pub.subscribe(self.load_numpy_array, 'load-numpy-array')
+        pub.subscribe(self.load_fits_file, 'load-fits-file')
+        pub.subscribe(self.load_default_image, 'load-default-image')
         self._pause_redraw_image = False
         self.cur_fitsfile_basename = ''
         self.cur_fitsfile_path = ''
@@ -661,20 +662,20 @@ class ZTVFrame(wx.Frame):
         self.is_cmap_inverted = False
         self.accelerator_table = []  # keyboard accelerators, e.g. cmd-Q
         self.zoom_factor = 2.0
-        pub.subscribe(self.invert_cmap, "invert_cmap")
-        pub.subscribe(self.set_cmap, "set_cmap")
-        pub.subscribe(self.set_cmap_inverted, "set_cmap_inverted")
+        pub.subscribe(self.invert_cmap, 'invert-cmap')
+        pub.subscribe(self.set_cmap, 'set-cmap')
+        pub.subscribe(self.set_cmap_inverted, 'set-cmap-inverted')
         self.clim = [0.0, 1.0]
-        pub.subscribe(self.set_clim_to_minmax, "set_clim_to_minmax")
-        pub.subscribe(self.set_clim_to_auto, "set_clim_to_auto")
-        pub.subscribe(self.set_clim_to_auto_stats_box, "set_clim_to_auto_stats_box")
-        pub.subscribe(self.set_clim, "set_clim")
-        pub.subscribe(self.set_scaling, "set_scaling")
-        pub.subscribe(self.set_norm, "clim-changed")
-        pub.subscribe(self.set_norm, "scaling-changed")
-        pub.subscribe(self.recalc_proc_image, "image_process_functions_to_apply-changed")
-        pub.subscribe(self.set_cur_display_frame_num, "set_cur_display_frame_num") 
-        pub.subscribe(self.set_window_title, "set_window_title")
+        pub.subscribe(self.set_clim_to_minmax, 'set-clim-to-minmax')
+        pub.subscribe(self.set_clim_to_auto, 'set-clim-to-auto')
+        pub.subscribe(self.set_clim_to_auto_stats_box, 'set-clim-to-auto-stats-box')
+        pub.subscribe(self.set_clim, 'set-clim')
+        pub.subscribe(self.set_scaling, 'set-scaling')
+        pub.subscribe(self.set_norm, 'clim-changed')
+        pub.subscribe(self.set_norm, 'scaling-changed')
+        pub.subscribe(self.recalc_proc_image, 'image-process-functions-to-apply-changed')
+        pub.subscribe(self.set_cur_display_frame_num, 'set-cur-display-frame-num') 
+        pub.subscribe(self.set_window_title, 'set-window-title')
         self.scaling = 'Linear'
         self.available_scalings = ['Linear', 'Asinh', 'Log', 'PowerDist', 'Sinh', 'Sqrt', 'Squared']
         # scalings that require inputs & need additional work to implement:  
@@ -749,7 +750,7 @@ class ZTVFrame(wx.Frame):
         self.cur_fits_hdulist = None
         if launch_listen_thread:
             self.command_listener_thread = CommandListenerThread(self)
-        self.set_cmap(('gray', False))
+        self.set_cmap((False, 'gray'))
         temp_id = wx.NewId()
         self.Bind(wx.EVT_MENU, self.kill_ztv, id=temp_id)
         self.accelerator_table.append((wx.ACCEL_CMD, ord('Q'), temp_id))
@@ -793,48 +794,59 @@ class ZTVFrame(wx.Frame):
         else:
             return self.cmap
 
+    # Any method that calls redraw_image (or, more often, uses wx.CallAfter 
+    # to send a redraw-image message) should accept a tuple msg input where
+    # msg[0] is True/False of pause_redraw_image.
+    # Routines should test (pause_redraw_image or self._pause_redraw_image) 
+    # and *only* send redraw-image message if nothing is calling for Pause.
+      
     def set_cmap_inverted(self, msg):
         """
-        msg is tuple of two booleans:  (is_cmap_inverted, pause_redraw_image)
+        msg is tuple of two booleans:  (pause_redraw_image, is_cmap_inverted)
         """
         old_is_cmap_inverted = self.is_cmap_inverted
-        self.is_cmap_inverted = msg[0]
+        pause_redraw_image, self.is_cmap_inverted = msg
         if old_is_cmap_inverted != self.is_cmap_inverted:
-            wx.CallAfter(pub.sendMessage, "is_cmap_inverted-changed", msg=None)
-            wx.CallAfter(pub.sendMessage, "redraw_image", msg=(msg[1] or self._pause_redraw_image))
+            wx.CallAfter(pub.sendMessage, 'is-cmap-inverted-changed', msg=None)
+            if not (pause_redraw_image or self._pause_redraw_image):
+                wx.CallAfter(pub.sendMessage, 'redraw-image', msg=False)
 
-    def invert_cmap(self, msg=None):
-        self.set_cmap_inverted((not self.is_cmap_inverted, self._pause_redraw_image))
+    def invert_cmap(self, msg=(False,)):
+        """
+        msg is (pause_redraw_image, )
+        """
+        self.set_cmap_inverted(((msg[0] or self._pause_redraw_image), not self.is_cmap_inverted))
 
     def set_cmap(self, msg):
         """
         Verify that requested cmap is in the list (or it's reversed equivalent) and set it
 
-        msg is tuple:  (new_cmap, pause_redraw_image)
+        msg is tuple:  (pause_redraw_image, new_cmap)
         """
-        new_cmap, pause_redraw_image = msg
+        pause_redraw_image, new_cmap = msg
         old_cmap = self.cmap
         lower_available_cmaps = [a.lower() for a in self.available_cmaps]
         if new_cmap.lower() in lower_available_cmaps:
             self.cmap = self.available_cmaps[lower_available_cmaps.index(new_cmap.lower())]
-            self.set_cmap_inverted((False, pause_redraw_image))
+            self.set_cmap_inverted(((pause_redraw_image or self._pause_redraw_image), False))
         elif new_cmap.replace('_r', '').lower() in lower_available_cmaps:
             self.cmap = self.available_cmaps[lower_available_cmaps.index(new_cmap.lower().replace('_r', ''))]
-            self.set_cmap_inverted((True, pause_redraw_image))
+            self.set_cmap_inverted(((pause_redraw_image or self._pause_redraw_image), True))
         elif (new_cmap.lower() + '_r') in lower_available_cmaps:
             self.cmap = self.available_cmaps[lower_available_cmaps.index(new_cmap.lower() + '_r')]
-            self.set_cmap_inverted((True, pause_redraw_image))
+            self.set_cmap_inverted(((pause_redraw_image or self._pause_redraw_image), True))
         else:
             sys.stderr.write("unrecognized cmap ({}) requested\n".format(new_cmap))
         if self.cmap != old_cmap:
-            wx.CallAfter(pub.sendMessage, "cmap-changed", msg=None)
-            wx.CallAfter(pub.sendMessage, "redraw_image", msg=(pause_redraw_image or self._pause_redraw_image))
-            
+            wx.CallAfter(pub.sendMessage, 'cmap-changed', msg=None)
+            if not (pause_redraw_image or self._pause_redraw_image):
+                wx.CallAfter(pub.sendMessage, 'redraw-image', msg=False)
+
     def set_clim(self, msg):
         """
-        msg is tuple:  ((clim[0], clim[1]), pause_redraw_image)
+        msg is tuple:  (pause_redraw_image, (clim[0], clim[1]))
         """
-        clim, pause_redraw_image = msg
+        pause_redraw_image, clim = msg
         old_clim = self.clim
         if clim[0] is None:
             clim[0] = self.clim[0]
@@ -842,14 +854,18 @@ class ZTVFrame(wx.Frame):
             clim[1] = self.clim[1]
         if clim[0] > clim[1]:
             self.clim = [clim[1], clim[0]]
-            self.set_cmap_inverted((not self.is_cmap_inverted, pause_redraw_image))
+            self.set_cmap_inverted(((pause_redraw_image or self._pause_redraw_image), not self.is_cmap_inverted))
         else:
             self.clim = clim
         if old_clim != self.clim:
-            wx.CallAfter(pub.sendMessage, "clim-changed", msg=(pause_redraw_image or self._pause_redraw_image))
+            wx.CallAfter(pub.sendMessage, 'clim-changed', msg=((pause_redraw_image or self._pause_redraw_image),))
 
-    def set_clim_to_minmax(self, msg=False):
-        self.set_clim(([self.display_image.min(), self.display_image.max()], msg))
+    def set_clim_to_minmax(self, msg=(False,)):
+        """
+        msg is tuple:  (pause_redraw_image, )
+        """
+        self.set_clim(((pause_redraw_image or self._pause_redraw_image), 
+                      [self.display_image.min(), self.display_image.max()]))
 
     def get_auto_clim_values(self, *args):
         """
@@ -886,17 +902,23 @@ class ZTVFrame(wx.Frame):
         n_sigma_above = 6.
         return (robust_mean - n_sigma_below * robust_stdev, robust_mean + n_sigma_above * robust_stdev)
 
-    def set_clim_to_auto_stats_box(self, msg=False):
-        auto_clim = self.get_auto_stats_box_clim_values()
-        self.set_clim(([auto_clim[0], auto_clim[1]], msg))
-
-    def set_clim_to_auto(self, msg=False):
-        auto_clim = self.get_auto_clim_values()
-        self.set_clim(([auto_clim[0], auto_clim[1]], msg))
-
-    def set_norm(self, msg=False):
+    def set_clim_to_auto_stats_box(self, msg=(False,)):
         """
-        msg is pause_redraw_image
+        msg is tuple:  (pause_redraw_image, )
+        """
+        auto_clim = self.get_auto_stats_box_clim_values()
+        self.set_clim(((msg[0] or self._pause_redraw_image), [auto_clim[0], auto_clim[1]]))
+
+    def set_clim_to_auto(self, msg=(False,)):
+        """
+        msg is tuple:  (pause_redraw_image, )
+        """
+        auto_clim = self.get_auto_clim_values()
+        self.set_clim(((msg[0] or self._pause_redraw_image), [auto_clim[0], auto_clim[1]]))
+
+    def set_norm(self, msg=(False,)):
+        """
+        msg is tuple:  (pause_redraw_image, )
         """
         if self._norm is None or self.clim != self._set_norm_old_clim:
             self._norm = Normalize(vmin=self.clim[0], vmax=self.clim[1])
@@ -906,7 +928,8 @@ class ZTVFrame(wx.Frame):
             self._scaling = eval('astropy.visualization.' + self.scaling + 'Stretch()')
             self._set_norm_old_scaling = self.scaling
             self._need_to_recalc_normalization = True
-        wx.CallAfter(pub.sendMessage, "redraw_image", msg=(msg or self._pause_redraw_image))
+        if not (msg[0] or self._pause_redraw_image):
+            wx.CallAfter(pub.sendMessage, 'redraw-image', msg=False)
 
     def normalize(self, im):
         if self._need_to_recalc_normalization or self.normalized_image is None:
@@ -915,11 +938,14 @@ class ZTVFrame(wx.Frame):
         return self.normalized_image
 
     def set_scaling(self, msg):
-        scaling = msg
+        """
+        msg is (pause_redraw_image, scaling)
+        """
+        pause_redraw_image, scaling = msg
         available_scalings_lowercase = [a.lower() for a in self.available_scalings]
         if scaling.lower() in available_scalings_lowercase:
             self.scaling = self.available_scalings[available_scalings_lowercase.index(scaling.lower())]
-            wx.CallAfter(pub.sendMessage, "scaling-changed", msg=None)
+            wx.CallAfter(pub.sendMessage, 'scaling-changed', msg=((pause_redraw_image or self._pause_redraw_image),))
         else:
             sys.stderr.write("unrecognized scaling ({}) requested\n".format(scaling))
 
@@ -963,14 +989,18 @@ class ZTVFrame(wx.Frame):
         set_textctrl_background_color(self.frame_number_textctrl, 'ok')
         self.recalc_display_image()
 
-    def recalc_proc_image(self, msg=None):
+    def recalc_proc_image(self, msg=(False,)):
+        """
+        msg is (pause_redraw_image, )
+        """
         self.proc_image = self.raw_image.copy()
         for cur_imageproc_label, cur_imageproc_fxn in self.image_process_functions_to_apply:
             self.proc_image = cur_imageproc_fxn(self.proc_image)
-        self.recalc_display_image()
-        wx.CallAfter(pub.sendMessage, "recalc-proc-image-called", msg=None)
+        self.recalc_display_image(msg=((msg[0] or self._pause_redraw_image),))
+        wx.CallAfter(pub.sendMessage, 'recalc-proc-image-called',
+                     msg=((msg[0] or self._pause_redraw_image),))
 
-    def recalc_display_image(self, msg=None):
+    def recalc_display_image(self, msg=(False,)):
         if self.proc_image.ndim == 2:
             self.display_image = self.proc_image.copy()
         elif self.proc_image.ndim == 3:
@@ -999,8 +1029,7 @@ class ZTVFrame(wx.Frame):
                 auto_stats_box_clim_values = self.get_auto_stats_box_clim_values()
             new_max = auto_stats_box_clim_values[1]
         self._need_to_recalc_normalization = True
-        self.set_clim(([new_min, new_max], self._pause_redraw_image))
-        # don't need to send a separate "redraw_image" message because set_clim sends one
+        self.set_clim(((msg[0] or self._pause_redraw_image), [new_min, new_max]))
   
     def load_numpy_array(self, msg, is_fits_file=False):
         self._pause_redraw_image = True  # pause redrawing during loading so that don't redraw for every step of the way
@@ -1008,7 +1037,8 @@ class ZTVFrame(wx.Frame):
         if not is_fits_file:
             self.cur_fits_hdulist = None
         if (image.ndim != 2) and (image.ndim != 3):
-            sys.stderr.write("Only supports numpy arrays of 2-d or 3-d; tried to load a {}-d numpy array".format(image.ndim))
+            sys.stderr.write("Only supports numpy arrays of 2-d or 3-d; " +
+                             "tried to load a {}-d numpy array".format(image.ndim))
         else:
             need_to_reset_zoom_and_center = False
             self.cur_display_frame_num = 0
@@ -1019,7 +1049,7 @@ class ZTVFrame(wx.Frame):
             self.raw_image = image  
             self.image_radec = None
             self.cur_fitsfile_basename = ''
-            self.recalc_proc_image()
+            self.recalc_proc_image(msg=(self._pause_redraw_image,))
             if need_to_reset_zoom_and_center:
                 self.primary_image_panel.reset_zoom_and_center()
             self.SetTitle(self.base_title)
@@ -1030,7 +1060,7 @@ class ZTVFrame(wx.Frame):
                 self.frame_number_textctrl.SetValue('0')
                 self.total_frame_numbers_text.SetLabel('of {}'.format(self.raw_image.shape[0]))
         self._pause_redraw_image = False
-        wx.CallAfter(pub.sendMessage, "redraw_image", msg=self._pause_redraw_image)
+        wx.CallAfter(pub.sendMessage, 'redraw-image', msg=(self._pause_redraw_image,))
 
     def load_hdulist_from_fitsfile(self, filename):
         """
@@ -1055,8 +1085,8 @@ class ZTVFrame(wx.Frame):
     def set_window_title(self, msg=None):
         new_title = 'ztv'
         if len(self.cur_fitsfile_basename) > 0:
-            sky_subtraction = 'sky_subtraction' in [a[0] for a in self.image_process_functions_to_apply]
-            flat_division = 'flat_division' in [a[0] for a in self.image_process_functions_to_apply]
+            sky_subtraction = 'sky-subtraction' in [a[0] for a in self.image_process_functions_to_apply]
+            flat_division = 'flat-division' in [a[0] for a in self.image_process_functions_to_apply]
             new_title += ': ' 
             if flat_division:
                 new_title += '('
@@ -1113,7 +1143,7 @@ class ZTVFrame(wx.Frame):
                         self.image_radec = ICRS(a[0]*units.degree, a[1]*units.degree)
                     except:  # just ignore radec if anything at all goes wrong.
                         self.image_radec = None
-                    wx.CallAfter(pub.sendMessage, "fitsfile-loaded", msg=filename)
+                    wx.CallAfter(pub.sendMessage, 'fitsfile-loaded', msg=filename)
                 else:
                     raise Error("Cannot find file: {}".format(filename))
             else:
@@ -1147,8 +1177,9 @@ class WatchMasterPIDThread(threading.Thread):
         time.sleep(60)  # wait a full minute for launch before beginning to check for PID
         while psutil.pid_exists(self.masterPID):
             time.sleep(2)
-        sys.stderr.write("\n\n----\nlooks like python session that owned this instance of the ZTV gui is gone, so disposing of the window\n----\n")
-        wx.CallAfter(pub.sendMessage, "kill_ztv", msg=None)
+        sys.stderr.write("\n\n----\nlooks like python session that owned this instance of the " +
+                         "ZTV gui is gone, so disposing of the window\n----\n")
+        wx.CallAfter(pub.sendMessage, 'kill-ztv', msg=None)
 
 
 class CommandListenerThread(threading.Thread):
@@ -1158,7 +1189,7 @@ class CommandListenerThread(threading.Thread):
         *very* carefully.  Essentially view this access as "readonly".  It's easy to screw things up with the gui if
         CommandListenerThread starts messing with parameters in ZTVFrame.  The appropriate way for CommandListenerThread
         to send commands to ZTVFrame is with a wx.CallAfter(pub.sendMessage....   call, e.g.:
-            wx.CallAfter(pub.sendMessage, "load_default_image", None)
+            wx.CallAfter(pub.sendMessage, 'load-default-image', None)
         """
         threading.Thread.__init__(self)
         self.ztv_frame = ztv_frame
@@ -1179,49 +1210,50 @@ class CommandListenerThread(threading.Thread):
                 if not isinstance(x, tuple):
                     raise Error("ListenThread only accepts tuples")
                 wx.GetApp().ProcessIdle() # give time for any parameter changes to take effect
-                if (x[0].startswith('get_') and 
-                    hasattr(self.ztv_frame, x[0][4:]) and
-                    not callable(getattr(self.ztv_frame, x[0][4:]))):
+                if (x[0].startswith('get-') and 
+                    hasattr(self.ztv_frame, x[0][4:].replace('-', '_')) and
+                    not callable(getattr(self.ztv_frame, x[0][4:].replace('-', '_')))):
                     # catch the easiest cases where we just want some parameter out of ztv_frame, e.g.:
-                    # ztv.frame_cmap is returned by the request message "get_cmap"
-                    wx.CallAfter(send_to_stream, sys.stdout, (x[0][4:], getattr(self.ztv_frame, x[0][4:])))
-                elif x[0] == 'get_xy_center':
+                    # ztv.frame_cmap is returned by the request message 'get-cmap'
+                    wx.CallAfter(send_to_stream, sys.stdout, (x[0][4:], 
+                                                              getattr(self.ztv_frame, x[0][4:].replace('-', '_'))))
+                elif x[0] == 'get-xy-center':
                     wx.CallAfter(send_to_stream, sys.stdout, 
                                  (x[0][4:], (self.ztv_frame.primary_image_panel.center.x,
                                              self.ztv_frame.primary_image_panel.center.y)))
                 # TODO: the following N elif statements accessing/controlling source_panel elements is ripe for some sort of sensible refactoring
-                elif x[0] == 'set_sky_subtraction_status':
+                elif x[0] == 'set-sky-subtraction-status':
                     if hasattr(self.ztv_frame, 'source_panel'):
                         if x[1]:
                             self.ztv_frame.source_panel.load_sky_subtraction_to_process_stack()
                         else:
                             self.ztv_frame.source_panel.unload_sky_subtraction_from_process_stack()
-                elif x[0] == 'set_sky_subtraction_filename':
+                elif x[0] == 'set-sky-subtraction-filename':
                     if hasattr(self.ztv_frame, 'source_panel'):
                         self.ztv_frame.source_panel.load_sky_frame(x[1])
-                elif x[0] == 'get_sky_subtraction_status_and_filename':
+                elif x[0] == 'get-sky-subtraction-status-and-filename':
                     if hasattr(self.ztv_frame, 'source_panel'):
                         sky_subtraction_loaded = False
-                        if 'sky_subtraction' in [a[0] for a in self.ztv_frame.image_process_functions_to_apply]:
+                        if 'sky-subtraction' in [a[0] for a in self.ztv_frame.image_process_functions_to_apply]:
                             sky_subtraction_loaded = True
                         wx.CallAfter(send_to_stream, sys.stdout, 
                                      (x[0][4:], (sky_subtraction_loaded, 
                                                  self.ztv_frame.source_panel.sky_file_fullname)))
                     else:
                         send_to_stream(sys.stdout, (x[0][4:], 'source_panel not available'))
-                elif x[0] == 'set_flat_division_status':
+                elif x[0] == 'set-flat-division-status':
                     if hasattr(self.ztv_frame, 'source_panel'):
                         if x[1]:
                             self.ztv_frame.source_panel.load_flat_division_to_process_stack()
                         else:
                             self.ztv_frame.source_panel.unload_flat_division_from_process_stack()
-                elif x[0] == 'set_flat_division_filename':
+                elif x[0] == 'set-flat-division-filename':
                     if hasattr(self.ztv_frame, 'source_panel'):
                         self.ztv_frame.source_panel.load_flat_frame(x[1])
-                elif x[0] == 'get_flat_division_status_and_filename':
+                elif x[0] == 'get-flat-division-status-and-filename':
                     if hasattr(self.ztv_frame, 'source_panel'):
                         flat_division_loaded = False
-                        if 'flat_division' in [a[0] for a in self.ztv_frame.image_process_functions_to_apply]:
+                        if 'flat-division' in [a[0] for a in self.ztv_frame.image_process_functions_to_apply]:
                             flat_division_loaded = True
                         wx.CallAfter(send_to_stream, sys.stdout, 
                                      (x[0][4:], 
@@ -1229,7 +1261,7 @@ class CommandListenerThread(threading.Thread):
                                        self.ztv_frame.source_panel.flatfile_file_picker.current_textctrl_GetValue())))
                     else:
                         send_to_stream(sys.stdout, (x[0][4:], 'source_panel not available'))
-                elif x[0] == 'set_autoload_filename_pattern_status':
+                elif x[0] == 'set-autoload-filename-pattern-status':
                     if hasattr(self.ztv_frame, 'source_panel'):
                         if x[1]:
                             self.ztv_frame.source_panel.launch_autoload_filematch_thread()
@@ -1237,10 +1269,10 @@ class CommandListenerThread(threading.Thread):
                         else:
                             self.ztv_frame.source_panel.kill_autoload_filematch_thread()
                             self.ztv_frame.source_panel.autoload_mode = None
-                elif x[0] == 'set_autoload_filename_pattern':
+                elif x[0] == 'set-autoload-filename-pattern':
                     if hasattr(self.ztv_frame, 'source_panel'):
                         self.ztv_frame.source_panel.autoload_curfile_file_picker_on_load(x[1])
-                elif x[0] == 'get_autoload_status_and_filename_pattern':
+                elif x[0] == 'get-autoload-status-and-filename-pattern':
                     if hasattr(self.ztv_frame, 'source_panel'):
                         wx.CallAfter(send_to_stream, sys.stdout, 
                                      (x[0][4:], 
@@ -1248,25 +1280,25 @@ class CommandListenerThread(threading.Thread):
                                        self.ztv_frame.source_panel.autoload_match_string)))
                     else:
                         send_to_stream(sys.stdout, (x[0][4:], 'source_panel not available'))
-                elif x[0] == 'set_autoload_pausetime':
+                elif x[0] == 'set-autoload-pausetime':
                     if hasattr(self.ztv_frame, 'source_panel'):
                         i = np.abs(np.array(self.ztv_frame.source_panel.autoload_pausetime_choices) - 
                                    float(x[1])).argmin()
                         self.ztv_frame.source_panel.autoload_pausetime = self.ztv_frame.source_panel.autoload_pausetime_choices[i]
                         self.ztv_frame.source_panel.autoload_pausetime_choice.SetSelection(i)
-                elif x[0] == 'get_autoload_pausetime':
+                elif x[0] == 'get-autoload-pausetime':
                     if hasattr(self.ztv_frame, 'source_panel'):
                         wx.CallAfter(send_to_stream, sys.stdout, 
                                      (x[0][4:], self.ztv_frame.source_panel.autoload_pausetime))
                     else:
                         send_to_stream(sys.stdout, (x[0][4:], 'source_panel not available'))
-                elif x[0] == 'set_new_slice_plot_xy0':
+                elif x[0] == 'set-new-slice-plot-xy0':
                     if hasattr(self.ztv_frame, 'plot_panel'):
-                        wx.CallAfter(pub.sendMessage, 'new_slice_plot_xy0', msg=x[1])
-                elif x[0] == 'set_new_slice_plot_xy1':
+                        wx.CallAfter(pub.sendMessage, 'new-slice-plot-xy0', msg=x[1])
+                elif x[0] == 'set-new-slice-plot-xy1':
                     if hasattr(self.ztv_frame, 'plot_panel'):
-                        wx.CallAfter(pub.sendMessage, 'new_slice_plot_xy1', msg=x[1])
-                elif x[0] == 'get_slice_plot_coords':
+                        wx.CallAfter(pub.sendMessage, 'new-slice-plot-xy1', msg=x[1])
+                elif x[0] == 'get-slice-plot-coords':
                     if hasattr(self.ztv_frame, 'plot_panel'):
                         wx.CallAfter(send_to_stream, sys.stdout, 
                                      (x[0][4:], [[self.ztv_frame.plot_panel.start_pt.x, 
@@ -1275,13 +1307,13 @@ class CommandListenerThread(threading.Thread):
                                                   self.ztv_frame.plot_panel.end_pt.y]]))
                     else:
                         send_to_stream(sys.stdout, (x[0][4:], 'plot_panel not available'))
-                elif x[0] == 'hide_plot_panel_overplot':
+                elif x[0] == 'hide-plot-panel-overplot':
                     if hasattr(self.ztv_frame, 'plot_panel'):
                         wx.CallAfter(self.ztv_frame.plot_panel.remove_overplot_on_image)
-                elif x[0] == 'show_plot_panel_overplot':
+                elif x[0] == 'show-plot-panel-overplot':
                     if hasattr(self.ztv_frame, 'plot_panel'):
                         wx.CallAfter(self.ztv_frame.plot_panel.redraw_overplot_on_image)
-                elif x[0] == 'set_stats_box_parameters':
+                elif x[0] == 'set-stats-box-parameters':
                     if hasattr(self.ztv_frame, 'stats_panel'):
                         x0,x1,y0,y1 = [None]*4
                         if x[1]['xrange'] is not None:
@@ -1295,13 +1327,13 @@ class CommandListenerThread(threading.Thread):
                                 self.ztv_frame.stats_panel.redraw_overplot_on_image()
                             else:
                                 self.ztv_frame.stats_panel.remove_overplot_on_image()
-                    send_to_stream(sys.stdout, (x[0] + '_done', True))
-                elif x[0] == 'get_stats_box_info':
+                    send_to_stream(sys.stdout, (x[0] + '-done', True))
+                elif x[0] == 'get-stats-box-info':
                     if hasattr(self.ztv_frame, 'stats_panel'):
                         wx.CallAfter(send_to_stream, sys.stdout, (x[0][4:], self.ztv_frame.stats_panel.stats_info))
                     else:
                         send_to_stream(sys.stdout, (x[0][4:], 'stats_panel not available'))
-                elif x[0] == 'set_aperture_phot_parameters':
+                elif x[0] == 'set-aperture-phot-parameters':
                     if hasattr(self.ztv_frame, 'phot_panel'):
                         if x[1]['xclick'] is not None:
                             self.ztv_frame.phot_panel.xclick = x[1]['xclick']
@@ -1319,15 +1351,15 @@ class CommandListenerThread(threading.Thread):
                                 self.ztv_frame.phot_panel.redraw_overplot_on_image()
                             else:
                                 self.ztv_frame.phot_panel.remove_overplot_on_image()
-                    send_to_stream(sys.stdout, (x[0] + '_done', True))
-                elif x[0] == 'get_aperture_phot_info':
+                    send_to_stream(sys.stdout, (x[0] + '-done', True))
+                elif x[0] == 'get-aperture-phot-info':
                     if hasattr(self.ztv_frame, 'phot_panel'):
                         phot_info = self.ztv_frame.phot_panel.phot_info.copy()
                         phot_info.pop('distances', None)
                         wx.CallAfter(send_to_stream, sys.stdout, (x[0][4:], phot_info))
                     else:
                         send_to_stream(sys.stdout, (x[0][4:], 'phot_panel not available'))
-                elif x[0] == 'switch_to_control_panel':
+                elif x[0] == 'switch-to-control-panel':
                     name_lower = x[1].lower()
                     display_names_lower = [a.ztv_display_name.lower() for a in self.ztv_frame.control_panels]
                     if name_lower in display_names_lower:

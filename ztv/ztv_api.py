@@ -63,13 +63,13 @@ class ZTV():
         """
         Shutdown this instance of ZTV
         """
-        self._send_to_ztv("kill_ztv")
+        self._send_to_ztv('kill-ztv')
 
     def _request_return_value_from_ztv(self, request_message, expected_return_message_title=None, timeout=10.):
         """
         routine to request info from ztv by sending message and receiving response
         """
-        if expected_return_message_title is None and request_message.startswith('get_'):
+        if expected_return_message_title is None and request_message.startswith('get-'):
             expected_return_message_title = request_message[4:]
         elif expected_return_message_title is None:
             expected_return_message_title = request_message
@@ -93,7 +93,7 @@ class ZTV():
         Load a numpy array into the image.
         """
         if isinstance(image, np.ndarray):
-            self._send_to_ztv(('load_numpy_array', image))
+            self._send_to_ztv(('load-numpy-array', image))
         else:
             raise Error('Tried to send type {} instead of a numpy array'.format(type(image)))
 
@@ -120,7 +120,7 @@ class ZTV():
         (or any other capitalization of those file suffixes)
         """
         if self._validate_fits_filename(filename):
-            self._send_to_ztv(('load_fits_file', filename))
+            self._send_to_ztv(('load-fits-file', filename))
 
     def load(self, input):
         """
@@ -140,7 +140,7 @@ class ZTV():
         """
         Load the default nonsense image
         """
-        self._send_to_ztv("load_default_image")
+        self._send_to_ztv('load-default-image')
 
     def cmap(self, cmap=None):
         """
@@ -158,14 +158,14 @@ class ZTV():
         returns the current (new) colormap
         """
         if isinstance(cmap, str):
-            self._send_to_ztv(('set_cmap', (cmap, False)))
-        return self._request_return_value_from_ztv('get_cmap')
-        
+            self._send_to_ztv(('set-cmap', (cmap, False)))
+        return self._request_return_value_from_ztv('get-cmap')
+          
     def cmaps_list(self):
         """
         returns the available color maps as a list of strings
         """
-        return self._request_return_value_from_ztv('get_available_cmaps')
+        return self._request_return_value_from_ztv('get-available-cmaps')
 
     def invert_cmap(self, state=None):
         """
@@ -175,8 +175,8 @@ class ZTV():
         Returns the current inversion state
         """
         if state is not None:
-            self._send_to_ztv(('set_cmap_inverted', (state, False)))
-        return self._request_return_value_from_ztv('get_is_cmap_inverted')
+            self._send_to_ztv(('set-cmap-inverted', (state, False)))
+        return self._request_return_value_from_ztv('get-is-cmap-inverted')
 
     def scaling(self, scaling=None):
         """
@@ -190,14 +190,14 @@ class ZTV():
         returns the current (new) scaling
         """
         if isinstance(scaling, str):
-            self._send_to_ztv(('set_scaling', scaling))
-        return self._request_return_value_from_ztv('get_scaling')
+            self._send_to_ztv(('set-scaling', (False, scaling)))
+        return self._request_return_value_from_ztv('get-scaling')
 
     def scalings_list(self):
         """
         returns the available scalings as a list of strings
         """
-        return self._request_return_value_from_ztv('get_available_scalings')
+        return self._request_return_value_from_ztv('get-available-scalings')
 
     def set_minmax_to_full_range(self):
         """
@@ -205,8 +205,8 @@ class ZTV():
         
         returns current (new) min/max range
         """
-        self._send_to_ztv('set_clim_to_minmax')
-        return self._request_return_value_from_ztv('get_clim')
+        self._send_to_ztv('set-clim-to-minmax')
+        return self._request_return_value_from_ztv('get-clim')
 
     def set_minmax_to_auto(self):
         """
@@ -214,8 +214,8 @@ class ZTV():
         
         returns current (new) min/max range
         """
-        self._send_to_ztv('set_clim_to_auto')
-        return self._request_return_value_from_ztv('get_clim')
+        self._send_to_ztv('set-clim-to-auto')
+        return self._request_return_value_from_ztv('get-clim')
 
     def minmax(self, minval=None, maxval=None):
         """
@@ -228,15 +228,15 @@ class ZTV():
         returns current (new) min/max range
         """
         if minval is not None and maxval is not None:
-            self._send_to_ztv(('set_clim', ((minval, maxval), False)))
-        return self._request_return_value_from_ztv('get_clim')
+            self._send_to_ztv(('set-clim', (False, (minval, maxval))))
+        return self._request_return_value_from_ztv('get-clim')
 
     def reset_zoom_and_center(self):
         """
         Reset pan to center of image
         Reset zoom to image just fitting in primary display frame
         """
-        self._send_to_ztv('reset_zoom_and_center')
+        self._send_to_ztv('reset-zoom-and-center')
   
     def zoom(self, zoom=None):
         """
@@ -245,8 +245,8 @@ class ZTV():
         returns current zoom factor
         """
         if zoom is not None:
-            self._send_to_ztv(('set_zoom_factor', zoom))
-        return self._request_return_value_from_ztv('get_zoom_factor')
+            self._send_to_ztv(('set-zoom-factor', zoom))
+        return self._request_return_value_from_ztv('get-zoom-factor')
 
     def xy_center(self, *args):
         """
@@ -259,8 +259,8 @@ class ZTV():
                 x,y = args[0]
             else:
                 x,y = args[0], args[1]
-            self._send_to_ztv(('set_xy_center', (x, y)))
-        return self._request_return_value_from_ztv('get_xy_center')
+            self._send_to_ztv(('set-xy-center', (x, y)))
+        return self._request_return_value_from_ztv('get-xy-center')
 
     def add_activemq(self, server=None, port=61613, destination=None):
         """
@@ -270,7 +270,7 @@ class ZTV():
             raise Error('Must specify a server address in server keyword, e.g.  "myserver.mywebsite.com"')
         if destination is None:
             raise Error('Must specify a message queue to follow in destination keyword')
-        self._send_to_ztv(('add_activemq_instance', (server, port, destination)))
+        self._send_to_ztv(('add-activemq-instance', (server, port, destination)))
 
     def frame_number(self, n=None, relative=False):
         """
@@ -286,8 +286,8 @@ class ZTV():
                 flag = 'relative'
             else:
                 flag = 'absolute'
-            self._send_to_ztv(('set_cur_display_frame_num', (n, flag)))
-        return self._request_return_value_from_ztv('get_cur_display_frame_num')
+            self._send_to_ztv(('set-cur-display-frame-num', (n, flag)))
+        return self._request_return_value_from_ztv('get-cur-display-frame-num')
         
     def sky_frame(self, filename=None):
         """
@@ -299,10 +299,10 @@ class ZTV():
         returns tuple of current sky subtraction status (True/False) and current sky frame filename
         """
         if filename is True or filename is False:
-            self._send_to_ztv(('set_sky_subtraction_status', filename))
+            self._send_to_ztv(('set-sky-subtraction-status', filename))
         elif filename is not None:
-            self._send_to_ztv(('set_sky_subtraction_filename', filename))
-        return self._request_return_value_from_ztv('get_sky_subtraction_status_and_filename')
+            self._send_to_ztv(('set-sky-subtraction-filename', filename))
+        return self._request_return_value_from_ztv('get-sky-subtraction-status-and-filename')
         
     def flat_frame(self, filename=None):
         """
@@ -314,10 +314,10 @@ class ZTV():
         returns current flat frame filename
         """
         if filename is True or filename is False:
-            self._send_to_ztv(('set_flat_division_status', filename))
+            self._send_to_ztv(('set-flat-division-status', filename))
         elif filename is not None:
-            self._send_to_ztv(('set_flat_division_filename', filename))
-        return self._request_return_value_from_ztv('get_flat_division_status_and_filename')
+            self._send_to_ztv(('set-flat-division-filename', filename))
+        return self._request_return_value_from_ztv('get-flat-division-status-and-filename')
         
     def autoload_filename_pattern(self, filename=None):
         """
@@ -329,10 +329,10 @@ class ZTV():
         returns current auto-load filename pattern
         """
         if filename is True or filename is False:
-            self._send_to_ztv(('set_autoload_filename_pattern_status', filename))
+            self._send_to_ztv(('set-autoload-filename-pattern-status', filename))
         elif filename is not None:
-            self._send_to_ztv(('set_autoload_filename_pattern', filename))
-        return self._request_return_value_from_ztv('get_autoload_status_and_filename_pattern')
+            self._send_to_ztv(('set-autoload-filename-pattern', filename))
+        return self._request_return_value_from_ztv('get-autoload-status-and-filename-pattern')
 
     def autoload_pause_seconds(self, seconds=None):
         """
@@ -340,8 +340,8 @@ class ZTV():
         returns current autoload pause time
         """
         if seconds is not None:
-            self._send_to_ztv(('set_autoload_pausetime', seconds))
-        return self._request_return_value_from_ztv('get_autoload_pausetime')
+            self._send_to_ztv(('set-autoload-pausetime', seconds))
+        return self._request_return_value_from_ztv('get-autoload-pausetime')
 
     def slice_plot(self, pts=None, show_overplot=True):
         """
@@ -351,14 +351,14 @@ class ZTV():
         Returns current (new) pts
         """
         if pts is not None:
-            self._send_to_ztv(('set_new_slice_plot_xy0', pts[0]))
-            self._request_return_value_from_ztv('get_slice_plot_coords')  # dummy call to give time to update so that return is correct.
-            self._send_to_ztv(('set_new_slice_plot_xy1', pts[1]))
+            self._send_to_ztv(('set-new-slice-plot-xy0', pts[0]))
+            self._request_return_value_from_ztv('get-slice-plot-coords')  # dummy call to give time to update so that return is correct.
+            self._send_to_ztv(('set-new-slice-plot-xy1', pts[1]))
         if show_overplot:
-            self._send_to_ztv('show_plot_panel_overplot')
+            self._send_to_ztv('show-plot-panel-overplot')
         else:
-            self._send_to_ztv('hide_plot_panel_overplot')
-        return self._request_return_value_from_ztv('get_slice_plot_coords')
+            self._send_to_ztv('hide-plot-panel-overplot')
+        return self._request_return_value_from_ztv('get-slice-plot-coords')
         
     def stats_box(self, xrange=None, yrange=None, show_overplot=None):
         """
@@ -368,10 +368,10 @@ class ZTV():
                         If None, leave unchanged
         Returns current (new) box
         """
-        self._send_to_ztv(('set_stats_box_parameters', {'xrange':xrange, 'yrange':yrange,
+        self._send_to_ztv(('set-stats-box-parameters', {'xrange':xrange, 'yrange':yrange,
                                                                           'show_overplot':show_overplot}))
-        waiting = self._request_return_value_from_ztv('set_stats_box_parameters_done')
-        return self._request_return_value_from_ztv('get_stats_box_info')
+        waiting = self._request_return_value_from_ztv('set-stats-box-parameters-done')
+        return self._request_return_value_from_ztv('get-stats-box-info')
 
     def aperture_phot(self, xclick=None, yclick=None, radius=None, inner_sky_radius=None, outer_sky_radius=None,
                       show_overplot=None):
@@ -387,16 +387,16 @@ class ZTV():
                         If None, don't change.
         returns a dict with output photometry
         """  
-        self._send_to_ztv(('set_aperture_phot_parameters', 
+        self._send_to_ztv(('set-aperture-phot-parameters', 
                                              {'xclick':xclick, 'yclick':yclick, 'radius':radius, 
                                               'inner_sky_radius':inner_sky_radius, 'outer_sky_radius':outer_sky_radius,
                                               'show_overplot':show_overplot}))
-        waiting = self._request_return_value_from_ztv('set_aperture_phot_parameters_done')
-        return self._request_return_value_from_ztv('get_aperture_phot_info')
+        waiting = self._request_return_value_from_ztv('set-aperture-phot-parameters-done')
+        return self._request_return_value_from_ztv('get-aperture-phot-info')
 
     def control_panel(self, name):
         """
         Switch to the control panel `name`.  `name` is matched against the names shown in the gui tabs, except case insenstive. 
         """
-        self._send_to_ztv(('switch_to_control_panel', name))
+        self._send_to_ztv(('switch-to-control-panel', name))
         

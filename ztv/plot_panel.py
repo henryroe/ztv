@@ -54,11 +54,11 @@ class PlotPanel(wx.Panel):
         self.start_pt = wx.RealPoint(0., 0.)
         self.end_pt = wx.RealPoint(0., 0.)
         self.redraw()
-        pub.subscribe(self.update_line_plot_points, "update_line_plot_points")
-        pub.subscribe(self.on_new_xy0, "new_slice_plot_xy0")
-        pub.subscribe(self.on_new_xy1, "new_slice_plot_xy1")
-        pub.subscribe(self.redraw, "primary_xy_limits-changed")
-        pub.subscribe(self.redraw, "redraw_image")
+        pub.subscribe(self.update_line_plot_points, 'update-line-plot-points')
+        pub.subscribe(self.on_new_xy0, 'new-slice-plot-xy0')
+        pub.subscribe(self.on_new_xy1, 'new-slice-plot-xy1')
+        pub.subscribe(self.redraw, 'primary-xy-limits-changed')
+        pub.subscribe(self.redraw, 'redraw-image')
 
     def update_line_plot_points(self, msg):
         xy0, xy1 = msg

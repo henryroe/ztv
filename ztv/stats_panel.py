@@ -201,7 +201,7 @@ class StatsPanel(wx.Panel):
         v_sizer1.Add(values_sizer, 0, wx.ALIGN_CENTER_HORIZONTAL)
         v_sizer1.AddStretchSpacer(1.0)
         self.SetSizer(v_sizer1)
-        pub.subscribe(self.update_stats, "redraw_image")
+        pub.subscribe(self.update_stats, 'redraw-image')
 
     def update_stats_box(self, x0=None, y0=None, x1=None, y1=None):
         if x0 is None:
@@ -280,9 +280,9 @@ class StatsPanel(wx.Panel):
         self.median_textctrl.SetValue("{:0.4g}".format(self.stats_info['median']))
         self.stdev_textctrl.SetValue("{:0.4g}".format(self.stats_info['std']))
         robust_mean, robust_median, robust_std = sigma_clipped_stats(stats_data)
-        self.stats_info['robust_mean'] = robust_mean
-        self.stats_info['robust_median'] = robust_median
-        self.stats_info['robust_std'] = robust_std
+        self.stats_info['robust-mean'] = robust_mean
+        self.stats_info['robust-median'] = robust_median
+        self.stats_info['robust-std'] = robust_std
         self.robust_mean_textctrl.SetValue("{:0.4g}".format(robust_mean)) 
         self.robust_stdev_textctrl.SetValue("{:0.4g}".format(robust_std))
         self.minval_textctrl.SetValue("{:0.4g}".format(self.stats_info['min']))
