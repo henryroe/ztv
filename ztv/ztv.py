@@ -911,6 +911,7 @@ class ZTVFrame(wx.Frame):
     def normalize(self, im):
         if self._need_to_recalc_normalization or self.normalized_image is None:
             self.normalized_image = self._scaling(self._norm(self.display_image))
+            self._need_to_recalc_normalization = False
         return self.normalized_image
 
     def set_scaling(self, msg):
