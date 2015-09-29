@@ -15,11 +15,17 @@ import datetime as dt
 
 
 def tracefunc(frame, event, arg, indent=[0], start_times={}):
-    full_name = (frame.f_code.co_filename.replace('.pyo','').replace('.pyc','').replace('.py','') + 
-                 '.' + frame.f_code.co_name)
-    if '/ztv/' in full_name:
+    if event != "call" and event != "return":
+        return None
+    prefix = frame.f_code.co_filename.replace('.pyo','').replace('.pyc','').replace('.py','')
+    if '/ztv/' in prefix:
+        try:
+            class_name = '.' + frame.f_locals['self'].__class__.__name__
+        except KeyError:
+            class_name = ''
+        full_name = prefix + class_name + '.' + frame.f_code.co_name 
         full_name = full_name[full_name.find('py/ztv/') + 7:].replace('/', '.')
-        if event == "call":
+        if event == "call":            
             indent[0] += 2
             now = dt.datetime.utcnow()
             start_times[indent[0]] = now
