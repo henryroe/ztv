@@ -9,8 +9,8 @@ ztv Change Log
 - Made default datadir and auto-load pattern be the current working directory (rather than just user's home dir)
 - dev2:  made temporary fix to ztv.set_clim to force image redisplay even when cim unchanged.  Problem was that new images weren't being displayed automatically for a fixed clim.  (Need to come back and re-evaluate how images are loaded and look for remaining inefficiencies, e.g. code called more than once during a single image load)
 - dev3:  speed improvements in areas that will help speed of auto-loading new images; primarily reducing number of extraneous recalculations of aperture photometry
-- dev4:  speed improvements in areas that will help speed of auto-loading new images; primarily reducing number of times that redraw_*_image routines are called, though the fixes may still be fragile and result in >1 or 0 calls when 1 call needed & more testing needed.
-- dev5:  reduce number of times that image normalization is recalculated by caching; 
+- dev4:  speed improvements in areas that will help speed of auto-loading new images; primarily reducing number of times that redraw_*_image routines are called
+- dev5:  reduce number of times that image normalization is recalculated by caching; modified some syntaxes for easier future upkeep.  
 
 --------------------
 0.2.1-5   2015-09-22
