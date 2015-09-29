@@ -129,13 +129,14 @@ class PlotPanel(wx.Panel):
             self.plot_panel.axes.set_xlim([positions[0], positions[-1]])
             self.plot_panel.figure.canvas.draw()
         else:
-            xy_limits = self.ztv_frame.primary_image_panel.set_and_get_xy_limits()
+            xlim = self.ztv_frame.primary_image_panel.xlim
+            ylim = self.ztv_frame.primary_image_panel.ylim
             oversample_factor = 10.
             n_pts = oversample_factor*np.max(self.ztv_frame.display_image.shape)
             xs = np.linspace(self.start_pt.x, self.end_pt.x, n_pts)
             ys = np.linspace(self.start_pt.y, self.end_pt.y, n_pts)
-            mask = ((xs >= min(xy_limits['xlim'])) & (xs <= max(xy_limits['xlim'])) & 
-                    (ys >= min(xy_limits['ylim'])) & (ys <= max(xy_limits['ylim'])) &
+            mask = ((xs >= min(xlim)) & (xs <= max(xlim)) & 
+                    (ys >= min(ylim)) & (ys <= max(ylim)) &
                     (xs >= 0.) & (ys >= 0.) &
                     (xs < self.ztv_frame.display_image.shape[1]) & 
                     (ys < self.ztv_frame.display_image.shape[0]))
