@@ -650,6 +650,12 @@ class ZTVFrame(wx.Frame):
         self.cur_display_frame_num = 0              # ignored if raw_image/proc_image is 2-d, otherwise 
                                                     # display_image is proc_image[self.cur_display_frame_num,:,:]
         self.display_image = self.proc_image.copy()  # 2-d array of what is currently displayed on-screen
+        # display_image is primarily different from proc_image in that proc_image can be 3-d, while 
+        # display_image is always 2-d
+        self.normalized_image = None  # this will be display_image clipped to clim and scaled (e.g. Linear/Log)
+        self._need_to_recalc_normalization = False
+        self._norm = None
+        self._scaling = None
         self.available_cmaps = ColorMaps().basic()
         self.cmap = 'jet'  # will go back to gray later
         self.is_cmap_inverted = False
@@ -892,12 +898,20 @@ class ZTVFrame(wx.Frame):
         """
         msg is pause_redraw_image
         """
-        self._norm = Normalize(vmin=self.clim[0], vmax=self.clim[1])
-        self._scaling = eval('astropy.visualization.' + self.scaling + 'Stretch()')
+        if self._norm is None or self.clim != self._set_norm_old_clim:
+            self._norm = Normalize(vmin=self.clim[0], vmax=self.clim[1])
+            self._set_norm_old_clim = self.clim
+            self._need_to_recalc_normalization = True
+        if self._scaling is None or self.scaling != self._set_norm_old_scaling:
+            self._scaling = eval('astropy.visualization.' + self.scaling + 'Stretch()')
+            self._set_norm_old_scaling = self.scaling
+            self._need_to_recalc_normalization = True
         wx.CallAfter(pub.sendMessage, "redraw_image", msg=(msg or self._pause_redraw_image))
 
     def normalize(self, im):
-        return self._scaling(self._norm(self.display_image))
+        if self._need_to_recalc_normalization or self.normalized_image is None:
+            self.normalized_image = self._scaling(self._norm(self.display_image))
+        return self.normalized_image
 
     def set_scaling(self, msg):
         scaling = msg
@@ -983,6 +997,7 @@ class ZTVFrame(wx.Frame):
             if self.min_value_mode_on_new_image != 'auto-stats-box':  # only calculate if didn't already calculate above
                 auto_stats_box_clim_values = self.get_auto_stats_box_clim_values()
             new_max = auto_stats_box_clim_values[1]
+        self._need_to_recalc_normalization = True
         self.set_clim(([new_min, new_max], self._pause_redraw_image))
         # don't need to send a separate "redraw_image" message because set_clim sends one
   
