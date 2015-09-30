@@ -441,9 +441,7 @@ class OverviewImagePanel(wx.Panel):
         self.ztv_frame = self.GetTopLevelParent()
         self.figure = Figure(None, dpi)
         self.axes = self.figure.add_axes([0., 0., 1., 1.])
-        self.curview_rectangle = Rectangle((0, 0), self.ztv_frame.display_image.shape[1], 
-                                           self.ztv_frame.display_image.shape[0],
-                                           color='green', fill=False, zorder=100)
+        self.curview_rectangle = Rectangle((0, 0), 1, 1, color='green', fill=False, zorder=100)
         self.axes.add_patch(self.curview_rectangle)
         self.canvas = FigureCanvasWxAgg(self, -1, self.figure)
         self.overview_zoom_factor = 1.
