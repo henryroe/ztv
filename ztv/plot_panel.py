@@ -58,7 +58,7 @@ class PlotPanel(wx.Panel):
         pub.subscribe(self.on_new_xy0, 'new-slice-plot-xy0')
         pub.subscribe(self.on_new_xy1, 'new-slice-plot-xy1')
         pub.subscribe(self.redraw, 'primary-xy-limits-changed')
-        pub.subscribe(self.redraw, 'redraw-image')
+        pub.subscribe(self.redraw, 'recalc-proc-image-called')
 
     def update_line_plot_points(self, msg):
         xy0, xy1 = msg

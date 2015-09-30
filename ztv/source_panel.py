@@ -227,6 +227,10 @@ class SourcePanel(wx.Panel):
         self.SetSizer(v_sizer1)
         self.sky_header_button.Disable()
         self.flat_header_button.Disable()
+        # 'redraw-image' is an imperfect signal to be watching, as will be triggered more frequently than
+        #  necessary; however it's the only signal that's currently sent out by load_numpy_array.  Could
+        #  publish a different signal from load_numpy_array, but tradeoff between extra complexity and
+        #  extra calls of update_cur_header_button_status (which is VERY simple)
         pub.subscribe(self.update_cur_header_button_status, 'redraw-image')
         if not self.stomp_install_is_ok: # deactivate activeMQ option if stomp not installed OK
             try:  # wrap in a try, just in case source_panel wasn't loaded.

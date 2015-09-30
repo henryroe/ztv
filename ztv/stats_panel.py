@@ -201,7 +201,7 @@ class StatsPanel(wx.Panel):
         v_sizer1.Add(values_sizer, 0, wx.ALIGN_CENTER_HORIZONTAL)
         v_sizer1.AddStretchSpacer(1.0)
         self.SetSizer(v_sizer1)
-        pub.subscribe(self.update_stats, 'redraw-image')
+        pub.subscribe(self.update_stats, 'recalc-proc-image-called')
 
     def update_stats_box(self, x0=None, y0=None, x1=None, y1=None):
         if x0 is None:
