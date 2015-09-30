@@ -14,6 +14,8 @@ import random
 import datetime as dt
 
 
+# can we modify this to print line info just for lines within specfic methods???
+
 def tracefunc(frame, event, arg, indent=[0], start_times={}):
     if event != "call" and event != "return":
         return None
