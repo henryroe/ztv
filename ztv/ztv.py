@@ -190,15 +190,16 @@ class PrimaryImagePanel(wx.Panel):
             self.cur_fits_header_dialog.Show()
 
     def set_and_get_xy_limits(self):
-        num_x_pixels = self.canvas.GetSize().x
+        canvas_size = self.canvas.GetSize()
+        num_x_pixels = canvas_size.x
         halfsize = (num_x_pixels / 2.0) / self.ztv_frame.zoom_factor
         xlim = (self.center.x - halfsize, self.center.x + halfsize)
         self.axes.set_xlim(xlim)
-        num_y_pixels = self.canvas.GetSize().y
+        num_y_pixels = canvas_size.y
         halfsize = (num_y_pixels / 2.0) / self.ztv_frame.zoom_factor
         ylim = (self.center.y - halfsize, self.center.y + halfsize)
         self.axes.set_ylim(ylim)
-        self.figure.canvas.draw()
+        self.figure.canvas.draw()  # bulk of time in method is spent in this line: TODO: look for ways to make faster
         send_change_message = True
         if xlim == self.xlim and ylim == self.ylim:
             send_change_message = False
@@ -256,9 +257,10 @@ class PrimaryImagePanel(wx.Panel):
             self.ztv_frame.set_cur_display_frame_num(-1, relative=True)
 
     def set_xy_center(self, msg):
-        self.center.x = msg[0]
-        self.center.y = msg[1]
-        self.set_and_get_xy_limits()
+        if self.center.x != msg[0] or self.center.y != msg[1]:
+            self.center.x = msg[0]
+            self.center.y = msg[1]
+            self.set_and_get_xy_limits()
 
     def set_zoom_factor(self, msg):
         zoom_factor = msg
@@ -428,7 +430,7 @@ class PrimaryImagePanel(wx.Panel):
                                            cmap=self.ztv_frame.get_cmap_to_display(), zorder=0)
         clear_ticks_and_frame_from_axes(self.axes)
         self.set_and_get_xy_limits()
-        self.figure.canvas.draw()
+        # self.figure.canvas.draw() is not needed here, b/c called from within set_and_get_xy_limits
 
 
 class OverviewImagePanel(wx.Panel):
@@ -524,12 +526,12 @@ class OverviewImagePanel(wx.Panel):
         if hasattr(self, 'axes_image'):
             if self.axes_image in self.axes.images:
                 self.axes.images.remove(self.axes_image)
-        self.axes_image = self.axes.imshow(self.ztv_frame.normalize(self.ztv_frame.display_image), 
+        self.axes_image = self.axes.imshow(self.ztv_frame.normalize(self.ztv_frame.display_image)[0:129, 0:129], 
                                            interpolation='Nearest',
                                            cmap=self.ztv_frame.get_cmap_to_display(), zorder=0)
         clear_ticks_and_frame_from_axes(self.axes)
         self.set_xy_limits()
-        self.figure.canvas.draw()
+        self.figure.canvas.draw()  # bulk of time in method is spent in this line: TODO: look for ways to make faster
 
 
 class LoupeImagePanel(wx.Panel):
@@ -570,7 +572,7 @@ class LoupeImagePanel(wx.Panel):
                                            interpolation='Nearest',
                                            cmap=self.ztv_frame.get_cmap_to_display(), zorder=0)
         clear_ticks_and_frame_from_axes(self.axes)
-        self.figure.canvas.draw()
+        self.figure.canvas.draw()  # bulk of time in method is spent in this line: TODO: look for ways to make faster
 
 
 class ControlsNotebook(wx.Notebook):
