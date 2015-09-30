@@ -526,7 +526,7 @@ class OverviewImagePanel(wx.Panel):
         if hasattr(self, 'axes_image'):
             if self.axes_image in self.axes.images:
                 self.axes.images.remove(self.axes_image)
-        self.axes_image = self.axes.imshow(self.ztv_frame.normalize(self.ztv_frame.display_image)[0:129, 0:129], 
+        self.axes_image = self.axes.imshow(self.ztv_frame.normalize(self.ztv_frame.display_image), 
                                            interpolation='Nearest',
                                            cmap=self.ztv_frame.get_cmap_to_display(), zorder=0)
         clear_ticks_and_frame_from_axes(self.axes)
