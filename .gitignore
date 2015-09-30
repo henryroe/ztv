@@ -7,4 +7,5 @@ venv-testing
 minimal-venv
 ztv.egg-info
 TODO*.txt
+dev-notebooks
 NOTES.txt
