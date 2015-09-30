@@ -517,19 +517,28 @@ class OverviewImagePanel(wx.Panel):
         self.ylim = (y_cen - halfYsize, y_cen + halfYsize)
         self.axes.set_xlim(self.xlim)
         self.axes.set_ylim(self.ylim)
-
+        
     def redraw_overview_image(self, msg=None):
         if msg is True or self.ztv_frame._pause_redraw_image:
             return
         if hasattr(self, 'axes_image'):
             if self.axes_image in self.axes.images:
                 self.axes.images.remove(self.axes_image)
-        self.axes_image = self.axes.imshow(self.ztv_frame.normalize(self.ztv_frame.display_image), 
-                                           interpolation='Nearest',
+        # note that following is not an actual rebin, but a sub-sampling, which is what matplotlib ultimately
+        # would do on its own anyway if we gave it the full image.  But, matplotlib takes longer.  For a 2Kx2K
+        # image, this saves almost 0.3sec on a ~2014 MacBookProRetina
+        max_rebin_x = float(self.ztv_frame.display_image.shape[1]) / self.size.x
+        max_rebin_y = float(self.ztv_frame.display_image.shape[0]) / self.size.y
+        rebin_factor = np.int(np.floor(min([max_rebin_x, max_rebin_y])))
+        self.axes_image = self.axes.imshow(self.ztv_frame.normalize(self.ztv_frame.display_image)[::rebin_factor, 
+                                                                                                  ::rebin_factor],
+                                           interpolation='Nearest', vmin=0., vmax=1.,
+                                           extent=[0., self.ztv_frame.display_image.shape[0], 
+                                                   self.ztv_frame.display_image.shape[1], 0.],
                                            cmap=self.ztv_frame.get_cmap_to_display(), zorder=0)
         clear_ticks_and_frame_from_axes(self.axes)
         self.set_xy_limits()
-        self.figure.canvas.draw()  # bulk of time in method is spent in this line: TODO: look for ways to make faster
+        self.figure.canvas.draw()
 
 
 class LoupeImagePanel(wx.Panel):
