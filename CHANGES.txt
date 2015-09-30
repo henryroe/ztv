@@ -11,6 +11,7 @@ ztv Change Log
 - dev3:  speed improvements in areas that will help speed of auto-loading new images; primarily reducing number of extraneous recalculations of aperture photometry
 - dev4:  speed improvements in areas that will help speed of auto-loading new images; primarily reducing number of times that redraw_*_image routines are called
 - dev5:  reduce number of times that image normalization is recalculated by caching; modified some syntaxes for easier future upkeep.  
+- dev6:  moved rebinning of overview image (really sub-sampling, not rebinning) from allowing matplotlib to do implicitly to doing explicitly before passing to matplotlib.  This speeds things up a lot (0.3sec on a ~2014 MacBook Pro Retina) for large (2K) images.
 
 --------------------
 0.2.1-5   2015-09-22
