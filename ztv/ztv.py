@@ -864,7 +864,7 @@ class ZTVFrame(wx.Frame):
         """
         msg is tuple:  (pause_redraw_image, )
         """
-        self.set_clim(((pause_redraw_image or self._pause_redraw_image), 
+        self.set_clim(((msg[0] or self._pause_redraw_image), 
                       [self.display_image.min(), self.display_image.max()]))
 
     def get_auto_clim_values(self, *args):
