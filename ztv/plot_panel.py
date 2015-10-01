@@ -57,10 +57,13 @@ class PlotPanel(wx.Panel):
         pub.subscribe(self.update_line_plot_points, 'update-line-plot-points')
         pub.subscribe(self.on_new_xy0, 'new-slice-plot-xy0')
         pub.subscribe(self.on_new_xy1, 'new-slice-plot-xy1')
-        pub.subscribe(self.redraw, 'primary-xy-limits-changed')
+        pub.subscribe(self.queue_redraw, 'primary-xy-limits-changed')
         pub.subscribe(self.queue_redraw, 'recalc-proc-image-called')
 
-    def queue_redraw(self, msg=None):
+    def queue_redraw(self, msg=None):  
+        """
+        wrapper to call redraw from CallAfter in order to make GUI as responsive as possible.
+        """
         wx.CallAfter(self.redraw, msg=None)
 
     def update_line_plot_points(self, msg):

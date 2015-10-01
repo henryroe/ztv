@@ -303,7 +303,13 @@ class PhotPanel(wx.Panel):
 
         self.SetSizer(v_sizer1)
         pub.subscribe(self.update_phot_xy, 'new-phot-xy')
-        pub.subscribe(self.recalc_phot, 'recalc-proc-image-called')
+        pub.subscribe(self.queue_recalc_phot, 'recalc-proc-image-called')
+
+    def queue_recalc_phot(self, msg=None):  
+        """
+        wrapper to call recalc_phot from CallAfter in order to make GUI as responsive as possible.
+        """
+        wx.CallAfter(self.recalc_phot, msg=None)
 
     def on_hideshow_button(self, evt):
         if self.hideshow_button.GetLabel() == 'Hide':
