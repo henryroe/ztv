@@ -58,7 +58,10 @@ class PlotPanel(wx.Panel):
         pub.subscribe(self.on_new_xy0, 'new-slice-plot-xy0')
         pub.subscribe(self.on_new_xy1, 'new-slice-plot-xy1')
         pub.subscribe(self.redraw, 'primary-xy-limits-changed')
-        pub.subscribe(self.redraw, 'recalc-proc-image-called')
+        pub.subscribe(self.place_redraw_in_queue, 'recalc-proc-image-called')
+
+    def place_redraw_in_queue(self, msg=None):
+        wx.CallAfter(self.redraw, msg=None)
 
     def update_line_plot_points(self, msg):
         xy0, xy1 = msg
