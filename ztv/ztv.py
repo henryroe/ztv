@@ -529,7 +529,7 @@ class OverviewImagePanel(wx.Panel):
         # image, this saves almost 0.3sec on a ~2014 MacBookProRetina
         max_rebin_x = float(self.ztv_frame.display_image.shape[1]) / self.size.x
         max_rebin_y = float(self.ztv_frame.display_image.shape[0]) / self.size.y
-        rebin_factor = np.int(np.floor(min([max_rebin_x, max_rebin_y])))
+        rebin_factor = max(1, np.int(np.floor(min([max_rebin_x, max_rebin_y]))))
         self.axes_image = self.axes.imshow(self.ztv_frame.normalize(self.ztv_frame.display_image)[::rebin_factor, 
                                                                                                   ::rebin_factor],
                                            interpolation='Nearest', vmin=0., vmax=1.,
