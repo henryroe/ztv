@@ -3,6 +3,13 @@ ztv Change Log
 ~~~~~~~~~~~~~~
 
 --------------------
+0.2.1-8   2015-11-25
+--------------------
+
+- updated fits_faker_panel to work with wxpython v3
+- fixed bug in ztv_api that was causing crashes when using control_panel_module_path keyword (used by fits_faker_panel example)
+
+--------------------
 0.2.1-7   2015-11-03
 --------------------
 
