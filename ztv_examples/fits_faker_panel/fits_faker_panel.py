@@ -1,7 +1,8 @@
 from __future__ import absolute_import
 import wx
 from .fake_fits_maker import FakeFitsMaker
-from wx.lib.pubsub import Publisher
+from wx.lib.pubsub import pub
+
 
 class FitsFakerPanel(wx.Panel):
     def __init__(self, parent):
@@ -40,8 +41,8 @@ class FitsFakerPanel(wx.Panel):
 
         v_sizer1.AddSpacer((0, 0), 1, wx.EXPAND)
         self.SetSizer(v_sizer1)
-        Publisher().subscribe(self.on_launch_button, "fits-faker-start")
-        Publisher().subscribe(self.on_halt_button, "fits-faker-stop")
+        pub.subscribe(self.on_launch_button, "fits-faker-start")
+        pub.subscribe(self.on_halt_button, "fits-faker-stop")
 
     def on_launch_button(self, evt=None):
         self.fake_fits_maker = FakeFitsMaker(ztv_frame_pid=self.ztv_frame.ztv_frame_pid)

@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 from ztv import ZTV
 import wx
-from wx.lib.pubsub import Publisher
 import time
 
 # intended to be run with, e.g.:
