@@ -44,7 +44,7 @@ class ZTV():
         if control_panels_module_path is None:
             cmd = find_python_str + " -c 'from ztv.ztv import ZTVMain ; ZTVMain(launch_listen_thread=True,"
         else:
-            cmd = (find_python_str + "python -c 'from ztv.ztv import ZTVMain ; import importlib ; " + 
+            cmd = (find_python_str + " -c 'from ztv.ztv import ZTVMain ; import importlib ; " + 
                    "control_panels_module = importlib.import_module(\"" + 
                    control_panels_module_path + "\") ; ZTVMain(launch_listen_thread=True, " +
                    "control_panels_to_load=control_panels_module.control_panels_to_load,")
