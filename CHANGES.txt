@@ -2,6 +2,12 @@
 ztv Change Log
 ~~~~~~~~~~~~~~
 
+----------------------
+0.2.2dev1   2015-12-27
+----------------------
+
+- first steps toward refactoring out cursor code relating to specific control panels from main ztv code
+
 --------------------
 0.2.1-9   2015-11-25
 --------------------
