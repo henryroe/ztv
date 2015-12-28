@@ -105,12 +105,12 @@ class PrimaryImagePanel(wx.Panel):
                                          np.arange(cmap_bitmap_width, dtype=np.uint8)))
             self.cmap_bitmaps[cmap] = wx.BitmapFromBufferRGBA(cmap_bitmap_width, cmap_bitmap_height,
                                                               np.uint8(np.round(rgba*255)))
-        self.available_cursor_modes = [# ('None', self.set_cursor_to_none_mode),
-                                       ('Zoom', self.set_cursor_to_zoom_mode),
-                                       ('Pan', self.set_cursor_to_pan_mode),
-                                       ('Slice plot', self.set_cursor_to_plot_mode),
-                                       ('Stats box', self.set_cursor_to_stats_box_mode),
-                                       ('Phot', self.set_cursor_to_phot_mode)]
+        self.popup_menu_cursor_modes = ['Zoom', 'Pan', 'Slice plot', 'Stats box', 'Phot']
+        self.available_cursor_modes = {'Zoom':{'set-to-mode':self.set_cursor_to_zoom_mode},
+                                       'Pan':{'set-to-mode':self.set_cursor_to_pan_mode},
+                                       'Slice plot':{'set-to-mode':self.set_cursor_to_plot_mode},
+                                       'Stats box':{'set-to-mode':self.set_cursor_to_stats_box_mode},
+                                       'Phot':{'set-to-mode':self.set_cursor_to_phot_mode}}
         self.cursor_mode = 'Zoom'
         self.max_doubleclick_millisec = 500  # needed to trap 'real' single clicks from the first click of a double click
         self.init_popup_menu()
@@ -147,7 +147,8 @@ class PrimaryImagePanel(wx.Panel):
         menu.Append(wx.NewId(), 'Cursor mode:').Enable(False)
         self.cursor_mode_to_eventID = {}
         cmd_num = 1
-        for cursor_mode, fxn in self.available_cursor_modes:
+        for cursor_mode in self.popup_menu_cursor_modes:
+            fxn = self.available_cursor_modes[cursor_mode]['set-to-mode']
             wx_id = wx.NewId()
             menu.AppendCheckItem(wx_id, '   ' + cursor_mode + '\tCtrl+' + str(cmd_num))
             wx.EVT_MENU(menu, wx_id, fxn)
@@ -315,6 +316,10 @@ class PrimaryImagePanel(wx.Panel):
                 self.ztv_frame.plot_panel.select_panel()
                 wx.CallAfter(pub.sendMessage, 'new-slice-plot-xy0', msg=(event.xdata, event.ydata))
                 wx.CallAfter(pub.sendMessage, 'new-slice-plot-xy1', msg=(event.xdata, event.ydata))
+            else:
+                if (self.available_cursor_modes.has_key(self.cursor_mode) and
+                    self.available_cursor_modes[self.cursor_mode].has_key('on_button_press')):
+                    self.available_cursor_modes[self.cursor_mode]['on_button_press'](event)
 
     def on_motion(self, event):
         if event.xdata is None or event.ydata is None:
@@ -333,6 +338,10 @@ class PrimaryImagePanel(wx.Panel):
                 self.ztv_frame.stats_panel.update_stats()
             elif self.cursor_mode == 'Slice plot':
                 wx.CallAfter(pub.sendMessage, 'new-slice-plot-xy1', msg=(event.xdata, event.ydata))
+            else:
+                if (self.available_cursor_modes.has_key(self.cursor_mode) and
+                    self.available_cursor_modes[self.cursor_mode].has_key('on_motion')):
+                    self.available_cursor_modes[self.cursor_mode]['on_motion'](event)
         if ((x >= 0) and (x < self.ztv_frame.display_image.shape[1]) and
             (y >= 0) and (y < self.ztv_frame.display_image.shape[0])):
             imval = self.ztv_frame.display_image[y, x]
@@ -381,6 +390,10 @@ class PrimaryImagePanel(wx.Panel):
                 self.ztv_frame.stats_panel.update_stats()
             elif self.cursor_mode == 'Slice plot':
                 wx.CallAfter(pub.sendMessage, 'new-slice-plot-xy1', msg=(event.xdata, event.ydata))
+            else:
+                if (self.available_cursor_modes.has_key(self.cursor_mode) and
+                    self.available_cursor_modes[self.cursor_mode].has_key('on_button_release')):
+                    self.available_cursor_modes[self.cursor_mode]['on_button_release'](event)
 
     def on_right_down(self, event):
         for cursor_mode in self.cursor_mode_to_eventID:
