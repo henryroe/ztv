@@ -134,6 +134,7 @@ class PrimaryImagePanel(wx.Panel):
         pub.subscribe(self.set_xy_center, 'set-xy-center')
         self.SetAcceleratorTable(wx.AcceleratorTable(self.accelerator_table))
 
+
     def _append_menu_item(self, menu, wx_id, title, fxn):
         if wx_id is None:
             wx_id = wx.NewId()
@@ -530,6 +531,7 @@ class OverviewImagePanel(wx.Panel):
         max_rebin_x = float(self.ztv_frame.display_image.shape[1]) / self.size.x
         max_rebin_y = float(self.ztv_frame.display_image.shape[0]) / self.size.y
         rebin_factor = max(1, np.int(np.floor(min([max_rebin_x, max_rebin_y]))))
+        sys.stderr.write("\n\nmax_rebin_x,max_rebin_y,rebin_factor = {}\n\n".format((max_rebin_x,max_rebin_y,rebin_factor)))
         self.axes_image = self.axes.imshow(self.ztv_frame.normalize(self.ztv_frame.display_image)[::rebin_factor, 
                                                                                                   ::rebin_factor],
                                            interpolation='Nearest', vmin=0., vmax=1.,
