@@ -3,6 +3,12 @@ ztv Change Log
 ~~~~~~~~~~~~~~
 
 ----------------------
+0.2.2dev2   2015-12-27
+----------------------
+
+- fixed bug in overview image panel where non-square images weren't being displayed correctly
+
+----------------------
 0.2.2dev1   2015-12-27
 ----------------------
 

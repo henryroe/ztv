@@ -544,12 +544,11 @@ class OverviewImagePanel(wx.Panel):
         max_rebin_x = float(self.ztv_frame.display_image.shape[1]) / self.size.x
         max_rebin_y = float(self.ztv_frame.display_image.shape[0]) / self.size.y
         rebin_factor = max(1, np.int(np.floor(min([max_rebin_x, max_rebin_y]))))
-        sys.stderr.write("\n\nmax_rebin_x,max_rebin_y,rebin_factor = {}\n\n".format((max_rebin_x,max_rebin_y,rebin_factor)))
         self.axes_image = self.axes.imshow(self.ztv_frame.normalize(self.ztv_frame.display_image)[::rebin_factor, 
                                                                                                   ::rebin_factor],
                                            interpolation='Nearest', vmin=0., vmax=1.,
-                                           extent=[0., self.ztv_frame.display_image.shape[0], 
-                                                   self.ztv_frame.display_image.shape[1], 0.],
+                                           extent=[0., self.ztv_frame.display_image.shape[1], 
+                                                   self.ztv_frame.display_image.shape[0], 0.],
                                            cmap=self.ztv_frame.get_cmap_to_display(), zorder=0)
         clear_ticks_and_frame_from_axes(self.axes)
         self.set_xy_limits()
