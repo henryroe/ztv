@@ -352,13 +352,13 @@ class PrimaryImagePanel(wx.Panel):
                                                               c.dec.to_string(sep=':', precision=2, alwayssign=True, 
                                                                               pad=True))
             new_status_string += "  val={:.5g}".format(imval)
-            self.ztv_frame.status_bar.SetStatusText(new_status_string)
+            self.ztv_frame.status_bar.SetStatusText(new_status_string, 0)
             self.ztv_frame.loupe_image_panel.set_xy_limits((x, y))
             # finally, catch for a situation where cursor should be active, but didn't enter, e.g. window launched under cursor
             if not hasattr(self, 'saved_cursor') or self.saved_cursor is None:
                 self.on_cursor_enter(event)
         else:
-            self.ztv_frame.status_bar.SetStatusText("")
+            self.ztv_frame.status_bar.SetStatusText("", 0)
             self.ztv_frame.loupe_image_panel.set_xy_limits()
   
     def on_button_release(self, event):
@@ -412,7 +412,7 @@ class PrimaryImagePanel(wx.Panel):
         self.figure.canvas.PopupMenuXY(self.popup_menu, event.GetX() + 8,  event.GetY() + 8)
 
     def on_cursor_leave(self, event):
-        self.ztv_frame.status_bar.SetStatusText('')
+        self.ztv_frame.status_bar.SetStatusText('', 0)
         self.ztv_frame.loupe_image_panel.set_xy_limits()
         if hasattr(self, 'saved_cursor') and self.saved_cursor is not None:
             self.figure.canvas.SetCursor(self.saved_cursor)
@@ -760,7 +760,7 @@ class ZTVFrame(wx.Frame):
         self.controls_sizer.Add(self.controls_notebook_sizer, 1, wx.EXPAND, border=0)
         self.main_sizer.Add(self.controls_sizer, 0, wx.EXPAND, border=5)
         self.SetSizer(self.main_sizer)
-        self.status_bar = self.CreateStatusBar()
+        self.status_bar = self.CreateStatusBar(2)
         rw, rh = self.primary_image_panel.GetSize()
         sw, sh = self.controls_sizer.GetSize()
         fw, fh = self.GetSize()
@@ -989,7 +989,7 @@ class ZTVFrame(wx.Frame):
         To ensure proper error checking & notifications, *all* changes to self.cur_display_frame_num
         should come through this method
         """
-        if len(msg) == 2:
+        if not isinstance(msg, int) and len(msg) == 2:
             n, flag = msg
             if flag == 'relative':
                 relative = True
@@ -1069,6 +1069,8 @@ class ZTVFrame(wx.Frame):
             new_2d_shape = image.shape[-2:]
             if new_2d_shape != old_2d_shape:
                 need_to_reset_zoom_and_center = True
+            if (len(image.shape) == 3) and (image.shape[0] == 1):
+                image = image[0, :, :]
             self.raw_image = image  
             self.image_radec = None
             self.cur_fitsfile_basename = ''
