@@ -1,6 +1,9 @@
 try:
-    from astropy_helpers.git_helpers import get_git_devstr
-    git_devstr = get_git_devstr(False)
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        from astropy_helpers.git_helpers import get_git_devstr
+        git_devstr = get_git_devstr(False)
 except ImportError:
     git_devstr = ""
     
