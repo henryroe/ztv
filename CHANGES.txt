@@ -7,6 +7,7 @@ ztv Change Log
 ----------------------
 
 - upgraded min/max/robust-stat calcs to better ignore NaN/Inf in displayed images & stats-box/photometry calculations
+- changed colors of curview_rectangle in OverviewImagePanel and zoom_rect in PrimaryImagePanel to match and be orange, which in tests looks better than the old dark green (overview) and magenta (primary) and makes more sense to have be matching
 
 --------------------
 0.2.2-1   2016-03-08
