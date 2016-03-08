@@ -298,7 +298,7 @@ class PrimaryImagePanel(wx.Panel):
                 else:
                     self.zoom_start_timestamp = event.guiEvent.GetTimestamp()  # millisec
                     self.zoom_rect = Rectangle((event.xdata, event.ydata), 0, 0,
-                                               color='magenta', fill=False, zorder=100)
+                                               color='orange', fill=False, zorder=100)
                     self.axes.add_patch(self.zoom_rect)
                     self.figure.canvas.draw()
             elif self.cursor_mode == 'Pan':
@@ -455,7 +455,7 @@ class OverviewImagePanel(wx.Panel):
         self.ztv_frame = self.GetTopLevelParent()
         self.figure = Figure(None, dpi)
         self.axes = self.figure.add_axes([0., 0., 1., 1.])
-        self.curview_rectangle = Rectangle((0, 0), 1, 1, color='green', fill=False, zorder=100)
+        self.curview_rectangle = Rectangle((0, 0), 1, 1, color='orange', fill=False, zorder=100)
         self.axes.add_patch(self.curview_rectangle)
         self.canvas = FigureCanvasWxAgg(self, -1, self.figure)
         self.overview_zoom_factor = 1.
