@@ -279,17 +279,23 @@ class StatsPanel(wx.Panel):
         self.npix_textctrl.SetValue(str(x_npix * y_npix))
 
         stats_data = self.ztv_frame.display_image[y0:y1+1, x0:x1+1]
+        finite_mask = np.isfinite(stats_data)
+        if finite_mask.max() is np.True_:
+            stats_data_mean = stats_data[finite_mask].mean()
+            stats_data_median = np.median(stats_data[finite_mask])
+            stats_data_std = stats_data[finite_mask].std()
+            robust_mean, robust_median, robust_std = sigma_clipped_stats(stats_data[finite_mask])
+        else:
+            stats_data_mean = np.nan
+            stats_data_median = np.nan
+            stats_data_std = np.inf
+            robust_mean, robust_median, robust_std = np.nan, np.nan, np.inf
         self.stats_info = {'xrange':[x0,x1], 'yrange':[y0,y1],
-                           'mean':stats_data.mean(), 'median':np.median(stats_data), 'std':stats_data.std(),
-                           'min':stats_data.min(), 'max':stats_data.max()}
+                           'mean':stats_data_mean, 'median':stats_data_median, 'std':stats_data_std, 
+                           'min':stats_data.min(), 'max':stats_data.max()} # want min/max to reflect any Inf/NaN
         self.mean_textctrl.SetValue("{:0.4g}".format(self.stats_info['mean']))
         self.median_textctrl.SetValue("{:0.4g}".format(self.stats_info['median']))
         self.stdev_textctrl.SetValue("{:0.4g}".format(self.stats_info['std']))
-        finite_mask = np.isfinite(stats_data)
-        if finite_mask.max() is np.True_:
-            robust_mean, robust_median, robust_std = sigma_clipped_stats(stats_data[finite_mask])
-        else:
-            robust_mean, robust_median, robust_std = np.nan, np.nan, np.inf
         self.stats_info['robust-mean'] = robust_mean
         self.stats_info['robust-median'] = robust_median
         self.stats_info['robust-std'] = robust_std
