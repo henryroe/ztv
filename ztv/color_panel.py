@@ -217,12 +217,12 @@ class ColorPanel(wx.Panel):
         self.ztv_frame.set_clim_to_minmax()
 
     def on_set_min_button(self, evt):
-        self.ztv_frame.set_clim((self.ztv_frame._pause_redraw_image, [self.ztv_frame.display_image.min(), None]))
+        self.ztv_frame.set_clim((self.ztv_frame._pause_redraw_image, [self.ztv_frame.display_image_min(), None]))
         if self.FindFocus() == self.minval_textctrl:
             self.minval_textctrl.SetSelection(-1, -1)
 
     def on_set_max_button(self, evt):
-        self.ztv_frame.set_clim((self.ztv_frame._pause_redraw_image, [None, self.ztv_frame.display_image.max()]))
+        self.ztv_frame.set_clim((self.ztv_frame._pause_redraw_image, [None, self.ztv_frame.display_image_max()]))
         if self.FindFocus() == self.maxval_textctrl:
             self.maxval_textctrl.SetSelection(-1, -1)
 

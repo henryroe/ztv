@@ -79,8 +79,12 @@ def aperture_phot(im, x, y, star_radius, sky_inner_radius, sky_outer_radius,
     sky_pixels = im[(dist >= sky_inner_radius) & (dist <= sky_outer_radius)]
     output['n_star_pix'] = star_pixels.size
     output['n_sky_pix'] = sky_pixels.size
-    sky_per_pixel, median, stddev = sigma_clipped_stats(sky_pixels)
-    sky_per_pixel_err = stddev/np.sqrt(sky_pixels.size)
+    finite_mask = np.isfinite(sky_pixels)
+    if finite_mask.max() is np.True_:
+        sky_per_pixel, median, stddev = sigma_clipped_stats(sky_pixels[finite_mask])
+    else:
+        sky_per_pixel, median, stddev = np.nan, np.nan, np.inf
+    sky_per_pixel_err = stddev/np.sqrt(finite_mask.sum())
     output['sky_per_pixel'] = sky_per_pixel
     # TODO: check that are doing sky_per_pixel_err right.  In one quick test seemed high (but maybe wasn't a good test)
     output['sky_per_pixel_err'] = sky_per_pixel_err

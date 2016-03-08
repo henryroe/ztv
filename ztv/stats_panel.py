@@ -285,7 +285,11 @@ class StatsPanel(wx.Panel):
         self.mean_textctrl.SetValue("{:0.4g}".format(self.stats_info['mean']))
         self.median_textctrl.SetValue("{:0.4g}".format(self.stats_info['median']))
         self.stdev_textctrl.SetValue("{:0.4g}".format(self.stats_info['std']))
-        robust_mean, robust_median, robust_std = sigma_clipped_stats(stats_data)
+        finite_mask = np.isfinite(stats_data)
+        if finite_mask.max() is np.True_:
+            robust_mean, robust_median, robust_std = sigma_clipped_stats(stats_data[finite_mask])
+        else:
+            robust_mean, robust_median, robust_std = np.nan, np.nan, np.inf
         self.stats_info['robust-mean'] = robust_mean
         self.stats_info['robust-median'] = robust_median
         self.stats_info['robust-std'] = robust_std

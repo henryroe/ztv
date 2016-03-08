@@ -2,9 +2,15 @@
 ztv Change Log
 ~~~~~~~~~~~~~~
 
-------------------
+----------------------
+0.2.3dev1   2016-03-08
+----------------------
+
+- upgraded min/max/robust-stat calcs to better ignore NaN/Inf in displayed images & stats-box/photometry calculations
+
+--------------------
 0.2.2-1   2016-03-08
-------------------
+--------------------
 
 - cleaned up release of current codebase incorporating lots of bugfixes from recent months.
 

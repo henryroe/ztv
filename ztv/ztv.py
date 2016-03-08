@@ -676,6 +676,9 @@ class ZTVFrame(wx.Frame):
         self.display_image = self.proc_image.copy()  # 2-d array of what is currently displayed on-screen
         # display_image is primarily different from proc_image in that proc_image can be 3-d, while 
         # display_image is always 2-d
+        # except for the above initialization, display_image should *never* be changed except by self.recalc_display_image
+        self._display_image_min = None  # _display_image_min/max will be recalc'd in a 'safe' way (ignoring Inf/NaN) 
+        self._display_image_max = None  # as needed when display_image_min()/max() are called
         self.normalized_image = None  # this will be display_image clipped to clim and scaled (e.g. Linear/Log)
         self._need_to_recalc_normalization = False
         self._norm = None
@@ -888,7 +891,7 @@ class ZTVFrame(wx.Frame):
         msg is tuple:  (pause_redraw_image, )
         """
         self.set_clim(((msg[0] or self._pause_redraw_image), 
-                      [self.display_image.min(), self.display_image.max()]))
+                      [self.display_image_min(), self.display_image_max()]))
 
     def get_auto_clim_values(self, *args):
         """
@@ -896,12 +899,23 @@ class ZTVFrame(wx.Frame):
         
         'cheat' for speed by sampling only a subset of pts
         """
-        n_pts = 1000
-        stepsize = self.display_image.size/n_pts
-        robust_mean, robust_median, robust_stdev = sigma_clipped_stats(self.display_image.ravel()[0::stepsize])
-        n_sigma_below = 1.0
-        n_sigma_above = 6.
-        return (robust_mean - n_sigma_below * robust_stdev, robust_mean + n_sigma_above * robust_stdev)
+        finite_mask = np.isfinite(self.display_image)
+        n_finite_pts = finite_mask.sum()
+        if n_finite_pts > 0:
+            n_pts = 1000
+            # sample ALL points unless the sampled points will be reasonably nicely distributed.  e.g.
+            # n_pts=1000, n_finite_pts=1999 -> all samples would be clumped in one half.
+            # factor of 5* means that the 'missing' unsampled clump at the end is <=20% of total pts, which seems reasonable
+            if n_finite_pts < (5*n_pts):  
+                robust_mean, robust_median, robust_stdev = sigma_clipped_stats(self.display_image[finite_mask])
+            else:
+                stepsize = n_finite_pts/n_pts
+                robust_mean, robust_median, robust_stdev = sigma_clipped_stats(self.display_image[finite_mask].ravel()[0::stepsize])
+            n_sigma_below = 1.0
+            n_sigma_above = 6.
+            return (robust_mean - n_sigma_below * robust_stdev, robust_mean + n_sigma_above * robust_stdev)
+        else:
+            return (0., 0.)  # no valid pixels
 
     def get_auto_stats_box_clim_values(self, *args):
         """
@@ -909,7 +923,6 @@ class ZTVFrame(wx.Frame):
         
         'cheat' for speed by sampling only a subset of pts
         """
-        n_pts = 1000
         if (isinstance(self.stats_panel.stats_info, dict) and 
             self.stats_panel.stats_info.has_key('xrange') and
             self.stats_panel.stats_info.has_key('yrange')):
@@ -919,11 +932,23 @@ class ZTVFrame(wx.Frame):
                                             max(self.stats_panel.stats_info['xrange'])] 
         else:
             temp_image = self.display_image
-        stepsize = max([1, temp_image.size/n_pts])
-        robust_mean, robust_median, robust_stdev = sigma_clipped_stats(temp_image.ravel()[0::stepsize])
-        n_sigma_below = 1.0
-        n_sigma_above = 6.
-        return (robust_mean - n_sigma_below * robust_stdev, robust_mean + n_sigma_above * robust_stdev)
+        finite_mask = np.isfinite(temp_image)
+        n_finite_pts = finite_mask.sum()
+        if n_finite_pts > 0:
+            n_pts = 1000
+            # sample ALL points unless the sampled points will be reasonably nicely distributed.  e.g.
+            # n_pts=1000, n_finite_pts=1999 -> all samples would be clumped in one half.
+            # factor of 5* means that the 'missing' unsampled clump at the end is <=20% of total pts, which seems reasonable
+            if n_finite_pts < (5*n_pts):  
+                robust_mean, robust_median, robust_stdev = sigma_clipped_stats(temp_image[finite_mask])
+            else:
+                stepsize = n_finite_pts/n_pts
+                robust_mean, robust_median, robust_stdev = sigma_clipped_stats(temp_image[finite_mask].ravel()[0::stepsize])
+            n_sigma_below = 1.0
+            n_sigma_above = 6.
+            return (robust_mean - n_sigma_below * robust_stdev, robust_mean + n_sigma_above * robust_stdev)
+        else:
+            return (0., 0.)  # no valid pixels        
 
     def set_clim_to_auto_stats_box(self, msg=(False,)):
         """
@@ -1023,6 +1048,25 @@ class ZTVFrame(wx.Frame):
         wx.CallAfter(pub.sendMessage, 'recalc-proc-image-called',
                      msg=((msg[0] or self._pause_redraw_image),))
 
+    def _recalc_display_image_minmax(self):
+        finite_mask = np.isfinite(self.display_image)
+        if finite_mask.max() is np.True_:
+            self._display_image_min = self.display_image[finite_mask].min()
+            self._display_image_max = self.display_image[finite_mask].max()
+        else:
+            self._display_image_min = 0.
+            self._display_image_max = 0. 
+
+    def display_image_min(self):
+        if self._display_image_min is None:
+            self._recalc_display_image_minmax()
+        return self._display_image_min
+
+    def display_image_max(self):
+        if self._display_image_max is None:
+            self._recalc_display_image_minmax()
+        return self._display_image_max
+
     def recalc_display_image(self, msg=(False,)):
         if self.proc_image.ndim == 2:
             self.display_image = self.proc_image.copy()
@@ -1032,9 +1076,11 @@ class ZTVFrame(wx.Frame):
                                                      self.proc_image.shape[0] - 1), :, :]
         else:
             raise Error("proc_image must be 2-d or 3-d, was instead {}-d".format(self.proc_image.ndim))
+        self._display_image_min = None
+        self._display_image_max = None
         new_min, new_max = None, None
         if self.min_value_mode_on_new_image == 'data-min/max':
-            new_min = self.display_image.min()
+            new_min = self.display_image_min()
         elif self.min_value_mode_on_new_image == 'auto':
             auto_clim_values = self.get_auto_clim_values()
             new_min = auto_clim_values[0]
@@ -1042,7 +1088,7 @@ class ZTVFrame(wx.Frame):
             auto_stats_box_clim_values = self.get_auto_stats_box_clim_values()
             new_min = auto_stats_box_clim_values[0]
         if self.max_value_mode_on_new_image == 'data-min/max':
-            new_max = self.display_image.max()
+            new_max = self.display_image_max()
         elif self.max_value_mode_on_new_image == 'auto':
             if self.min_value_mode_on_new_image != 'auto':  # only calculate if didn't already calculate above
                 auto_clim_values = self.get_auto_clim_values()
