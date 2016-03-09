@@ -3,13 +3,13 @@ ztv Change Log
 ~~~~~~~~~~~~~~
 
 ----------------------
-0.2.3dev1   2016-03-08
+0.2.3dev3   2016-03-08
 ----------------------
 
 - upgraded min/max/robust-stat calcs to better ignore NaN/Inf in displayed images & stats-box/photometry calculations
 - changed colors of curview_rectangle in OverviewImagePanel and zoom_rect in PrimaryImagePanel to match and be orange, which in tests looks better than the old dark green (overview) and magenta (primary) and makes more sense to have be matching
 - reduced initial delay in CommandListenerThread to 10 seconds (had been 1 minute) to reduce potential confusion about zombie ztv windows
-- fixed a matplotlib warning bug annoyance - problem was __about__.py imports one routine from astropy_helpers, but astropy_helpers has some (unrelated/unnecessary for our purposes) matplotlib code.
+- fixed a matplotlib warning bug annoyance - problem was __about__.py imports one routine from astropy_helpers, but astropy_helpers has some (unrelated/unnecessary for our purposes) matplotlib code.  Fix was to include the astropy_helpers.git_helpers code directly within ztv, to avoid both the annoyance warnings, but also blocking pylab.show() from working correctly at times in the underlying python session.
 
 --------------------
 0.2.2-1   2016-03-08
