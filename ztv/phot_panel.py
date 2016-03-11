@@ -18,6 +18,7 @@ except ImportError, e:
     scipy_install_is_ok = False
 from .quick_phot import centroid, aperture_phot
 from .ztv_wx_lib import validate_textctrl_str, textctrl_output_only_background_color, set_textctrl_background_color
+from .ztv_lib import send_to_stream
 from astropy import units
 import numpy as np
 import sys
@@ -37,7 +38,7 @@ class PhotPlotPanel(wx.Panel):
         self.axes_widget.connect_event('button_release_event', self.on_button_release)
         self.axes_widget.connect_event('figure_leave_event', self.on_cursor_leave)
         self.button_down = False
-        
+
     def on_button_press(self, event):
         self.aper_names = ['aprad', 'skyradin', 'skyradout']
         self.aper_last_radii = np.array([self.ztv_frame.phot_panel.aprad, 
@@ -137,6 +138,11 @@ class PhotPanel(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize)
         self.ztv_frame = self.GetTopLevelParent()
+        self.ztv_frame.primary_image_panel.popup_menu_cursor_modes.append('Phot')
+        self.ztv_frame.primary_image_panel.available_cursor_modes['Phot'] = {
+                'set-to-mode':self.set_cursor_to_phot_mode,
+                'on_button_press':self.on_button_press}
+                
         self.star_center_patch = None
         self.star_aperture_patch = None
         self.sky_aperture_patch = None
@@ -300,10 +306,25 @@ class PhotPanel(wx.Panel):
 
         self.plot_panel = PhotPlotPanel(self)
         v_sizer1.Add(self.plot_panel, 1, wx.LEFT | wx.TOP | wx.EXPAND)
-
+        
         self.SetSizer(v_sizer1)
-        pub.subscribe(self.update_phot_xy, 'new-phot-xy')
-        pub.subscribe(self.queue_recalc_phot, 'recalc-proc-image-called')
+        pub.subscribe(self.queue_recalc_phot, 'recalc-display-image-called')
+        pub.subscribe(self._set_aperture_phot_parameters, 'set-aperture-phot-parameters')
+        pub.subscribe(self.publish_aperture_phot_info_to_stream, 'get-aperture-phot-info')
+        
+    def publish_aperture_phot_info_to_stream(self, msg=None):
+        phot_info = self.phot_info.copy()
+        phot_info.pop('distances', None)
+        wx.CallAfter(send_to_stream, sys.stdout, ('aperture-phot-info', phot_info))
+        
+    def on_button_press(self, event):
+        self.select_panel()
+        self.update_phot_xy((event.xdata, event.ydata))
+
+    def set_cursor_to_phot_mode(self, event):
+        self.ztv_frame.primary_image_panel.cursor_mode = 'Phot'
+        self.select_panel()
+        self.highlight_panel()
 
     def queue_recalc_phot(self, msg=None):  
         """
@@ -346,6 +367,25 @@ class PhotPanel(wx.Panel):
         self.ztv_frame.primary_image_panel.axes.add_patch(self.sky_aperture_patch)
         self.ztv_frame.primary_image_panel.figure.canvas.draw()
         self.hideshow_button.SetLabel(u"Hide")
+
+    def _set_aperture_phot_parameters(self, msg):
+        if msg['xclick'] is not None:
+            self.xclick = msg['xclick']
+        if msg['yclick'] is not None:
+            self.yclick = msg['yclick']
+        if msg['radius'] is not None:
+            self.aprad = msg['radius']
+        if msg['inner_sky_radius'] is not None:
+            self.skyradin = msg['inner_sky_radius']
+        if msg['outer_sky_radius'] is not None:
+            self.skyradout = msg['outer_sky_radius']
+        self.recalc_phot()
+        if msg['show_overplot'] is not None:
+            if msg['show_overplot']:
+                self.redraw_overplot_on_image()
+            else:
+                self.remove_overplot_on_image()
+        send_to_stream(sys.stdout, ('set-aperture-phot-parameters-done', True))
 
     def update_phot_xy(self, msg):
         self.xclick, self.yclick = msg

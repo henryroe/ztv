@@ -97,10 +97,9 @@ class PrimaryImagePanel(wx.Panel):
                                          np.arange(cmap_bitmap_width, dtype=np.uint8)))
             self.cmap_bitmaps[cmap] = wx.BitmapFromBufferRGBA(cmap_bitmap_width, cmap_bitmap_height,
                                                               np.uint8(np.round(rgba*255)))
-        self.popup_menu_cursor_modes = ['Zoom', 'Pan', 'Phot']
+        self.popup_menu_cursor_modes = ['Zoom', 'Pan']
         self.available_cursor_modes = {'Zoom':{'set-to-mode':self.set_cursor_to_zoom_mode},
-                                       'Pan':{'set-to-mode':self.set_cursor_to_pan_mode},
-                                       'Phot':{'set-to-mode':self.set_cursor_to_phot_mode}}
+                                       'Pan':{'set-to-mode':self.set_cursor_to_pan_mode}}
         self.available_key_presses = {}
         self.cursor_mode = 'Zoom'
         self.max_doubleclick_millisec = 500  # needed to trap 'real' single clicks from the first click of a double click
@@ -216,11 +215,6 @@ class PrimaryImagePanel(wx.Panel):
         self.cursor_mode = 'Pan'
         self.ztv_frame.controls_notebook.clear_highlights()
         
-    def set_cursor_to_phot_mode(self, event):
-        self.cursor_mode = 'Phot'
-        self.ztv_frame.phot_panel.select_panel()
-        self.ztv_frame.phot_panel.highlight_panel()
-
     def on_key_press(self, event):
         # TODO: figure out why keypresses are only recognized after a click in the matplotlib frame.
         if event.key == 'right':
@@ -276,9 +270,6 @@ class PrimaryImagePanel(wx.Panel):
             elif self.cursor_mode == 'Pan':
                 self.center = wx.RealPoint(event.xdata, event.ydata)
                 self.set_and_get_xy_limits()
-            elif self.cursor_mode == 'Phot':
-                self.ztv_frame.phot_panel.select_panel()
-                wx.CallAfter(pub.sendMessage, 'new-phot-xy', msg=(event.xdata, event.ydata))
             else:
                 if (self.available_cursor_modes.has_key(self.cursor_mode) and
                     self.available_cursor_modes[self.cursor_mode].has_key('on_button_press')):
@@ -1319,32 +1310,6 @@ class CommandListenerThread(threading.Thread):
                                      (x[0][4:], self.ztv_frame.source_panel.autoload_pausetime))
                     else:
                         send_to_stream(sys.stdout, (x[0][4:], 'source_panel not available'))
-                elif x[0] == 'set-aperture-phot-parameters':
-                    if hasattr(self.ztv_frame, 'phot_panel'):
-                        if x[1]['xclick'] is not None:
-                            self.ztv_frame.phot_panel.xclick = x[1]['xclick']
-                        if x[1]['yclick'] is not None:
-                            self.ztv_frame.phot_panel.yclick = x[1]['yclick']
-                        if x[1]['radius'] is not None:
-                            self.ztv_frame.phot_panel.aprad = x[1]['radius']
-                        if x[1]['inner_sky_radius'] is not None:
-                            self.ztv_frame.phot_panel.skyradin = x[1]['inner_sky_radius']
-                        if x[1]['outer_sky_radius'] is not None:
-                            self.ztv_frame.phot_panel.skyradout = x[1]['outer_sky_radius']
-                        self.ztv_frame.phot_panel.recalc_phot()
-                        if x[1]['show_overplot'] is not None:
-                            if x[1]['show_overplot']:
-                                self.ztv_frame.phot_panel.redraw_overplot_on_image()
-                            else:
-                                self.ztv_frame.phot_panel.remove_overplot_on_image()
-                    send_to_stream(sys.stdout, (x[0] + '-done', True))
-                elif x[0] == 'get-aperture-phot-info':
-                    if hasattr(self.ztv_frame, 'phot_panel'):
-                        phot_info = self.ztv_frame.phot_panel.phot_info.copy()
-                        phot_info.pop('distances', None)
-                        wx.CallAfter(send_to_stream, sys.stdout, (x[0][4:], phot_info))
-                    else:
-                        send_to_stream(sys.stdout, (x[0][4:], 'phot_panel not available'))
                 elif x[0] == 'switch-to-control-panel':
                     name_lower = x[1].lower()
                     display_names_lower = [a.ztv_display_name.lower() for a in self.ztv_frame.control_panels]
