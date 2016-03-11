@@ -550,7 +550,7 @@ class ControlsNotebook(wx.Notebook):
         self.ztv_frame.control_panels = []  # list of currently loaded/visible control panels, in order of display
         for cur_title, cur_panel in self.ztv_frame.control_panels_to_load:
             self.AddPanelAndStoreID(cur_panel(self), cur_title)
-        # TODO:   # HEREIAM: should probably call         primary_image_panel.init_popup_menu()  once all the panels are loaded?
+        self.ztv_frame.primary_image_panel.init_popup_menu()
         
     def AddPanelAndStoreID(self, panel, text, **kwargs):
         new_page_image_id = len(self.ztv_frame.control_panels)
