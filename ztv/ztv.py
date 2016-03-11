@@ -123,7 +123,6 @@ class PrimaryImagePanel(wx.Panel):
         pub.subscribe(self.reset_zoom_and_center, 'reset-zoom-and-center')
         pub.subscribe(self.set_zoom_factor, 'set-zoom-factor')
         pub.subscribe(self.set_xy_center, 'set-xy-center')
-        self.SetAcceleratorTable(wx.AcceleratorTable(self.accelerator_table))
 
     def _append_menu_item(self, menu, wx_id, title, fxn):
         if wx_id is None:
@@ -170,6 +169,7 @@ class PrimaryImagePanel(wx.Panel):
         self._append_menu_item(menu, self.popup_menu_cur_fits_header_eventID, 'FITS Header',
                                self.on_display_cur_fits_header)
         self.popup_menu = menu
+        self.SetAcceleratorTable(wx.AcceleratorTable(self.accelerator_table))
 
     def on_display_cur_fits_header(self, event):
         raw_header_str = self.ztv_frame.cur_fits_hdulist[0].header.tostring()

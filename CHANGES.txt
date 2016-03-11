@@ -10,6 +10,8 @@ ztv Change Log
 - changed colors of curview_rectangle in OverviewImagePanel and zoom_rect in PrimaryImagePanel to match and be orange, which in tests looks better than the old dark green (overview) and magenta (primary) and makes more sense to have be matching
 - reduced initial delay in CommandListenerThread to 10 seconds (had been 1 minute) to reduce potential confusion about zombie ztv windows
 - fixed a matplotlib warning bug annoyance - problem was __about__.py imports one routine from astropy_helpers, but astropy_helpers has some (unrelated/unnecessary for our purposes) matplotlib code.  Fix was to include the astropy_helpers.git_helpers code directly within ztv, to avoid both the annoyance warnings, but also blocking pylab.show() from working correctly at times in the underlying python session.
+- re-factored phot_panel, plot_panel, stats_panel almost entirely out of ztv.py main module for clarity/maintainability reasons.  (ztv main module still has few hooks into stats_panel regarding doing auto clim setting from stats box, but that seems acceptable at this stage)
+- fixed recently introduced bug that was causing accelerator key strokes to fail in primary_image_panel
 
 --------------------
 0.2.2-1   2016-03-08
