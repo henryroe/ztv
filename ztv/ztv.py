@@ -36,7 +36,6 @@ from .file_picker import FilePicker
 from .fits_header_dialog import FITSHeaderDialog
 # Intend: control panels are one per file with class name "MyPanel" in filename "my_panel.py"
 from .source_panel import SourcePanel
-from .plot_panel import PlotPanel
 from .phot_panel import PhotPanel
 from .stats_panel import StatsPanel
 from .color_panel import ColorPanel
@@ -105,12 +104,12 @@ class PrimaryImagePanel(wx.Panel):
                                          np.arange(cmap_bitmap_width, dtype=np.uint8)))
             self.cmap_bitmaps[cmap] = wx.BitmapFromBufferRGBA(cmap_bitmap_width, cmap_bitmap_height,
                                                               np.uint8(np.round(rgba*255)))
-        self.popup_menu_cursor_modes = ['Zoom', 'Pan', 'Slice plot', 'Stats box', 'Phot']
+        self.popup_menu_cursor_modes = ['Zoom', 'Pan', 'Stats box', 'Phot']
         self.available_cursor_modes = {'Zoom':{'set-to-mode':self.set_cursor_to_zoom_mode},
                                        'Pan':{'set-to-mode':self.set_cursor_to_pan_mode},
-                                       'Slice plot':{'set-to-mode':self.set_cursor_to_plot_mode},
                                        'Stats box':{'set-to-mode':self.set_cursor_to_stats_box_mode},
                                        'Phot':{'set-to-mode':self.set_cursor_to_phot_mode}}
+        self.available_key_presses = {}
         self.cursor_mode = 'Zoom'
         self.max_doubleclick_millisec = 500  # needed to trap 'real' single clicks from the first click of a double click
         self.popup_menu_needs_rebuild = True
@@ -225,11 +224,6 @@ class PrimaryImagePanel(wx.Panel):
         self.cursor_mode = 'Pan'
         self.ztv_frame.controls_notebook.clear_highlights()
         
-    def set_cursor_to_plot_mode(self, event):
-        self.cursor_mode = 'Slice plot'
-        self.ztv_frame.plot_panel.select_panel()
-        self.ztv_frame.plot_panel.highlight_panel()
-
     def set_cursor_to_stats_box_mode(self, event):
         self.cursor_mode = 'Stats box'
         self.ztv_frame.stats_panel.select_panel()
@@ -242,24 +236,12 @@ class PrimaryImagePanel(wx.Panel):
 
     def on_key_press(self, event):
         # TODO: figure out why keypresses are only recognized after a click in the matplotlib frame.
-        if event.key in ['c', 'C', 'v', 'V', 'y', 'Y']:
-            x = np.round(event.xdata)
-            max_y = self.ztv_frame.display_image.shape[0] - 1
-            wx.CallAfter(pub.sendMessage, 'update-line-plot-points', msg=((x + 0.5, max(0, self.ylim[0])), 
-                                                                          (x + 0.5, min(max_y, self.ylim[1]))))
-        elif event.key in ['r', 'R', 'h', 'H', 'x', 'X']:
-            y = np.round(event.ydata)
-            max_x = self.ztv_frame.display_image.shape[1] - 1
-            wx.CallAfter(pub.sendMessage, 'update-line-plot-points', msg=((max(0, self.xlim[0]), y + 0.5), 
-                                                                          (min(max_x, self.xlim[1]), y + 0.5)))
-        elif event.key in ['z', 'Z']:
-            x = np.round(event.xdata)
-            y = np.round(event.ydata)
-            wx.CallAfter(pub.sendMessage, 'update-line-plot-points', msg=((x, y), (x, y)))
-        elif event.key == 'right':
+        if event.key == 'right':
             self.ztv_frame.set_cur_display_frame_num(1, relative=True)
         elif event.key == 'left':
             self.ztv_frame.set_cur_display_frame_num(-1, relative=True)
+        elif event.key in self.available_key_presses:
+            self.available_key_presses[event.key](event)
 
     def set_xy_center(self, msg):
         if self.center.x != msg[0] or self.center.y != msg[1]:
@@ -315,10 +297,6 @@ class PrimaryImagePanel(wx.Panel):
             elif self.cursor_mode == 'Phot':
                 self.ztv_frame.phot_panel.select_panel()
                 wx.CallAfter(pub.sendMessage, 'new-phot-xy', msg=(event.xdata, event.ydata))
-            elif self.cursor_mode == 'Slice plot':
-                self.ztv_frame.plot_panel.select_panel()
-                wx.CallAfter(pub.sendMessage, 'new-slice-plot-xy0', msg=(event.xdata, event.ydata))
-                wx.CallAfter(pub.sendMessage, 'new-slice-plot-xy1', msg=(event.xdata, event.ydata))
             else:
                 if (self.available_cursor_modes.has_key(self.cursor_mode) and
                     self.available_cursor_modes[self.cursor_mode].has_key('on_button_press')):
@@ -339,8 +317,6 @@ class PrimaryImagePanel(wx.Panel):
                                                             event.xdata, event.ydata)
                 self.ztv_frame.stats_panel.redraw_overplot_on_image()
                 self.ztv_frame.stats_panel.update_stats()
-            elif self.cursor_mode == 'Slice plot':
-                wx.CallAfter(pub.sendMessage, 'new-slice-plot-xy1', msg=(event.xdata, event.ydata))
             else:
                 if (self.available_cursor_modes.has_key(self.cursor_mode) and
                     self.available_cursor_modes[self.cursor_mode].has_key('on_motion')):
@@ -391,8 +367,6 @@ class PrimaryImagePanel(wx.Panel):
             elif self.cursor_mode == 'Stats box':
                 self.ztv_frame.stats_panel.redraw_overplot_on_image()
                 self.ztv_frame.stats_panel.update_stats()
-            elif self.cursor_mode == 'Slice plot':
-                wx.CallAfter(pub.sendMessage, 'new-slice-plot-xy1', msg=(event.xdata, event.ydata))
             else:
                 if (self.available_cursor_modes.has_key(self.cursor_mode) and
                     self.available_cursor_modes[self.cursor_mode].has_key('on_button_release')):
@@ -611,6 +585,7 @@ class ControlsNotebook(wx.Notebook):
         self.ztv_frame.control_panels = []  # list of currently loaded/visible control panels, in order of display
         for cur_title, cur_panel in self.ztv_frame.control_panels_to_load:
             self.AddPanelAndStoreID(cur_panel(self), cur_title)
+        # TODO:   # HEREIAM: should probably call         primary_image_panel.init_popup_menu()  once all the panels are loaded?
         
     def AddPanelAndStoreID(self, panel, text, **kwargs):
         new_page_image_id = len(self.ztv_frame.control_panels)
@@ -1104,7 +1079,9 @@ class ZTVFrame(wx.Frame):
             new_max = auto_stats_box_clim_values[1]
         self._need_to_recalc_normalization = True
         self.set_clim(((msg[0] or self._pause_redraw_image), [new_min, new_max]))
-  
+        wx.CallAfter(pub.sendMessage, 'recalc-display-image-called',
+                     msg=((msg[0] or self._pause_redraw_image),))
+
     def load_numpy_array(self, msg, is_fits_file=False):
         self._pause_redraw_image = True  # pause redrawing during loading so that don't redraw for every step of the way
         image = msg
@@ -1368,27 +1345,6 @@ class CommandListenerThread(threading.Thread):
                                      (x[0][4:], self.ztv_frame.source_panel.autoload_pausetime))
                     else:
                         send_to_stream(sys.stdout, (x[0][4:], 'source_panel not available'))
-                elif x[0] == 'set-new-slice-plot-xy0':
-                    if hasattr(self.ztv_frame, 'plot_panel'):
-                        wx.CallAfter(pub.sendMessage, 'new-slice-plot-xy0', msg=x[1])
-                elif x[0] == 'set-new-slice-plot-xy1':
-                    if hasattr(self.ztv_frame, 'plot_panel'):
-                        wx.CallAfter(pub.sendMessage, 'new-slice-plot-xy1', msg=x[1])
-                elif x[0] == 'get-slice-plot-coords':
-                    if hasattr(self.ztv_frame, 'plot_panel'):
-                        wx.CallAfter(send_to_stream, sys.stdout, 
-                                     (x[0][4:], [[self.ztv_frame.plot_panel.start_pt.x, 
-                                                  self.ztv_frame.plot_panel.start_pt.y], 
-                                                 [self.ztv_frame.plot_panel.end_pt.x, 
-                                                  self.ztv_frame.plot_panel.end_pt.y]]))
-                    else:
-                        send_to_stream(sys.stdout, (x[0][4:], 'plot_panel not available'))
-                elif x[0] == 'hide-plot-panel-overplot':
-                    if hasattr(self.ztv_frame, 'plot_panel'):
-                        wx.CallAfter(self.ztv_frame.plot_panel.remove_overplot_on_image)
-                elif x[0] == 'show-plot-panel-overplot':
-                    if hasattr(self.ztv_frame, 'plot_panel'):
-                        wx.CallAfter(self.ztv_frame.plot_panel.redraw_overplot_on_image)
                 elif x[0] == 'set-stats-box-parameters':
                     if hasattr(self.ztv_frame, 'stats_panel'):
                         x0,x1,y0,y1 = [None]*4
@@ -1441,7 +1397,7 @@ class CommandListenerThread(threading.Thread):
                     if name_lower in display_names_lower:
                         self.ztv_frame.control_panels[display_names_lower.index(name_lower)].select_panel()
                 else:
-                    wx.CallAfter(pub.sendMessage, x[0], msg=x[1])
+                    wx.CallAfter(pub.sendMessage, x[0], msg=(None if len(x) == 1 else x[1]))
 
 
 class ZTVMain():

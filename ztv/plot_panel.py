@@ -13,6 +13,7 @@ from matplotlib.patches import PathPatch
 from matplotlib.path import Path
 import numpy as np
 import sys
+from .ztv_lib import send_to_stream
 
 
 class PlotPlotPanel(wx.Panel):
@@ -39,6 +40,19 @@ class PlotPanel(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize)
         self.ztv_frame = self.GetTopLevelParent()
+        self.ztv_frame.primary_image_panel.popup_menu_cursor_modes.append('Slice plot')
+        self.ztv_frame.primary_image_panel.available_cursor_modes['Slice plot'] = {
+                'set-to-mode':self.set_cursor_to_plot_mode,
+                'on_button_press':self.on_button_press,
+                'on_motion':self.on_motion,
+                'on_button_release':self.on_button_release}
+        for cur_key in ['c', 'C', 'v', 'V', 'y', 'Y']:
+            self.ztv_frame.primary_image_panel.available_key_presses[cur_key] = self.do_column_plot
+        for cur_key in ['r', 'R', 'h', 'H', 'x', 'X']:
+            self.ztv_frame.primary_image_panel.available_key_presses[cur_key] = self.do_row_plot
+        for cur_key in ['z', 'Z']:
+            self.ztv_frame.primary_image_panel.available_key_presses[cur_key] = self.do_stack_plot
+            
         self.primary_image_patch = None
 
         self.sizer = wx.BoxSizer(wx.VERTICAL)
@@ -54,11 +68,51 @@ class PlotPanel(wx.Panel):
         self.start_pt = wx.RealPoint(0., 0.)
         self.end_pt = wx.RealPoint(0., 0.)
         self.redraw()
-        pub.subscribe(self.update_line_plot_points, 'update-line-plot-points')
-        pub.subscribe(self.on_new_xy0, 'new-slice-plot-xy0')
-        pub.subscribe(self.on_new_xy1, 'new-slice-plot-xy1')
+        pub.subscribe(self.on_new_xy0, 'set-new-slice-plot-xy0')
+        pub.subscribe(self.on_new_xy1, 'set-new-slice-plot-xy1')
         pub.subscribe(self.queue_redraw, 'primary-xy-limits-changed')
         pub.subscribe(self.queue_redraw, 'recalc-proc-image-called')
+        pub.subscribe(self.queue_redraw, 'recalc-display-image-called')
+        pub.subscribe(self.remove_overplot_on_image, 'hide-plot-panel-overplot')
+        pub.subscribe(self.redraw_overplot_on_image, 'show-plot-panel-overplot')
+        pub.subscribe(self.publish_xy0xy1_to_stream, 'get-slice-plot-coords')
+
+    def publish_xy0xy1_to_stream(self, msg=None):
+        wx.CallAfter(send_to_stream, sys.stdout, 
+                     ('slice-plot-coords', [[self.start_pt.x, self.start_pt.y], [self.end_pt.x, self.end_pt.y]]))
+
+    def on_button_press(self, event):
+        self.ztv_frame.plot_panel.select_panel()
+        self.on_new_xy0((event.xdata, event.ydata))
+        self.on_new_xy1((event.xdata, event.ydata))
+
+    def on_motion(self, event):
+        self.on_new_xy1((event.xdata, event.ydata))
+
+    def on_button_release(self, event):
+        self.on_new_xy1((event.xdata, event.ydata))
+
+    def set_cursor_to_plot_mode(self, event):
+        self.ztv_frame.primary_image_panel.cursor_mode = 'Slice plot'
+        self.ztv_frame.plot_panel.select_panel()
+        self.ztv_frame.plot_panel.highlight_panel()
+
+    def do_column_plot(self, event):
+        x = np.round(event.xdata)
+        max_y = self.ztv_frame.display_image.shape[0] - 1
+        ylim = self.ztv_frame.primary_image_panel.ylim
+        self.update_line_plot_points(((x + 0.5, max(0, ylim[0])), (x + 0.5, min(max_y, ylim[1]))))
+
+    def do_row_plot(self, event):
+        y = np.round(event.ydata)
+        max_x = self.ztv_frame.display_image.shape[1] - 1
+        xlim = self.ztv_frame.primary_image_panel.xlim
+        self.update_line_plot_points(((max(0, xlim[0]), y + 0.5), (min(max_x, xlim[1]), y + 0.5)))
+
+    def do_stack_plot(self, event):
+        x = np.round(event.xdata)
+        y = np.round(event.ydata)
+        self.update_line_plot_points(((x, y), (x, y)))
 
     def queue_redraw(self, msg=None):  
         """
@@ -83,7 +137,7 @@ class PlotPanel(wx.Panel):
         self.redraw_overplot_on_image()
         self.redraw()
 
-    def redraw_overplot_on_image(self):
+    def redraw_overplot_on_image(self, msg=None):
         if self.primary_image_patch is not None:
             self.ztv_frame.primary_image_panel.axes.patches.remove(self.primary_image_patch)
         if self.start_pt == self.end_pt:
@@ -100,7 +154,7 @@ class PlotPanel(wx.Panel):
         self.ztv_frame.primary_image_panel.figure.canvas.draw()
         self.hideshow_button.SetLabel(u"Hide")        
 
-    def remove_overplot_on_image(self):
+    def remove_overplot_on_image(self, msg=None):
         if self.primary_image_patch is not None:
             self.ztv_frame.primary_image_panel.axes.patches.remove(self.primary_image_patch)
         self.ztv_frame.primary_image_panel.figure.canvas.draw()
