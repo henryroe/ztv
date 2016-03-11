@@ -5,6 +5,8 @@ from .phot_panel import PhotPanel
 from .stats_panel import StatsPanel
 from .color_panel import ColorPanel
 
+# Intend: control panels are one per file with class name "MyPanel" in filename "my_panel.py"
+
 # in adapting this file to your own use, you will most likely put it in some other directory.
 # the above default imports will probably then need to be:
 # from ztv.source_panel import SourcePanel

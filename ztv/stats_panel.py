@@ -12,6 +12,13 @@ class StatsPanel(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize)
         self.ztv_frame = self.GetTopLevelParent()
+        self.ztv_frame.primary_image_panel.popup_menu_cursor_modes.append('Stats box')
+        self.ztv_frame.primary_image_panel.available_cursor_modes['Stats box'] = {
+                'set-to-mode':self.set_cursor_to_stats_box_mode,
+                'on_button_press':self.on_button_press,
+                'on_motion':self.on_motion,
+                'on_button_release':self.on_button_release}
+
         self.stats_info = None
         
         self.last_string_values = {'x0':'', 'xsize':'', 'x1':'', 'y0':'', 'ysize':'', 'y1':''}
@@ -201,7 +208,28 @@ class StatsPanel(wx.Panel):
         v_sizer1.Add(values_sizer, 0, wx.ALIGN_CENTER_HORIZONTAL)
         v_sizer1.AddStretchSpacer(1.0)
         self.SetSizer(v_sizer1)
-        pub.subscribe(self.queue_update_stats, 'recalc-proc-image-called')
+        pub.subscribe(self.queue_update_stats, 'recalc-display-image-called')
+
+    def on_button_press(self, event):
+        self.select_panel()
+        self.stats_start_timestamp = event.guiEvent.GetTimestamp()  # millisec
+        self.update_stats_box(event.xdata, event.ydata, event.xdata, event.ydata)
+        self.redraw_overplot_on_image()
+        self.cursor_stats_box_x0, self.cursor_stats_box_y0 = event.xdata, event.ydata
+
+    def on_motion(self, event):
+        self.update_stats_box(self.cursor_stats_box_x0, self.cursor_stats_box_y0, event.xdata, event.ydata)
+        self.redraw_overplot_on_image()
+        self.update_stats()
+
+    def on_button_release(self, event):
+        self.redraw_overplot_on_image()
+        self.update_stats()
+
+    def set_cursor_to_stats_box_mode(self, event):
+        self.ztv_frame.primary_image_panel.cursor_mode = 'Stats box'
+        self.ztv_frame.stats_panel.select_panel()
+        self.ztv_frame.stats_panel.highlight_panel()
 
     def queue_update_stats(self, msg=None):  
         """

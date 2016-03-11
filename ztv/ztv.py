@@ -34,15 +34,8 @@ from matplotlib.colors import Normalize
 
 from .file_picker import FilePicker
 from .fits_header_dialog import FITSHeaderDialog
-# Intend: control panels are one per file with class name "MyPanel" in filename "my_panel.py"
-from .source_panel import SourcePanel
-from .phot_panel import PhotPanel
-from .stats_panel import StatsPanel
-from .color_panel import ColorPanel
 from .ztv_lib import send_to_stream, StreamListener, StreamListenerTimeOut
 from .ztv_wx_lib import set_textctrl_background_color, validate_textctrl_str
-
-import pdb
 
 base_dir = os.path.abspath(os.path.dirname(__file__))
 about = {}
@@ -104,10 +97,9 @@ class PrimaryImagePanel(wx.Panel):
                                          np.arange(cmap_bitmap_width, dtype=np.uint8)))
             self.cmap_bitmaps[cmap] = wx.BitmapFromBufferRGBA(cmap_bitmap_width, cmap_bitmap_height,
                                                               np.uint8(np.round(rgba*255)))
-        self.popup_menu_cursor_modes = ['Zoom', 'Pan', 'Stats box', 'Phot']
+        self.popup_menu_cursor_modes = ['Zoom', 'Pan', 'Phot']
         self.available_cursor_modes = {'Zoom':{'set-to-mode':self.set_cursor_to_zoom_mode},
                                        'Pan':{'set-to-mode':self.set_cursor_to_pan_mode},
-                                       'Stats box':{'set-to-mode':self.set_cursor_to_stats_box_mode},
                                        'Phot':{'set-to-mode':self.set_cursor_to_phot_mode}}
         self.available_key_presses = {}
         self.cursor_mode = 'Zoom'
@@ -224,11 +216,6 @@ class PrimaryImagePanel(wx.Panel):
         self.cursor_mode = 'Pan'
         self.ztv_frame.controls_notebook.clear_highlights()
         
-    def set_cursor_to_stats_box_mode(self, event):
-        self.cursor_mode = 'Stats box'
-        self.ztv_frame.stats_panel.select_panel()
-        self.ztv_frame.stats_panel.highlight_panel()
-
     def set_cursor_to_phot_mode(self, event):
         self.cursor_mode = 'Phot'
         self.ztv_frame.phot_panel.select_panel()
@@ -289,11 +276,6 @@ class PrimaryImagePanel(wx.Panel):
             elif self.cursor_mode == 'Pan':
                 self.center = wx.RealPoint(event.xdata, event.ydata)
                 self.set_and_get_xy_limits()
-            elif self.cursor_mode == 'Stats box':
-                self.stats_start_timestamp = event.guiEvent.GetTimestamp()  # millisec
-                self.ztv_frame.stats_panel.update_stats_box(event.xdata, event.ydata, event.xdata, event.ydata)
-                self.ztv_frame.stats_panel.redraw_overplot_on_image()
-                self.cursor_stats_box_x0, self.cursor_stats_box_y0 = event.xdata, event.ydata
             elif self.cursor_mode == 'Phot':
                 self.ztv_frame.phot_panel.select_panel()
                 wx.CallAfter(pub.sendMessage, 'new-phot-xy', msg=(event.xdata, event.ydata))
@@ -312,11 +294,6 @@ class PrimaryImagePanel(wx.Panel):
                 x0,y0 = self.zoom_rect.get_x(),self.zoom_rect.get_y()
                 self.zoom_rect.set_bounds(x0, y0, event.xdata - x0, event.ydata - y0)
                 self.figure.canvas.draw()
-            elif self.cursor_mode == 'Stats box':
-                self.ztv_frame.stats_panel.update_stats_box(self.cursor_stats_box_x0, self.cursor_stats_box_y0, 
-                                                            event.xdata, event.ydata)
-                self.ztv_frame.stats_panel.redraw_overplot_on_image()
-                self.ztv_frame.stats_panel.update_stats()
             else:
                 if (self.available_cursor_modes.has_key(self.cursor_mode) and
                     self.available_cursor_modes[self.cursor_mode].has_key('on_motion')):
@@ -364,9 +341,6 @@ class PrimaryImagePanel(wx.Panel):
                     self.axes.patches.remove(self.zoom_rect)
                 self.zoom_rect = None
                 self.figure.canvas.draw()
-            elif self.cursor_mode == 'Stats box':
-                self.ztv_frame.stats_panel.redraw_overplot_on_image()
-                self.ztv_frame.stats_panel.update_stats()
             else:
                 if (self.available_cursor_modes.has_key(self.cursor_mode) and
                     self.available_cursor_modes[self.cursor_mode].has_key('on_button_release')):

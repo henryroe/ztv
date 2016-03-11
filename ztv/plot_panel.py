@@ -35,7 +35,6 @@ class PlotPlotPanel(wx.Panel):
         self.figure.set_size_inches(float(pixels[0])/self.figure.get_dpi(), float(pixels[1])/self.figure.get_dpi())
 
 
-
 class PlotPanel(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize)
@@ -71,7 +70,6 @@ class PlotPanel(wx.Panel):
         pub.subscribe(self.on_new_xy0, 'set-new-slice-plot-xy0')
         pub.subscribe(self.on_new_xy1, 'set-new-slice-plot-xy1')
         pub.subscribe(self.queue_redraw, 'primary-xy-limits-changed')
-        pub.subscribe(self.queue_redraw, 'recalc-proc-image-called')
         pub.subscribe(self.queue_redraw, 'recalc-display-image-called')
         pub.subscribe(self.remove_overplot_on_image, 'hide-plot-panel-overplot')
         pub.subscribe(self.redraw_overplot_on_image, 'show-plot-panel-overplot')
@@ -82,7 +80,7 @@ class PlotPanel(wx.Panel):
                      ('slice-plot-coords', [[self.start_pt.x, self.start_pt.y], [self.end_pt.x, self.end_pt.y]]))
 
     def on_button_press(self, event):
-        self.ztv_frame.plot_panel.select_panel()
+        self.select_panel()
         self.on_new_xy0((event.xdata, event.ydata))
         self.on_new_xy1((event.xdata, event.ydata))
 
@@ -94,8 +92,8 @@ class PlotPanel(wx.Panel):
 
     def set_cursor_to_plot_mode(self, event):
         self.ztv_frame.primary_image_panel.cursor_mode = 'Slice plot'
-        self.ztv_frame.plot_panel.select_panel()
-        self.ztv_frame.plot_panel.highlight_panel()
+        self.select_panel()
+        self.highlight_panel()
 
     def do_column_plot(self, event):
         x = np.round(event.xdata)
