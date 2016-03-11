@@ -7,6 +7,8 @@ import numpy as np
 from astropy.stats import sigma_clipped_stats
 import sys
 from .ztv_wx_lib import set_textctrl_background_color, validate_textctrl_str, textctrl_output_only_background_color
+from .ztv_lib import send_to_stream
+
 
 class StatsPanel(wx.Panel):
     def __init__(self, parent):
@@ -209,6 +211,11 @@ class StatsPanel(wx.Panel):
         v_sizer1.AddStretchSpacer(1.0)
         self.SetSizer(v_sizer1)
         pub.subscribe(self.queue_update_stats, 'recalc-display-image-called')
+        pub.subscribe(self._set_stats_box_parameters, 'set-stats-box-parameters')
+        pub.subscribe(self.publish_stats_to_stream, 'get-stats-box-info')
+
+    def publish_stats_to_stream(self, msg=None):
+        wx.CallAfter(send_to_stream, sys.stdout, ('stats-box-info', self.stats_info))
 
     def on_button_press(self, event):
         self.select_panel()
@@ -236,6 +243,24 @@ class StatsPanel(wx.Panel):
         wrapper to call update_stats from CallAfter in order to make GUI as responsive as possible.
         """
         wx.CallAfter(self.update_stats, msg=None)
+
+    def _set_stats_box_parameters(self, msg):
+        """
+        wrapper to update_stats_box to receive messages & translate them correctly
+        """
+        x0,x1,y0,y1 = [None]*4
+        if msg['xrange'] is not None:
+            x0,x1 = msg['xrange']
+        if msg['yrange'] is not None:
+            y0,y1 = msg['yrange']
+        if msg['xrange'] is not None or msg['yrange'] is not None:
+            self.update_stats_box(x0, y0, x1, y1)
+        if msg['show_overplot'] is not None:
+            if msg['show_overplot']:
+                self.redraw_overplot_on_image()
+            else:
+                self.remove_overplot_on_image()
+        send_to_stream(sys.stdout, ('set-stats-box-parameters-done', True))
 
     def update_stats_box(self, x0=None, y0=None, x1=None, y1=None):
         if x0 is None:

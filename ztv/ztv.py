@@ -1319,26 +1319,6 @@ class CommandListenerThread(threading.Thread):
                                      (x[0][4:], self.ztv_frame.source_panel.autoload_pausetime))
                     else:
                         send_to_stream(sys.stdout, (x[0][4:], 'source_panel not available'))
-                elif x[0] == 'set-stats-box-parameters':
-                    if hasattr(self.ztv_frame, 'stats_panel'):
-                        x0,x1,y0,y1 = [None]*4
-                        if x[1]['xrange'] is not None:
-                            x0,x1 = x[1]['xrange']
-                        if x[1]['yrange'] is not None:
-                            y0,y1 = x[1]['yrange']
-                        if x[1]['xrange'] is not None or x[1]['yrange'] is not None:
-                            wx.CallAfter(self.ztv_frame.stats_panel.update_stats_box, *[x0, y0, x1, y1])
-                        if x[1]['show_overplot'] is not None:
-                            if x[1]['show_overplot']:
-                                self.ztv_frame.stats_panel.redraw_overplot_on_image()
-                            else:
-                                self.ztv_frame.stats_panel.remove_overplot_on_image()
-                    send_to_stream(sys.stdout, (x[0] + '-done', True))
-                elif x[0] == 'get-stats-box-info':
-                    if hasattr(self.ztv_frame, 'stats_panel'):
-                        wx.CallAfter(send_to_stream, sys.stdout, (x[0][4:], self.ztv_frame.stats_panel.stats_info))
-                    else:
-                        send_to_stream(sys.stdout, (x[0][4:], 'stats_panel not available'))
                 elif x[0] == 'set-aperture-phot-parameters':
                     if hasattr(self.ztv_frame, 'phot_panel'):
                         if x[1]['xclick'] is not None:
