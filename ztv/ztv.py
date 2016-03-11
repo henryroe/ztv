@@ -113,7 +113,8 @@ class PrimaryImagePanel(wx.Panel):
                                        'Phot':{'set-to-mode':self.set_cursor_to_phot_mode}}
         self.cursor_mode = 'Zoom'
         self.max_doubleclick_millisec = 500  # needed to trap 'real' single clicks from the first click of a double click
-        self.init_popup_menu()
+        self.popup_menu_needs_rebuild = True
+        self.popup_menu = None
         self.xlim = [-9e9, 9e9]
         self.ylim = [-9e9, 9e9]
         self.figure = Figure(None, dpi)
@@ -134,7 +135,6 @@ class PrimaryImagePanel(wx.Panel):
         pub.subscribe(self.set_xy_center, 'set-xy-center')
         self.SetAcceleratorTable(wx.AcceleratorTable(self.accelerator_table))
 
-
     def _append_menu_item(self, menu, wx_id, title, fxn):
         if wx_id is None:
             wx_id = wx.NewId()
@@ -143,6 +143,9 @@ class PrimaryImagePanel(wx.Panel):
         return wx_id
 
     def init_popup_menu(self):
+        self.popup_menu_needs_rebuild = False
+        if self.popup_menu is not None:
+            self.popup_menu.Destroy()
         menu = wx.Menu()
         menu.Append(wx.NewId(), 'Cursor mode:').Enable(False)
         self.cursor_mode_to_eventID = {}
@@ -396,6 +399,8 @@ class PrimaryImagePanel(wx.Panel):
                     self.available_cursor_modes[self.cursor_mode]['on_button_release'](event)
 
     def on_right_down(self, event):
+        if self.popup_menu_needs_rebuild or self.popup_menu is None:
+            self.init_popup_menu()
         for cursor_mode in self.cursor_mode_to_eventID:
             self.popup_menu.Check(self.cursor_mode_to_eventID[cursor_mode], False)
         self.popup_menu.Check(self.cursor_mode_to_eventID[self.cursor_mode], True)
