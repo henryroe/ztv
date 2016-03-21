@@ -102,7 +102,7 @@ class PrimaryImagePanel(wx.Panel):
                                        'Pan':{'set-to-mode':self.set_cursor_to_pan_mode}}
         self.available_key_presses = {}
         self.cursor_mode = 'Zoom'
-        self.max_doubleclick_millisec = 500  # needed to trap 'real' single clicks from the first click of a double click
+        self.max_doubleclick_sec = 0.5  # needed to trap 'real' single clicks from the first click of a double click
         self.popup_menu_needs_rebuild = True
         self.popup_menu = None
         self.xlim = [-9e9, 9e9]
@@ -262,7 +262,7 @@ class PrimaryImagePanel(wx.Panel):
                     self.ztv_frame.zoom_factor /= 2.
                     self.set_and_get_xy_limits()
                 else:
-                    self.zoom_start_timestamp = event.guiEvent.GetTimestamp()  # millisec
+                    self.zoom_start_timestamp = time.time()
                     self.zoom_rect = Rectangle((event.xdata, event.ydata), 0, 0,
                                                color='orange', fill=False, zorder=100)
                     self.axes.add_patch(self.zoom_rect)
@@ -312,7 +312,7 @@ class PrimaryImagePanel(wx.Panel):
         if event.button == 1:  # left button
             if self.cursor_mode == 'Zoom':
                 # this catches for the first click-release of a double-click
-                if (event.guiEvent.GetTimestamp() - self.zoom_start_timestamp) > self.max_doubleclick_millisec:
+                if (time.time() - self.zoom_start_timestamp) > self.max_doubleclick_sec:
                     # this catches for a long click-and-release without motion
                     x0,y0 = self.zoom_rect.get_x(),self.zoom_rect.get_y()
                     x1 = x0 + self.zoom_rect.get_width()
