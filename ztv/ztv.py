@@ -67,7 +67,7 @@ class ColorMaps():
         """
         return a selection of useful colormaps that is less overwhelming than ALL of them
         """
-        return ['gray', 'bone', 'Blues_r', 'Greens_r', 'Oranges_r', 'RdPu_r', 'hot', 'gist_heat',
+        return ['viridis', 'gray', 'bone', 'Blues_r', 'Greens_r', 'Oranges_r', 'RdPu_r', 'hot', 'gist_heat',
                 'rainbow', 'hsv', 'spectral', 'gnuplot', 'jet']
 
     def all_except_reversed(self):
@@ -629,7 +629,7 @@ class ZTVFrame(wx.Frame):
         self._norm = None
         self._scaling = None
         self.available_cmaps = ColorMaps().basic()
-        self.cmap = 'jet'  # will go back to gray later
+        self.cmap = 'viridis'  # will go back to gray later
         self.is_cmap_inverted = False
         self.accelerator_table = []  # keyboard accelerators, e.g. cmd-Q
         self.zoom_factor = 2.0
