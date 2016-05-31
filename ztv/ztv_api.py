@@ -158,7 +158,7 @@ class ZTV():
         returns the current (new) colormap
         """
         if isinstance(cmap, str):
-            self._send_to_ztv(('set-cmap', (cmap, False)))
+            self._send_to_ztv(('set-cmap', (False, cmap)))
         return self._request_return_value_from_ztv('get-cmap')
           
     def cmaps_list(self):
