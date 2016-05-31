@@ -175,7 +175,7 @@ class ZTV():
         Returns the current inversion state
         """
         if state is not None:
-            self._send_to_ztv(('set-cmap-inverted', (state, False)))
+            self._send_to_ztv(('set-cmap-inverted', (False, state)))
         return self._request_return_value_from_ztv('get-is-cmap-inverted')
 
     def scaling(self, scaling=None):
