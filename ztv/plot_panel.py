@@ -127,17 +127,6 @@ class PlotPanel(wx.Panel):
 
     def on_button_release(self, event):
         self.cursor_drag_active = False
-        if event.xdata is None or event.ydata is None:
-            return 
-        if event.key is not None and 'shift' in event.key:   # if shift key, align horizontally/vertically
-            xdata, ydata = event.xdata, event.ydata
-            if np.abs(xdata - self.start_pt.x) <= np.abs(ydata - self.start_pt.y):
-                xdata = self.start_pt.x
-            else:
-                ydata = self.start_pt.y
-            self.on_new_xy1((xdata, ydata))
-        else:
-            self.on_new_xy1((event.xdata, event.ydata))
 
     def set_cursor_to_plot_mode(self, event):
         self.ztv_frame.primary_image_panel.cursor_mode = 'Slice plot'
