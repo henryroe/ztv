@@ -100,7 +100,8 @@ class PlotPanel(wx.Panel):
         pub.subscribe(self.remove_overplot_on_image, 'hide-plot-panel-overplot')
         pub.subscribe(self.redraw_overplot_on_image, 'show-plot-panel-overplot')
         pub.subscribe(self.publish_xy0xy1_to_stream, 'get-slice-plot-coords')
-
+        self.cursor_drag_active = False
+        
     def publish_xy0xy1_to_stream(self, msg=None):
         wx.CallAfter(send_to_stream, sys.stdout, 
                      ('slice-plot-coords', [[self.start_pt.x, self.start_pt.y], [self.end_pt.x, self.end_pt.y]]))
@@ -109,12 +110,34 @@ class PlotPanel(wx.Panel):
         self.select_panel()
         self.on_new_xy0((event.xdata, event.ydata))
         self.on_new_xy1((event.xdata, event.ydata))
-
+        self.cursor_drag_active = True
+        
     def on_motion(self, event):
-        self.on_new_xy1((event.xdata, event.ydata))
+        if not self.cursor_drag_active:
+            return
+        if event.key is not None and 'shift' in event.key:   # if shift key, align horizontally/vertically
+            xdata, ydata = event.xdata, event.ydata
+            if np.abs(xdata - self.start_pt.x) <= np.abs(ydata - self.start_pt.y):
+                xdata = self.start_pt.x
+            else:
+                ydata = self.start_pt.y
+            self.on_new_xy1((xdata, ydata))
+        else:
+            self.on_new_xy1((event.xdata, event.ydata))
 
     def on_button_release(self, event):
-        self.on_new_xy1((event.xdata, event.ydata))
+        self.cursor_drag_active = False
+        if event.xdata is None or event.ydata is None:
+            return 
+        if event.key is not None and 'shift' in event.key:   # if shift key, align horizontally/vertically
+            xdata, ydata = event.xdata, event.ydata
+            if np.abs(xdata - self.start_pt.x) <= np.abs(ydata - self.start_pt.y):
+                xdata = self.start_pt.x
+            else:
+                ydata = self.start_pt.y
+            self.on_new_xy1((xdata, ydata))
+        else:
+            self.on_new_xy1((event.xdata, event.ydata))
 
     def set_cursor_to_plot_mode(self, event):
         self.ztv_frame.primary_image_panel.cursor_mode = 'Slice plot'

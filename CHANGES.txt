@@ -7,6 +7,8 @@ ztv Change Log
 --------------------
 
 - implemented cursor readout in plot_panel
+- implemented shift-key for locking to horizontal/vertical plot slices on primary image panel
+- fixed some logic in cursor modes when entering/exiting primary image panel with button pressed
 
 --------------------
 0.2.3-2   2016-05-31

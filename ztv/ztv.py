@@ -280,15 +280,15 @@ class PrimaryImagePanel(wx.Panel):
             return
         x = int(np.round(event.xdata))
         y = int(np.round(event.ydata))
-        if event.button is not None:
-            if self.cursor_mode == 'Zoom' and self.zoom_rect is not None:
+        if self.cursor_mode == 'Zoom':
+            if event.button is not None and self.zoom_rect is not None:
                 x0,y0 = self.zoom_rect.get_x(),self.zoom_rect.get_y()
                 self.zoom_rect.set_bounds(x0, y0, event.xdata - x0, event.ydata - y0)
                 self.figure.canvas.draw()
-            else:
-                if (self.available_cursor_modes.has_key(self.cursor_mode) and
-                    self.available_cursor_modes[self.cursor_mode].has_key('on_motion')):
-                    self.available_cursor_modes[self.cursor_mode]['on_motion'](event)
+        else:
+            if (self.available_cursor_modes.has_key(self.cursor_mode) and
+                self.available_cursor_modes[self.cursor_mode].has_key('on_motion')):
+                self.available_cursor_modes[self.cursor_mode]['on_motion'](event)
         if ((x >= 0) and (x < self.ztv_frame.display_image.shape[1]) and
             (y >= 0) and (y < self.ztv_frame.display_image.shape[0])):
             imval = self.ztv_frame.display_image[y, x]
@@ -361,10 +361,16 @@ class PrimaryImagePanel(wx.Panel):
         if hasattr(self, 'saved_cursor') and self.saved_cursor is not None:
             self.figure.canvas.SetCursor(self.saved_cursor)
             self.saved_cursor = None
+        if (self.available_cursor_modes.has_key(self.cursor_mode) and
+            self.available_cursor_modes[self.cursor_mode].has_key('on_cursor_leave')):
+            self.available_cursor_modes[self.cursor_mode]['on_cursor_leave'](event)
 
     def on_cursor_enter(self, event):
         self.saved_cursor = self.figure.canvas.GetCursor()
         self.figure.canvas.SetCursor(wx.StockCursor(wx.CURSOR_CROSS))
+        if (self.available_cursor_modes.has_key(self.cursor_mode) and
+            self.available_cursor_modes[self.cursor_mode].has_key('on_cursor_enter')):
+            self.available_cursor_modes[self.cursor_mode]['on_cursor_enter'](event)
 
     def _onSize(self, event):
         self._SetSize()
