@@ -1,7 +1,7 @@
 import wx
 
 textctrl_output_only_background_color = (235, 235, 235)
-        
+
 def set_textctrl_background_color(textctrl, mode, tooltip=None):
     if mode == 'ok':
         color = (255,255,255)

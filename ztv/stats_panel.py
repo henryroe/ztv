@@ -9,6 +9,7 @@ import sys
 from .ztv_wx_lib import set_textctrl_background_color, validate_textctrl_str, textctrl_output_only_background_color
 from .ztv_lib import send_to_stream
 
+textentry_font = wx.Font(14, wx.FONTFAMILY_MODERN, wx.NORMAL, wx.FONTWEIGHT_LIGHT, False)
 
 class StatsPanel(wx.Panel):
     def __init__(self, parent):
@@ -29,8 +30,6 @@ class StatsPanel(wx.Panel):
         # x0,y0,x1,y1 should be limited to range of 0 to shape-1
         # but, stats should be calculated over e.g. x0:x1+1  (so that have pixels to do stats on even if x0==x1)
         # and, width/height of stats_rect should always be >= 0
-
-        textentry_font = wx.Font(14, wx.FONTFAMILY_MODERN, wx.NORMAL, wx.FONTWEIGHT_LIGHT, False)
         
         values_sizer = wx.FlexGridSizer( 10, 5, 0, 0 )
         values_sizer.SetFlexibleDirection( wx.BOTH )

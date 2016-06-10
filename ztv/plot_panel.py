@@ -13,7 +13,11 @@ from matplotlib.patches import PathPatch
 from matplotlib.path import Path
 import numpy as np
 import sys
+from matplotlib.widgets import AxesWidget
 from .ztv_lib import send_to_stream
+from .ztv_wx_lib import textctrl_output_only_background_color
+
+textentry_font = wx.Font(14, wx.FONTFAMILY_MODERN, wx.NORMAL, wx.FONTWEIGHT_LIGHT, False)
 
 
 class PlotPlotPanel(wx.Panel):
@@ -24,6 +28,20 @@ class PlotPlotPanel(wx.Panel):
         self.axes = self.figure.add_subplot(111)
         self.canvas = FigureCanvasWxAgg(self, -1, self.figure)
         self.Bind(wx.EVT_SIZE, self._onSize)
+        self.axes_widget = AxesWidget(self.figure.gca())
+        self.axes_widget.connect_event('motion_notify_event', self.on_motion)
+        self.plot_point = None
+        
+    def on_motion(self, evt):
+        if evt.xdata is not None:
+            xarg = np.abs(self.ztv_frame.plot_panel.plot_positions - evt.xdata).argmin()
+            ydata = self.ztv_frame.plot_panel.plot_im_values[xarg]
+            self.ztv_frame.plot_panel.cursor_position_textctrl.SetValue('{0:.6g},{1:.6g}'.format(evt.xdata, ydata))
+            if self.plot_point is None:
+                self.plot_point, = self.axes.plot([evt.xdata], [ydata], 'xm')
+            else:
+                self.plot_point.set_data([[evt.xdata], [ydata]])
+            self.figure.canvas.draw()
 
     def _onSize(self, event):
         self._SetSize()
@@ -51,16 +69,24 @@ class PlotPanel(wx.Panel):
             self.ztv_frame.primary_image_panel.available_key_presses[cur_key] = self.do_row_plot
         for cur_key in ['z', 'Z']:
             self.ztv_frame.primary_image_panel.available_key_presses[cur_key] = self.do_stack_plot
-            
-        self.primary_image_patch = None
 
+        self.primary_image_patch = None
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.plot_panel = PlotPlotPanel(self)
         self.sizer.Add(self.plot_panel, 1, wx.LEFT | wx.TOP | wx.EXPAND)
         
+        self.h_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.cursor_position_textctrl = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, (200, -1),
+                                                    wx.TE_READONLY)
+        self.cursor_position_textctrl.SetFont(textentry_font)
+        self.cursor_position_textctrl.SetBackgroundColour(textctrl_output_only_background_color)
+        self.h_sizer.Add(self.cursor_position_textctrl, 0)
+        self.h_sizer.AddStretchSpacer(1)
         self.hideshow_button = wx.Button(self, wx.ID_ANY, u"Hide", wx.DefaultPosition, wx.DefaultSize, 0)
-        self.sizer.Add(self.hideshow_button, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_BOTTOM, 2)
+        self.h_sizer.Add(self.hideshow_button, 0)
         self.hideshow_button.Bind(wx.EVT_BUTTON, self.on_hideshow_button)
+
+        self.sizer.Add(self.h_sizer, 0, wx.EXPAND)
 
         self.SetSizer(self.sizer)
         self.Fit()
@@ -183,8 +209,11 @@ class PlotPanel(wx.Panel):
                 cur_im_value = self.ztv_frame.proc_image[cur_im_num, self.start_pt.y, self.start_pt.x]
             self.plot_panel.axes.clear()
             self.line_plot = self.plot_panel.axes.plot(positions, im_values)
+            self.plot_positions = positions
+            self.plot_im_values = im_values
             self.plot_panel.axes.plot([cur_im_num], [cur_im_value], 'xm')
             self.plot_panel.axes.set_xlim([positions[0], positions[-1]])
+            self.plot_panel.plot_point = None
             self.plot_panel.figure.canvas.draw()
         else:
             xlim = self.ztv_frame.primary_image_panel.xlim
@@ -219,11 +248,15 @@ class PlotPanel(wx.Panel):
                 ys = ys.astype(np.int)
                 im_values = self.ztv_frame.display_image[ys, xs]
                 self.plot_panel.axes.clear()
+                self.plot_positions = positions
+                self.plot_im_values = im_values
                 if positions.min() != positions.max():
                     self.line_plot = self.plot_panel.axes.plot(positions, im_values)
                     self.plot_panel.axes.set_xlim([positions[0], positions[-1]])
+                self.plot_panel.plot_point = None
                 self.plot_panel.figure.canvas.draw()
             else:
                 self.plot_panel.axes.clear()
+                self.plot_panel.plot_point = None
                 self.plot_panel.figure.canvas.draw()
         
