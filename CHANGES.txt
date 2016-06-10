@@ -3,7 +3,7 @@ ztv Change Log
 ~~~~~~~~~~~~~~
 
 --------------------
-0.2.3-4   
+0.2.3-4   not-yet-released
 --------------------
 
 - updated shift-key behavior in slice plot mode on primary image panel when releasing button to avoid having the selected slice 'jump'
