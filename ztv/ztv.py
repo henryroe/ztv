@@ -118,6 +118,7 @@ class PrimaryImagePanel(wx.Panel):
         self.axes_widget.connect_event('button_press_event', self.on_button_press)
         self.axes_widget.connect_event('button_release_event', self.on_button_release)
         self.axes_widget.connect_event('key_press_event', self.on_key_press)
+        self.zoom_start_timestamp = time.time()
         wx.EVT_RIGHT_DOWN(self.figure.canvas, self.on_right_down)  # supercedes the above button_press_event
         pub.subscribe(self.redraw_primary_image, 'redraw-image')   
         pub.subscribe(self.reset_zoom_and_center, 'reset-zoom-and-center')
@@ -386,9 +387,8 @@ class PrimaryImagePanel(wx.Panel):
     def redraw_primary_image(self, msg=None):
         if msg is True or self.ztv_frame._pause_redraw_image:
             return
-        if hasattr(self, 'axes_image'):
-            if self.axes_image in self.axes.images:
-                self.axes.images.remove(self.axes_image)
+          # HEREIAM
+        self.axes.cla()   # to avoid matplotlib memory leaks, need to clear axes each load
         self.axes_image = self.axes.imshow(self.ztv_frame.normalize(self.ztv_frame.display_image),
                                            interpolation='Nearest', 
                                            cmap=self.ztv_frame.get_cmap_to_display(), zorder=0)
@@ -494,12 +494,13 @@ class OverviewImagePanel(wx.Panel):
         max_rebin_x = float(self.ztv_frame.display_image.shape[1]) / self.size.x
         max_rebin_y = float(self.ztv_frame.display_image.shape[0]) / self.size.y
         rebin_factor = max(1, np.int(np.floor(min([max_rebin_x, max_rebin_y]))))
-        self.axes_image = self.axes.imshow(self.ztv_frame.normalize(self.ztv_frame.display_image)[::rebin_factor, 
-                                                                                                  ::rebin_factor],
-                                           interpolation='Nearest', vmin=0., vmax=1.,
-                                           extent=[0., self.ztv_frame.display_image.shape[1], 
-                                                   self.ztv_frame.display_image.shape[0], 0.],
-                                           cmap=self.ztv_frame.get_cmap_to_display(), zorder=0)
+  # HEREIAM
+#         self.axes_image = self.axes.imshow(self.ztv_frame.normalize(self.ztv_frame.display_image)[::rebin_factor, 
+#                                                                                                   ::rebin_factor],
+#                                            interpolation='Nearest', vmin=0., vmax=1.,
+#                                            extent=[0., self.ztv_frame.display_image.shape[1], 
+#                                                    self.ztv_frame.display_image.shape[0], 0.],
+#                                            cmap=self.ztv_frame.get_cmap_to_display(), zorder=0)
         clear_ticks_and_frame_from_axes(self.axes)
         self.set_xy_limits()
         self.figure.canvas.draw()
@@ -539,9 +540,10 @@ class LoupeImagePanel(wx.Panel):
         if hasattr(self, 'axes_image'):
             if self.axes_image in self.axes.images:
                 self.axes.images.remove(self.axes_image)
-        self.axes_image = self.axes.imshow(self.ztv_frame.normalize(self.ztv_frame.display_image),
-                                           interpolation='Nearest',
-                                           cmap=self.ztv_frame.get_cmap_to_display(), zorder=0)
+  # HEREIAM
+#         self.axes_image = self.axes.imshow(self.ztv_frame.normalize(self.ztv_frame.display_image),
+#                                            interpolation='Nearest',
+#                                            cmap=self.ztv_frame.get_cmap_to_display(), zorder=0)
         clear_ticks_and_frame_from_axes(self.axes)
         self.figure.canvas.draw()  # bulk of time in method is spent in this line: TODO: look for ways to make faster
 
