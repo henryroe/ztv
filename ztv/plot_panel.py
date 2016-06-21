@@ -17,8 +17,6 @@ from matplotlib.widgets import AxesWidget
 from .ztv_lib import send_to_stream
 from .ztv_wx_lib import textctrl_output_only_background_color
 
-textentry_font = wx.Font(14, wx.FONTFAMILY_MODERN, wx.NORMAL, wx.FONTWEIGHT_LIGHT, False)
-
 
 class PlotPlotPanel(wx.Panel):
     def __init__(self, parent, dpi=None, **kwargs):
@@ -78,7 +76,8 @@ class PlotPanel(wx.Panel):
         self.h_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.cursor_position_textctrl = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, (200, -1),
                                                     wx.TE_READONLY)
-        self.cursor_position_textctrl.SetFont(textentry_font)
+        self.textentry_font = wx.Font(14, wx.FONTFAMILY_MODERN, wx.NORMAL, wx.FONTWEIGHT_LIGHT, False)
+        self.cursor_position_textctrl.SetFont(self.textentry_font)
         self.cursor_position_textctrl.SetBackgroundColour(textctrl_output_only_background_color)
         self.h_sizer.Add(self.cursor_position_textctrl, 0)
         self.h_sizer.AddStretchSpacer(1)
