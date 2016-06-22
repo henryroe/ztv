@@ -3,11 +3,12 @@ ztv Change Log
 ~~~~~~~~~~~~~~
 
 --------------------
-0.2.3-4   not-yet-released
+0.2.3-4   2016-06-21
 --------------------
 
 - updated shift-key behavior in slice plot mode on primary image panel when releasing button to avoid having the selected slice 'jump'
 - bug fixes
+- fixed MAJOR bug of a memory leak related to matplotlib; ztv hadn't been properly calling cla() to clear axes and thus matplotlib objects were just piling up in memory.  (There may be some remaining similar leaks to be fixed, but the vast majority of the culprit was the imshow()'s and those are now fixed.)
 
 --------------------
 0.2.3-3   2016-06-10

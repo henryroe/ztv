@@ -437,7 +437,6 @@ class OverviewImagePanel(wx.Panel):
         self.figure = Figure(None, dpi)
         self.axes = self.figure.add_axes([0., 0., 1., 1.])
         self.curview_rectangle = Rectangle((0, 0), 1, 1, color='orange', fill=False, zorder=100)
-        self.axes.add_patch(self.curview_rectangle)
         self.canvas = FigureCanvasWxAgg(self, -1, self.figure)
         self.overview_zoom_factor = 1.
         self._SetSize()
@@ -516,25 +515,24 @@ class OverviewImagePanel(wx.Panel):
     def redraw_overview_image(self, msg=None):
         if msg is True or self.ztv_frame._pause_redraw_image:
             return
-        if hasattr(self, 'axes_image'):
-            if self.axes_image in self.axes.images:
-                self.axes.images.remove(self.axes_image)
         # note that following is not an actual rebin, but a sub-sampling, which is what matplotlib ultimately
         # would do on its own anyway if we gave it the full image.  But, matplotlib takes longer.  For a 2Kx2K
         # image, this saves almost 0.3sec on a ~2014 MacBookProRetina
         max_rebin_x = float(self.ztv_frame.display_image.shape[1]) / self.size.x
         max_rebin_y = float(self.ztv_frame.display_image.shape[0]) / self.size.y
         rebin_factor = max(1, np.int(np.floor(min([max_rebin_x, max_rebin_y]))))
-  # HEREIAM
-#         self.axes_image = self.axes.imshow(self.ztv_frame.normalize(self.ztv_frame.display_image)[::rebin_factor, 
-#                                                                                                   ::rebin_factor],
-#                                            interpolation='Nearest', vmin=0., vmax=1.,
-#                                            extent=[0., self.ztv_frame.display_image.shape[1], 
-#                                                    self.ztv_frame.display_image.shape[0], 0.],
-#                                            cmap=self.ztv_frame.get_cmap_to_display(), zorder=0)
+        self.axes.cla()
+        self.axes_image = self.axes.imshow(self.ztv_frame.normalize(self.ztv_frame.display_image)[::rebin_factor, 
+                                                                                                  ::rebin_factor],
+                                           interpolation='Nearest', vmin=0., vmax=1.,
+                                           extent=[0., self.ztv_frame.display_image.shape[1], 
+                                                   self.ztv_frame.display_image.shape[0], 0.],
+                                           cmap=self.ztv_frame.get_cmap_to_display(), zorder=0)
+        self.axes.add_patch(self.curview_rectangle)
         clear_ticks_and_frame_from_axes(self.axes)
         self.set_xy_limits()
-        self.figure.canvas.draw()
+        self.redraw_box()
+#         self.figure.canvas.draw()  is redundant here because redraw_box calls it
 
 
 class LoupeImagePanel(wx.Panel):
