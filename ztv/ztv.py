@@ -522,6 +522,8 @@ class OverviewImagePanel(wx.Panel):
         max_rebin_y = float(self.ztv_frame.display_image.shape[0]) / self.size.y
         rebin_factor = max(1, np.int(np.floor(min([max_rebin_x, max_rebin_y]))))
         self.axes.cla()
+        # TODO: work here on why sometimes the overview image isn't scaled to the same clims as the main image
+        #       think it has something to do with the rebinning in the next line.
         self.axes_image = self.axes.imshow(self.ztv_frame.normalize(self.ztv_frame.display_image)[::rebin_factor, 
                                                                                                   ::rebin_factor],
                                            interpolation='Nearest', vmin=0., vmax=1.,
@@ -865,6 +867,7 @@ class ZTVFrame(wx.Frame):
         else:
             self.clim = clim
         if old_clim != self.clim:
+            sys.stderr.write("\n\nset_clim:  clim = {}\n\n".format(clim))
             wx.CallAfter(pub.sendMessage, 'clim-changed', msg=((pause_redraw_image or self._pause_redraw_image),))
 
     def set_clim_to_minmax(self, msg=(False,)):

@@ -6,7 +6,7 @@ ztv Change Log
 0.2.3-5   not yet released
 --------------------
 
-
+- bug fix in LoupeImagePanel after redisplay for cmap/clim/etc change
 
 --------------------
 0.2.3-4   2016-06-21
