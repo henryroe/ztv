@@ -142,10 +142,6 @@ class PhotPanel(wx.Panel):
         self.ztv_frame.primary_image_panel.available_cursor_modes['Phot'] = {
                 'set-to-mode':self.set_cursor_to_phot_mode,
                 'on_button_press':self.on_button_press}
-                
-        self.star_center_patch = None
-        self.star_aperture_patch = None
-        self.sky_aperture_patch = None
 
         self.last_string_values = {'aprad':'', 'skyradin':'', 'skyradout':''}
         self.xclick = None
@@ -339,33 +335,22 @@ class PhotPanel(wx.Panel):
             self.redraw_overplot_on_image()
 
     def remove_overplot_on_image(self, *args):
-        if self.star_center_patch is not None:
-            self.ztv_frame.primary_image_panel.axes.patches.remove(self.star_center_patch)
-            self.star_center_patch = None
-        if self.star_aperture_patch is not None:
-            self.ztv_frame.primary_image_panel.axes.patches.remove(self.star_aperture_patch)
-            self.star_aperture_patch = None
-        if self.sky_aperture_patch is not None:
-            self.ztv_frame.primary_image_panel.axes.patches.remove(self.sky_aperture_patch)
-            self.sky_aperture_patch = None
-        self.ztv_frame.primary_image_panel.figure.canvas.draw()
+        self.ztv_frame.primary_image_panel.remove_patch('phot_panel:star_center_patch', no_redraw=True)
+        self.ztv_frame.primary_image_panel.remove_patch('phot_panel:star_aperture_patch', no_redraw=True)
+        self.ztv_frame.primary_image_panel.remove_patch('phot_panel:sky_aperture_patch', no_redraw=False)
         self.hideshow_button.SetLabel(u"Show")
 
     def redraw_overplot_on_image(self, *args):
-        if self.star_center_patch is not None:
-            self.ztv_frame.primary_image_panel.axes.patches.remove(self.star_center_patch)
-        if self.star_aperture_patch is not None:
-            self.ztv_frame.primary_image_panel.axes.patches.remove(self.star_aperture_patch)
-        if self.sky_aperture_patch is not None:
-            self.ztv_frame.primary_image_panel.axes.patches.remove(self.sky_aperture_patch)
-        self.star_center_patch = Circle([self.xcentroid, self.ycentroid], 0.125, color=self.aprad_color)
-        self.ztv_frame.primary_image_panel.axes.add_patch(self.star_center_patch)
-        self.star_aperture_patch = Circle([self.xcentroid, self.ycentroid], self.aprad, color=self.aprad_color, alpha=self.alpha)
-        self.ztv_frame.primary_image_panel.axes.add_patch(self.star_aperture_patch)
-        self.sky_aperture_patch = Wedge([self.xcentroid, self.ycentroid], self.skyradout, 0., 360., 
-                                        width=self.skyradout - self.skyradin, color=self.skyrad_color, alpha=self.alpha)
-        self.ztv_frame.primary_image_panel.axes.add_patch(self.sky_aperture_patch)
-        self.ztv_frame.primary_image_panel.figure.canvas.draw()
+        self.ztv_frame.primary_image_panel.add_patch('phot_panel:star_center_patch', 
+                                                     Circle([self.xcentroid, self.ycentroid], 
+                                                            0.125, color=self.aprad_color), no_redraw=True)
+        self.ztv_frame.primary_image_panel.add_patch('phot_panel:star_aperture_patch', 
+                                                     Circle([self.xcentroid, self.ycentroid], self.aprad, 
+                                                            color=self.aprad_color, alpha=self.alpha), no_redraw=True)
+        self.ztv_frame.primary_image_panel.add_patch('phot_panel:sky_aperture_patch', 
+                                                     Wedge([self.xcentroid, self.ycentroid], self.skyradout, 0., 360., 
+                                                           width=self.skyradout - self.skyradin, color=self.skyrad_color, 
+                                                           alpha=self.alpha), no_redraw=False)
         self.hideshow_button.SetLabel(u"Hide")
 
     def _set_aperture_phot_parameters(self, msg):

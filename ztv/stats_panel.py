@@ -223,7 +223,6 @@ class StatsPanel(wx.Panel):
         self.cursor_stats_box_x0, self.cursor_stats_box_y0 = event.xdata, event.ydata
 
     def on_motion(self, event):
-          # HEREIAM:  need to check for button down...
         if event.button is not None:
             self.update_stats_box(self.cursor_stats_box_x0, self.cursor_stats_box_y0, event.xdata, event.ydata)
             self.redraw_overplot_on_image()
