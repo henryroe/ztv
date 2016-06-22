@@ -568,13 +568,11 @@ class LoupeImagePanel(wx.Panel):
     def redraw_loupe_image(self, msg=None):
         if msg is True or self.ztv_frame._pause_redraw_image:
             return
-        if hasattr(self, 'axes_image'):
-            if self.axes_image in self.axes.images:
-                self.axes.images.remove(self.axes_image)
-  # HEREIAM
-#         self.axes_image = self.axes.imshow(self.ztv_frame.normalize(self.ztv_frame.display_image),
-#                                            interpolation='Nearest',
-#                                            cmap=self.ztv_frame.get_cmap_to_display(), zorder=0)
+        self.axes.cla()
+        self.crosshair = None
+        self.axes_image = self.axes.imshow(self.ztv_frame.normalize(self.ztv_frame.display_image),
+                                           interpolation='Nearest',
+                                           cmap=self.ztv_frame.get_cmap_to_display(), zorder=0)
         clear_ticks_and_frame_from_axes(self.axes)
         self.figure.canvas.draw()  # bulk of time in method is spent in this line: TODO: look for ways to make faster
 
