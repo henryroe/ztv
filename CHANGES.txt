@@ -7,6 +7,7 @@ ztv Change Log
 --------------------
 
 - bug fix in LoupeImagePanel after redisplay for cmap/clim/etc change
+- added add_text/remove_text methods similar to patches for external code to plot on PrimaryImagePanel
 
 --------------------
 0.2.3-4   2016-06-21
