@@ -107,7 +107,8 @@ class PrimaryImagePanel(wx.Panel):
         self.popup_menu = None
         self.xlim = [-9e9, 9e9]
         self.ylim = [-9e9, 9e9]
-        self.patches_dict = {}   #  external code, e.g. panels, can add patches to be drawn to this & then call redraw_patches_dict
+        self.patches_dict = {}   #  keep track of matplotlib patches added by external code
+        self.text_dict = {}   # similarly, keep track of text objects added to the axes
         self.figure = Figure(None, dpi)
         self.axes = self.figure.add_axes([0., 0., 1., 1.])
         self.canvas = FigureCanvasWxAgg(self, -1, self.figure)
@@ -385,6 +386,24 @@ class PrimaryImagePanel(wx.Panel):
                                     float(pixels[1])/self.figure.get_dpi())
         self.set_and_get_xy_limits()
 
+    def add_text(self, text_key, *args, **kwargs):
+        no_redraw = kwargs.pop('no_redraw', False)
+        self.text_dict[text_key] = {'args':args, 'kwargs':kwargs}
+        self.axes.text(*args, **kwargs)
+        if not no_redraw:
+            self.figure.canvas.draw() 
+
+    def remove_text(self, text_key, no_redraw=False):
+        if text_key in self.text_dict and self.text_dict[text_key] is not None:
+            pass   # TODO figure out how to remove text from matplotlib axes without access to original text object
+        self.text_dict[text_key] = None
+        if not no_redraw:
+            self.figure.canvas.draw() 
+
+    def reload_text_dict(self):
+        for cur_key in self.text_dict:
+            self.axes.text(*self.text_dict[cur_key]['args'], **self.text_dict[cur_key]['kwargs'])
+
     def add_patch(self, patch_key, new_patch, no_redraw=False):
         """
         add new_patch to self.patches_dict[patch_key], being sure to delete any existing patch
@@ -424,6 +443,7 @@ class PrimaryImagePanel(wx.Panel):
                                            cmap=self.ztv_frame.get_cmap_to_display(), zorder=0)
         clear_ticks_and_frame_from_axes(self.axes)
         self.reload_patches_dict()
+        self.reload_text_dict()
         self.set_and_get_xy_limits()
         # self.figure.canvas.draw() is not needed here, b/c called from within set_and_get_xy_limits
 
