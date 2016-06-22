@@ -867,7 +867,6 @@ class ZTVFrame(wx.Frame):
         else:
             self.clim = clim
         if old_clim != self.clim:
-            sys.stderr.write("\n\nset_clim:  clim = {}\n\n".format(clim))
             wx.CallAfter(pub.sendMessage, 'clim-changed', msg=((pause_redraw_image or self._pause_redraw_image),))
 
     def set_clim_to_minmax(self, msg=(False,)):
