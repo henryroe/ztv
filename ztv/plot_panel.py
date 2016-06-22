@@ -68,7 +68,6 @@ class PlotPanel(wx.Panel):
         for cur_key in ['z', 'Z']:
             self.ztv_frame.primary_image_panel.available_key_presses[cur_key] = self.do_stack_plot
 
-        self.primary_image_patch = None
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.plot_panel = PlotPlotPanel(self)
         self.sizer.Add(self.plot_panel, 1, wx.LEFT | wx.TOP | wx.EXPAND)
@@ -173,8 +172,6 @@ class PlotPanel(wx.Panel):
         self.redraw()
 
     def redraw_overplot_on_image(self, msg=None):
-        if self.primary_image_patch is not None:
-            self.ztv_frame.primary_image_panel.axes.patches.remove(self.primary_image_patch)
         if self.start_pt == self.end_pt:
             path = Path([self.start_pt, self.start_pt + (0.5, 0.),
                          self.start_pt, self.start_pt + (-0.5, 0.), 
@@ -184,16 +181,11 @@ class PlotPanel(wx.Panel):
                          Path.LINETO, Path.LINETO, Path.LINETO, Path.LINETO])
         else:
             path = Path([self.start_pt, self.end_pt], [Path.MOVETO, Path.LINETO])
-        self.primary_image_patch = PathPatch(path, color='magenta', lw=1)
-        self.ztv_frame.primary_image_panel.axes.add_patch(self.primary_image_patch)
-        self.ztv_frame.primary_image_panel.figure.canvas.draw()
+        self.ztv_frame.primary_image_panel.add_patch('plot_panel:overlay', PathPatch(path, color='magenta', lw=1))
         self.hideshow_button.SetLabel(u"Hide")        
 
     def remove_overplot_on_image(self, msg=None):
-        if self.primary_image_patch is not None:
-            self.ztv_frame.primary_image_panel.axes.patches.remove(self.primary_image_patch)
-        self.ztv_frame.primary_image_panel.figure.canvas.draw()
-        self.primary_image_patch = None
+        self.ztv_frame.primary_image_panel.remove_patch('plot_panel:overlay')
         self.hideshow_button.SetLabel(u"Show")
 
     def on_hideshow_button(self, event):

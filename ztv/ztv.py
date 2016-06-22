@@ -107,6 +107,7 @@ class PrimaryImagePanel(wx.Panel):
         self.popup_menu = None
         self.xlim = [-9e9, 9e9]
         self.ylim = [-9e9, 9e9]
+        self.patches_dict = {}   #  external code, e.g. panels, can add patches to be drawn to this & then call redraw_patches_dict
         self.figure = Figure(None, dpi)
         self.axes = self.figure.add_axes([0., 0., 1., 1.])
         self.canvas = FigureCanvasWxAgg(self, -1, self.figure)
@@ -118,6 +119,7 @@ class PrimaryImagePanel(wx.Panel):
         self.axes_widget.connect_event('button_press_event', self.on_button_press)
         self.axes_widget.connect_event('button_release_event', self.on_button_release)
         self.axes_widget.connect_event('key_press_event', self.on_key_press)
+        self.zoom_start_timestamp = time.time()
         wx.EVT_RIGHT_DOWN(self.figure.canvas, self.on_right_down)  # supercedes the above button_press_event
         pub.subscribe(self.redraw_primary_image, 'redraw-image')   
         pub.subscribe(self.reset_zoom_and_center, 'reset-zoom-and-center')
@@ -383,16 +385,45 @@ class PrimaryImagePanel(wx.Panel):
                                     float(pixels[1])/self.figure.get_dpi())
         self.set_and_get_xy_limits()
 
+    def add_patch(self, patch_key, new_patch, no_redraw=False):
+        """
+        add new_patch to self.patches_dict[patch_key], being sure to delete any existing patch
+        no_redraw prevents redraw, so that code that is adding multiple patches can prevent redraw until it's done
+        adding several patches
+        """
+        if patch_key in self.patches_dict and self.patches_dict[patch_key] is not None:
+            self.axes.patches.remove(self.patches_dict[patch_key])
+        self.patches_dict[patch_key] = new_patch
+        self.axes.add_patch(new_patch)
+        if not no_redraw:
+            self.figure.canvas.draw() 
+
+    def remove_patch(self, patch_key, no_redraw=False):
+        """
+        set self.patches_dict[patch_key] to None, being sure to delete any existing patch
+        no_redraw prevents redraw, so that code that is adding multiple patches can prevent redraw until it's done
+        adding several patches
+        """
+        if patch_key in self.patches_dict and self.patches_dict[patch_key] is not None:
+            self.axes.patches.remove(self.patches_dict[patch_key])
+        self.patches_dict[patch_key] = None
+        if not no_redraw:
+            self.figure.canvas.draw() 
+
+    def reload_patches_dict(self):
+        for cur_key in self.patches_dict:
+            if self.patches_dict[cur_key] is not None:
+                self.axes.add_patch(self.patches_dict[cur_key])
+
     def redraw_primary_image(self, msg=None):
         if msg is True or self.ztv_frame._pause_redraw_image:
             return
-        if hasattr(self, 'axes_image'):
-            if self.axes_image in self.axes.images:
-                self.axes.images.remove(self.axes_image)
+        self.axes.cla()   # to avoid matplotlib memory leaks, need to clear axes each load
         self.axes_image = self.axes.imshow(self.ztv_frame.normalize(self.ztv_frame.display_image),
                                            interpolation='Nearest', 
                                            cmap=self.ztv_frame.get_cmap_to_display(), zorder=0)
         clear_ticks_and_frame_from_axes(self.axes)
+        self.reload_patches_dict()
         self.set_and_get_xy_limits()
         # self.figure.canvas.draw() is not needed here, b/c called from within set_and_get_xy_limits
 
@@ -406,7 +437,6 @@ class OverviewImagePanel(wx.Panel):
         self.figure = Figure(None, dpi)
         self.axes = self.figure.add_axes([0., 0., 1., 1.])
         self.curview_rectangle = Rectangle((0, 0), 1, 1, color='orange', fill=False, zorder=100)
-        self.axes.add_patch(self.curview_rectangle)
         self.canvas = FigureCanvasWxAgg(self, -1, self.figure)
         self.overview_zoom_factor = 1.
         self._SetSize()
@@ -485,24 +515,24 @@ class OverviewImagePanel(wx.Panel):
     def redraw_overview_image(self, msg=None):
         if msg is True or self.ztv_frame._pause_redraw_image:
             return
-        if hasattr(self, 'axes_image'):
-            if self.axes_image in self.axes.images:
-                self.axes.images.remove(self.axes_image)
         # note that following is not an actual rebin, but a sub-sampling, which is what matplotlib ultimately
         # would do on its own anyway if we gave it the full image.  But, matplotlib takes longer.  For a 2Kx2K
         # image, this saves almost 0.3sec on a ~2014 MacBookProRetina
         max_rebin_x = float(self.ztv_frame.display_image.shape[1]) / self.size.x
         max_rebin_y = float(self.ztv_frame.display_image.shape[0]) / self.size.y
         rebin_factor = max(1, np.int(np.floor(min([max_rebin_x, max_rebin_y]))))
+        self.axes.cla()
         self.axes_image = self.axes.imshow(self.ztv_frame.normalize(self.ztv_frame.display_image)[::rebin_factor, 
                                                                                                   ::rebin_factor],
                                            interpolation='Nearest', vmin=0., vmax=1.,
                                            extent=[0., self.ztv_frame.display_image.shape[1], 
                                                    self.ztv_frame.display_image.shape[0], 0.],
                                            cmap=self.ztv_frame.get_cmap_to_display(), zorder=0)
+        self.axes.add_patch(self.curview_rectangle)
         clear_ticks_and_frame_from_axes(self.axes)
         self.set_xy_limits()
-        self.figure.canvas.draw()
+        self.redraw_box()
+#         self.figure.canvas.draw()  is redundant here because redraw_box calls it
 
 
 class LoupeImagePanel(wx.Panel):
@@ -536,9 +566,8 @@ class LoupeImagePanel(wx.Panel):
     def redraw_loupe_image(self, msg=None):
         if msg is True or self.ztv_frame._pause_redraw_image:
             return
-        if hasattr(self, 'axes_image'):
-            if self.axes_image in self.axes.images:
-                self.axes.images.remove(self.axes_image)
+        self.axes.cla()
+        self.crosshair = None
         self.axes_image = self.axes.imshow(self.ztv_frame.normalize(self.ztv_frame.display_image),
                                            interpolation='Nearest',
                                            cmap=self.ztv_frame.get_cmap_to_display(), zorder=0)
