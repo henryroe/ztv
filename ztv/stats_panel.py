@@ -218,15 +218,16 @@ class StatsPanel(wx.Panel):
 
     def on_button_press(self, event):
         self.select_panel()
-        self.stats_start_timestamp = event.guiEvent.GetTimestamp()  # millisec
         self.update_stats_box(event.xdata, event.ydata, event.xdata, event.ydata)
         self.redraw_overplot_on_image()
         self.cursor_stats_box_x0, self.cursor_stats_box_y0 = event.xdata, event.ydata
 
     def on_motion(self, event):
-        self.update_stats_box(self.cursor_stats_box_x0, self.cursor_stats_box_y0, event.xdata, event.ydata)
-        self.redraw_overplot_on_image()
-        self.update_stats()
+          # HEREIAM:  need to check for button down...
+        if event.button is not None:
+            self.update_stats_box(self.cursor_stats_box_x0, self.cursor_stats_box_y0, event.xdata, event.ydata)
+            self.redraw_overplot_on_image()
+            self.update_stats()
 
     def on_button_release(self, event):
         self.redraw_overplot_on_image()
@@ -279,19 +280,16 @@ class StatsPanel(wx.Panel):
         x1 = min(max(0, x1), self.ztv_frame.display_image.shape[1] - 1)
         y1 = min(max(0, y1), self.ztv_frame.display_image.shape[0] - 1)
         self.stats_rect.set_bounds(x0, y0, x1 - x0, y1 - y0)
-        self.ztv_frame.primary_image_panel.figure.canvas.draw()
+        if self.hideshow_button.GetLabel() == 'Hide':  
+            self.ztv_frame.primary_image_panel.figure.canvas.draw()
         self.update_stats()
 
     def remove_overplot_on_image(self):
-        if self.stats_rect in self.ztv_frame.primary_image_panel.axes.patches:
-            self.ztv_frame.primary_image_panel.axes.patches.remove(self.stats_rect)
-        self.ztv_frame.primary_image_panel.figure.canvas.draw()
+        self.ztv_frame.primary_image_panel.remove_patch('stats_panel:stats_rect')
         self.hideshow_button.SetLabel(u"Show")
 
     def redraw_overplot_on_image(self):
-        if self.stats_rect not in self.ztv_frame.primary_image_panel.axes.patches:
-            self.ztv_frame.primary_image_panel.axes.add_patch(self.stats_rect)
-        self.ztv_frame.primary_image_panel.figure.canvas.draw()
+        self.ztv_frame.primary_image_panel.add_patch('stats_panel:stats_rect', self.stats_rect)
         self.hideshow_button.SetLabel(u"Hide")        
 
     def on_hideshow_button(self, evt):
