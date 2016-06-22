@@ -562,6 +562,7 @@ class LoupeImagePanel(wx.Panel):
         else:
             self.crosshair[0].set_data([center[0]], [center[1]])
         self.figure.canvas.draw()
+        self.last_center = center  # record for future use, e.g. if clim/cmap changes & need to redraw
 
     def redraw_loupe_image(self, msg=None):
         if msg is True or self.ztv_frame._pause_redraw_image:
@@ -572,7 +573,7 @@ class LoupeImagePanel(wx.Panel):
                                            interpolation='Nearest',
                                            cmap=self.ztv_frame.get_cmap_to_display(), zorder=0)
         clear_ticks_and_frame_from_axes(self.axes)
-        self.figure.canvas.draw()  # bulk of time in method is spent in this line: TODO: look for ways to make faster
+        self.set_xy_limits(self.last_center)
 
 
 class ControlsNotebook(wx.Notebook):
